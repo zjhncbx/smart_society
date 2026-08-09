@@ -1,0 +1,210 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../models/society_activity.dart';
+import '../../providers/activity_provider.dart';
+import '../../utils/date_format.dart';
+import '../../widgets/common.dart';
+
+/// 活动列表页：状态筛选
+class ActivityListPage extends StatefulWidget {
+  const ActivityListPage({super.key});
+
+  @override
+  State<ActivityListPage> createState() => _ActivityListPageState();
+}
+
+class _ActivityListPageState extends State<ActivityListPage> {
+  int? _statusFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<ActivityProvider>();
+    final activities = provider.sortedActivities.where((a) {
+      return _statusFilter == null || a.status == _statusFilter;
+    }).toList();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('活动管理')),
+      body: Column(
+        children: [
+          SizedBox(
+            height: 48,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              children: [
+                _StatusChip(
+                  label: '全部',
+                  selected: _statusFilter == null,
+                  onTap: () => setState(() => _statusFilter = null),
+                ),
+                for (final (value, label) in const [
+                  (0, '未开始'),
+                  (1, '进行中'),
+                  (2, '已结束'),
+                ])
+                  _StatusChip(
+                    label: label,
+                    selected: _statusFilter == value,
+                    onTap: () => setState(() => _statusFilter = value),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: activities.isEmpty
+                ? const EmptyView(
+                    icon: Icons.event_busy,
+                    message: '暂无符合条件的活动',
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                    itemCount: activities.length,
+                    itemBuilder: (context, index) {
+                      final activity = activities[index];
+                      return _ActivityCard(
+                        activity: activity,
+                        onTap: () =>
+                            context.push('/activities/${activity.id}'),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/activities/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('创建活动'),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => onTap(),
+      ),
+    );
+  }
+}
+
+class _ActivityCard extends StatelessWidget {
+  const _ActivityCard({required this.activity, required this.onTap});
+
+  final SocietyActivity activity;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final statusColor = switch (activity.status) {
+      0 => const Color(0xFF3D6BD6),
+      1 => const Color(0xFF4FB36B),
+      _ => const Color(0xFF8A8F99),
+    };
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      activity.title,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      activity.statusLabel,
+                      style: TextStyle(color: statusColor, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.schedule, size: 16, color: theme.colorScheme.outline),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '${formatDateTime(activity.startTime)} ~ ${formatTime(activity.endTime)}',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.place_outlined, size: 16, color: theme.colorScheme.outline),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      activity.location,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.group_outlined, size: 16, color: theme.colorScheme.outline),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${activity.participantCount}/${activity.capacity} 人已报名',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
