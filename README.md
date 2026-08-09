@@ -1,379 +1,190 @@
 # 智联社团（SmartSociety）
 
-基于 **Flutter + HarmonyOS 混合开发** 的社团管理应用，覆盖成员管理、活动管理、通知公告等核心功能，通过 Platform Channel 集成华为推送、扫码签到等鸿蒙原生能力。
+基于 **Flutter + HarmonyOS 混合开发** 的社团管理应用，定位为**组织管理端**：成员管理、活动管理、通知公告、管理仪表盘，支持 3 种组织类型（学校社团 / 志愿服务队 / 社会团体）、4 套主题、自定义角色名称，并预留钉钉协同与华为云开发（AGC Serverless）能力。
 
-**Phase 1 目标**：完成开发环境搭建、MVP 核心功能开发、混合通信集成，并于第 12 周前上架华为应用市场。
-
-- 文档版本：V1.0
-- 适用周期：第 1-12 周（2026年8月—10月）
+- 文档版本：V2.0
 - 适用平台：Windows / macOS
+- 真机验证：华为 Mate 70 Pro+（HarmonyOS NEXT）
+
+## 产品定位
+
+- **管理端**：App 面向社长/队长/会长等管理人员，提供成员、活动、公告的全量管理能力。
+- **普通成员留在钉钉**：普通成员不直接使用本 App，通过钉钉接收通知与参与活动。
+- **预留钉钉集成**：`DingTalkApi` / `DingTalkSyncService` 已预留联系人同步、群消息、审批等接口。
 
 ## 技术栈
 
 | 层 | 技术 |
 |----|------|
-| UI / 业务 | Flutter（Dart） |
-| 原生壳 | HarmonyOS（ArkTS，`ohos/` 模块） |
-| 状态管理 | Provider |
-| 网络请求 | Dio |
-| 本地缓存 | Hive / hive_flutter（纯 Dart，无需适配） |
-| 路由 | go_router |
-| 响应式适配 | flutter_screenutil |
-| 混合通信 | MethodChannel + PlatformView |
+| UI / 业务 | Flutter（Dart 3.11），Flutter-OH 3.41.10 |
+| 原生壳 | HarmonyOS（ArkTS，`ohos/` 模块，API 26） |
+| 状态管理 | Provider 6 |
+| 路由 | go_router 14（StatefulShellRoute 四 Tab） |
+| 本地缓存 | Hive（settings / roleConfig / members / activities / notices） |
+| 网络请求 | Dio（预留 REST API） |
+| 云开发 | 华为 AGC Serverless（云函数 + 云数据库），系统 Kit `@kit.CloudFoundationKit` |
+| 混合通信 | MethodChannel（存储路径 / 云函数桥接） |
+| UI 组件 | 自研 AppCard / StatusBadge / AppEmptyState / AppTheme |
 
-## 里程碑总览（12 周）
+## 功能清单
 
-| 阶段 | 周次 | 核心交付物 | 验收标准 |
-|------|------|------------|----------|
-| 环境搭建 | W1 | 开发环境就绪 | `flutter doctor -v` 全部绿标 |
-| 项目初始化 | W2 | Flutter+鸿蒙混合工程 | 真机运行 Hello World |
-| 核心UI开发 | W3-W4 | 成员管理+活动管理界面 | UI 高保真还原 |
-| 业务逻辑开发 | W5-W6 | 完整 CRUD+网络+缓存 | 核心功能端到端打通 |
-| 混合通信 | W7-W8 | Platform Channel 打通 | 推送+扫码功能可用 |
-| 测试优化 | W9-W10 | 全量测试+性能优化 | Bug率<5%，启动<2秒 |
-| 打包上架 | W11-W12 | HAP 包上架 | 华为应用市场审核通过 |
+### 已实现
 
-## 环境搭建（W1）
+- **组织类型**：学校社团、志愿服务队、社会团体，引导页首次选择
+- **主题**：校园风（蓝）、志愿风（橙）、青年风（绿）、政务风（红）
+- **角色体系**：分级角色 + 人数上限约束，名称可在设置中自定义并持久化
+  - 学校社团：社长(1)、部长(不限)
+  - 志愿服务队：队长(1)、部长(不限)
+  - 社会团体：会长(1)、副会长(不限)、秘书长(1)、理事(不限)、监事长(1)、监事(不限)
+- **成员管理**：列表（搜索/角色筛选）、详情、新增/编辑、删除
+- **活动管理**：列表（状态色条：未开始/进行中/已结束）、创建/编辑、**参与人管理**（添加/移除）
+- **通知公告**：发布、重要标记、已读状态
+- **管理仪表盘**：成员总数 / 进行中活动 / 未读通知 / 钉钉同步状态统计、快捷操作（添加成员/创建活动/发布公告）
+- **云开发桥接**：MethodChannel 调用华为云函数（`cloudFunction.call`），云数据库读写全部经云函数（免鉴权 + 权限收紧）
+- **多语言文案体系**：全部 UI 文案经 `OrgLabels` 按组织类型分发，无硬编码中文
 
-### 前置工具
+### 规划中
 
-| 工具 | 版本要求 | 备注 |
-|------|----------|------|
-| 操作系统 | Windows 10+ / macOS 12+ | 推荐 macOS（可同时开发 iOS） |
-| JDK | **17** | 必须使用 17 版本，低版本不兼容 |
-| Git | 最新版 | 用于拉取 Flutter-OH 源码 |
-| Node.js | 18+ | HarmonyOS 构建依赖 |
-| DevEco Studio | **6.0.2 Release**（构建版本 6.0.2.640） | 鸿蒙 IDE，安装时勾选 HarmonyOS SDK |
+- 钉钉通讯录同步、群消息、审批流（接口已预留，见 `lib/services/dingtalk_*.dart`）
+- 华为推送 Kit（公告推送）、扫码签到（PlatformView）
 
-### 安装 JDK 17
-
-**Windows**：下载 [Oracle JDK 17](https://www.oracle.com/java/technologies/downloads/)，配置环境变量：
-
-```
-JAVA_HOME = D:\Program Files\Java\jdk-17
-PATH 追加 %JAVA_HOME%\bin
-```
-
-**macOS**：
-
-```bash
-brew install openjdk@17
-# ~/.zshrc
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
-export PATH=$JAVA_HOME/bin:$PATH
-```
-
-验证：`java -version` 应显示 `17.x.x`。
-
-### 安装 DevEco Studio
-
-1. 从[华为开发者官网](https://developer.huawei.com/consumer/cn/download/)下载 DevEco Studio 6.0.2 Release，安装时**务必勾选 HarmonyOS SDK**。
-2. 通过 SDK Manager 安装 OpenHarmony SDK（API 20）、Build Tools、Toolchains。
-3. macOS 可能需要解除安全限制：`sudo xattr -r -d com.apple.quarantine /Applications/DevEco-Studio.app`
-
-SDK 路径参考：
-- Windows：`C:\Users\你的用户名\AppData\Local\Huawei\Sdk`
-- macOS：`/Applications/DevEco-Studio.app/Contents/sdk`
-
-### 下载 Flutter-OH SDK
-
-> ⚠️ **关键**：Flutter 适配鸿蒙必须使用鸿蒙定制版，不能用官方原版！
-
-```bash
-git clone -b oh-3.35.7-dev --single-branch https://gitcode.com/openharmony-tpc/flutter_flutter.git
-```
-
-建议路径：Windows `D:\Developments\flutter\harmony_flutter`，macOS `~/flutter_flutter`。
-
-### 配置环境变量
-
-**Windows（系统环境变量，推荐永久生效）**：
-
-| 变量名 | 值 |
-|--------|-----|
-| `DEVECO_SDK_HOME` | `C:\Users\你的用户名\AppData\Local\Huawei\Sdk\sdk` |
-| `HOS_SDK_HOME` | `C:\Users\你的用户名\AppData\Local\Huawei\Sdk\sdk` |
-| `PUB_HOSTED_URL` | `https://pub.flutter-io.cn` |
-| `FLUTTER_STORAGE_BASE_URL` | `https://storage.flutter-io.cn` |
-
-`PATH` 追加：`%JAVA_HOME%\bin`、Flutter-OH 的 `bin` 目录、`Huawei\Sdk\default\openharmony\toolchains`、`Huawei\Sdk\tools\` 下的 `hvigor\bin`、`node\bin`、`ohpm\bin`。
-
-**macOS（~/.zshrc）**：
-
-```bash
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
-export PATH=$JAVA_HOME/bin:$PATH
-
-export TOOL_HOME=/Applications/DevEco-Studio.app/Contents
-export DEVECO_SDK_HOME=$TOOL_HOME/sdk
-export PATH=$TOOL_HOME/tools/ohpm/bin:$PATH
-export PATH=$TOOL_HOME/tools/hvigor/bin:$PATH
-export PATH=$TOOL_HOME/tools/node/bin:$PATH
-
-export PATH=~/flutter_flutter/bin:$PATH
-
-export PUB_HOSTED_URL=https://pub.flutter-io.cn
-export FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn
-```
-
-重新加载：Windows 重启终端（或 `refreshenv`），macOS 执行 `source ~/.zshrc`。
-
-### 配置 Flutter 的 ohos-sdk 路径
-
-```bash
-flutter config --ohos-sdk=''
-flutter config --ohos-sdk=<你的DevEco SDK路径>
-```
-
-### 验证环境
-
-```bash
-flutter doctor -v
-```
-
-正常输出应包含：
-
-```
-[✓] Flutter (Channel dev, 3.35.7-dev)
-[✓] OpenHarmony toolchain - develop for OpenHarmony devices
-[✓] DevEco Studio (version 6.0.2)
-```
-
-## 项目初始化与真机运行（W2）
-
-### 创建项目
-
-仅鸿蒙平台（推荐）：
-
-```bash
-flutter create --platforms ohos smart_society
-```
-
-三端同步（保留安卓/iOS）：
-
-```bash
-flutter create smart_society
-```
-
-### 项目结构
+## 目录结构
 
 ```
 smart_society/
-├── lib/                          # Flutter 主代码（核心开发在此进行）
-│   ├── main.dart
-│   ├── models/                   # 数据模型
-│   ├── screens/                  # 页面（member/、activity/ 等按模块分包）
-│   ├── widgets/                  # 可复用组件
-│   ├── services/                 # 网络/本地/原生服务
-│   └── utils/                    # 工具函数
-├── ohos/                         # 鸿蒙原生壳工程
-│   └── entry/src/main/ets/       # ArkTS 原生代码（混合通信在此编写）
-├── pubspec.yaml                  # Flutter 依赖管理
-└── build-profile.json5           # 鸿蒙签名配置
+├── lib/
+│   ├── main.dart / app.dart         # 入口：Hive 初始化 + Provider 注入 + ThemeData 全局样式
+│   ├── router.dart                  # go_router 路由（四 Tab + 表单/详情/设置）
+│   ├── config/                      # 组织类型、主题配置、OrgLabels（角色体系+全部文案）
+│   ├── models/                      # Member / SocietyActivity / Notice / CustomRoleConfig
+│   ├── providers/                   # Settings / Member / Activity / Notice / RoleConfig
+│   ├── screens/
+│   │   ├── member/ activity/ notice/   # 三模块：列表 + 详情 + 表单
+│   │   ├── profile/                    # 管理仪表盘
+│   │   └── settings/                   # 设置、角色编辑器、引导页
+│   ├── services/
+│   │   ├── storage_service.dart        # Hive 初始化 + 种子数据
+│   │   ├── cloud_function_service.dart # 云函数调用（MethodChannel 桥接）
+│   │   ├── api_client.dart             # Dio 封装
+│   │   ├── dingtalk_api.dart           # 钉钉 API 占位（UnimplementedError）
+│   │   └── dingtalk_sync_service.dart  # 钉钉同步编排
+│   ├── widgets/                        # AppCard / StatusBadge / AppEmptyState / AppTheme / common
+│   └── utils/
+├── ohos/                              # 鸿蒙原生壳
+│   └── entry/src/main/ets/
+│       ├── entryability/EntryAbility.ets   # cloudCommon.init + MethodChannel 桥接
+│       └── resources/rawfile/agconnect-services.json  # AGC 配置（含密钥，不入库）
+└── pubspec.yaml
 ```
 
-### 真机签名配置（核心步骤）
+## 环境要求
 
-运行到真机前**必须完成签名配置**：
+| 工具 | 版本 | 备注 |
+|------|------|------|
+| Flutter-OH | **3.41.10-ohos-1.0.0** | 鸿蒙定制版，勿用官方原版（`gitcode.com/openharmony-tpc/flutter_flutter`） |
+| Dart SDK | ^3.11.5 | 随 Flutter-OH |
+| DevEco Studio | 6.1+ | 安装时勾选 HarmonyOS SDK |
+| JDK | 17 | 构建必需 |
+| Node.js | 18+ | hvigor/ohpm 依赖 |
 
-1. 用 DevEco Studio 打开项目的 `ohos` 模块。
-2. `File → Project Structure → Project → Signing Configs`，勾选 `Automatically generate signature`（DevEco Studio 26.0.0 Beta2+ 支持自动签名；旧版本需在 AGC 手动生成 .p12/.csr/.cer/.p7b 并配置到 `build-profile.json5`）。
-3. 登录华为账号，签名成功后点击 `Apply`。
+环境变量：`DEVECO_SDK_HOME`、`HOS_SDK_HOME`、`PUB_HOSTED_URL=https://pub.flutter-io.cn`、`FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn`。
 
-### 真机调试
-
-1. 手机开启开发者模式：设置 → 关于手机 → 连续点击“版本号”7 次。
-2. 开启 USB 调试：设置 → 系统和更新 → 开发人员选项 → USB 调试。
-3. USB 连接手机，`flutter devices` 应显示 `ohos-arm64` 设备。
+## 快速开始
 
 ```bash
-# 方式1（推荐）：开发调试，支持热重载
+# 环境验证
+flutter doctor -v
+
+# 拉依赖 + 分析
+flutter pub get
+flutter analyze          # 应零 issue
+
+# 调试构建（HAP 产物）
+flutter build hap --debug
+# 或
+cd ohos && devecocli build
+
+# 真机运行（需已开启开发者模式的鸿蒙手机）
 flutter run --debug -d <deviceId>
-# 方式2：批量部署/离线安装
-flutter build hap --debug && hdc install <hap路径>
-# 方式3：DevEco Studio 选择真机直接运行
 ```
 
-**成功标志**：手机上显示 “Hello, World!” 应用。
+首次启动进入引导页：选择组织类型与主题 → 写入种子数据（10 名成员 + 示例活动/公告）。
 
-## 核心功能开发（W3-W6）
+## 鸿蒙云开发（AGC）配置
 
-### 依赖库
+### 1. 应用关联
 
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  dio: ^5.0.0              # 网络请求
-  provider: ^6.0.0         # 状态管理
-  hive: ^2.2.0             # 本地缓存（纯 Dart）
-  hive_flutter: ^1.1.0
-  go_router: ^14.0.0       # 路由
-  flutter_screenutil: ^5.9.0  # 响应式适配
-  intl: ^0.19.0            # 日期处理
-```
+1. AGC 控制台创建项目与应用，**包名必须等于** `com.hnmrxz.smart_society`（见 `ohos/AppScope/app.json5`）。
+2. 启用数据处理位置（必须含中国站点），开通云开发服务（云函数 + 云数据库）。
 
-### 模块优先级
+### 2. 项目侧配置（已完成）
 
-| 优先级 | 模块 | 核心功能 | 预计工时 |
-|--------|------|----------|----------|
-| P0 | 成员管理 | 列表、详情、添加、编辑、角色筛选 | W3 |
-| P0 | 活动管理 | 创建、报名列表、名额管理 | W4 |
-| P0 | 通知公告 | 发布、列表、已读状态 | W5 |
-| P1 | 网络层 | Dio 封装、API 定义、拦截器 | W3 穿插 |
-| P1 | 本地缓存 | Hive 初始化、数据持久化 | W4 穿插 |
+| 项 | 位置 |
+|----|------|
+| `agconnect-services.json` | `ohos/entry/src/main/resources/rawfile/`（含密钥，已加入 `.gitignore`） |
+| 云开发初始化 | `EntryAbility.ets`：`cloudCommon.init({ region: CHINA })` |
+| 云函数桥接 | `EntryAbility.ets` 注册 `com.smartsociety/cloud` 通道 → `cloudFunction.call` |
+| Dart 调用层 | `lib/services/cloud_function_service.dart`（`call()` / `callChecked()`） |
 
-### 代码规范
+### 3. AGC 控制台侧
 
-- 命名：类名大驼峰（`MemberModel`），变量/方法小驼峰（`getMemberList`）。
-- 目录：按功能模块分包（`screens/member/`、`screens/activity/`）。
-- 状态管理：使用 Provider，避免过多 `setState`。
+- **证书指纹**：项目设置 → 常规 → 证书指纹，登记调试证书 SHA256（真机调试签名与 `build-profile.json5` 一致；发布时替换正式证书）。
+- **云数据库对象类型**：`Member` / `Activity` / `Notice`，字段与 Dart 模型 `toJson()` 一致（时间戳为 Long 毫秒）。权限建议全关，仅「管理员」开启 query/upsert/delete（端侧不直连，云函数服务端访问不受限）。
+- **云函数**（HTTP 触发器、POST、认证类型 `apigw-client`、**不启用 decode**，入口 `index.xxx`）：
 
-## 混合通信集成（W7-W8）
+| 函数 | 入口 | 说明 |
+|------|------|------|
+| `get-all-data` | `index.getAllData` | 全量拉取三张表 |
+| `save-member` / `delete-member` | `index.saveMember` / `index.deleteMember` | 成员 upsert / 删除 |
+| `save-activity` / `delete-activity` | `index.saveActivity` / `index.deleteActivity` | 活动 upsert（含 participants）/ 删除 |
+| `save-notice` / `delete-notice` | `index.saveNotice` / `index.deleteNotice` | 公告 upsert / 删除 |
 
-| 鸿蒙原生能力 | 使用场景 | 通信方式 |
-|-------------|----------|----------|
-| 华为推送 Kit | 通知公告推送 | MethodChannel |
-| 扫码能力 | 活动签到 | MethodChannel + PlatformView |
-| 文件选择器 | 资料库上传 | MethodChannel |
+云函数统一返回 `{ code: 0, message: 'ok', data: ... }`，依赖 `@hw-agconnect/database-server`（Node.js 服务端 SDK，不受对象类型权限限制）。
 
-**Dart 端（lib/services/native_service.dart）**：
+### 4. 端侧调用示例
 
 ```dart
-import 'package:flutter/services.dart';
-
-class NativeService {
-  static const MethodChannel _channel = MethodChannel('com.smartsociety/native');
-
-  static Future<bool> sendNotification(String title, String content) async {
-    try {
-      final result = await _channel.invokeMethod('sendNotification', {
-        'title': title,
-        'content': content,
-      });
-      return result == true;
-    } on PlatformException catch (e) {
-      print('推送失败: ${e.message}');
-      return false;
-    }
-  }
-
-  static Future<String> startScan() async {
-    try {
-      final result = await _channel.invokeMethod('startScan');
-      return result.toString();
-    } on PlatformException catch (e) {
-      print('扫码失败: ${e.message}');
-      return '';
-    }
-  }
-}
+final data = await CloudFunctionService.instance.callChecked('get-all-data');
 ```
 
-**ArkTS 端（ohos/entry/src/main/ets/entryability/EntryAbility.ts）**：
+## 混合通信
 
-```typescript
-import { MethodChannel } from '@ohos/flutter';
-import notificationManager from '@ohos.notificationManager';
+| Channel | 方法 | 用途 |
+|---------|------|------|
+| `com.smartsociety/storage` | `getStoragePath` | 返回 `filesDir`（Hive 落盘路径） |
+| `com.smartsociety/cloud` | `callFunction` | 参数 `{ name, data?, timeout? }` → `cloudFunction.call`，返回 JSON 字符串 |
 
-export default class EntryAbility extends UIAbility {
-  onCreate() {
-    const channel = new MethodChannel('com.smartsociety/native');
-    channel.setMethodCallHandler((call, result) => {
-      if (call.method === 'sendNotification') {
-        this.handleNotification(call.arguments, result);
-      } else if (call.method === 'startScan') {
-        this.handleScan(result);
-      } else {
-        result.notImplemented();
-      }
-    });
-  }
+## 里程碑
 
-  private async handleNotification(args: any, result: any) {
-    try {
-      const request = {
-        id: 1001,
-        title: args.title || '社团通知',
-        text: args.content || '',
-        smallIcon: 'common_icon',
-      };
-      await notificationManager.publish(request);
-      result.success(true);
-    } catch (error) {
-      result.error('NOTIFICATION_ERROR', error.message, null);
-    }
-  }
-}
-```
+| 阶段 | 状态 | 交付物 |
+|------|------|--------|
+| 环境搭建 / 项目初始化 | ✅ | Flutter-OH + DevEco 工程，真机运行 |
+| 核心 UI（三模块 + 仪表盘） | ✅ | 成员/活动/公告/设置页，钉钉风格卡片化 UI |
+| 角色体系与文案重构 | ✅ | 分级角色、自定义角色名、OrgLabels 全量文案 |
+| 本地持久化 | ✅ | Hive 五盒 + 种子数据 |
+| 云开发接入 | ✅ | AGC 配置、云函数桥接、7 个云函数部署 |
+| 钉钉集成 | ⏳ | 接口预留，待企业资质与开放平台配置 |
+| 测试优化 | ⏳ | 功能回归、性能（启动 <2s）、兼容性 |
+| 打包上架 | ⏳ | 签名证书、隐私政策、上架审核 |
 
-**权限声明（ohos/entry/src/main/module.json5）**：
+## 上架流程（规划）
 
-```json
-"requestPermissions": [
-  { "name": "ohos.permission.NOTIFICATION_CONTROLLER" }
-]
-```
+1. 准备正式签名证书，AGC 更新证书指纹，`build-profile.json5` 切换 signingConfig。
+2. `flutter build hap --release`，产物：`ohos/entry/build/default/outputs/default/entry-default-signed.hap`。
+3. 检查清单：图标、启动页、应用名称、隐私政策、权限声明（`module.json5` 已含 INTERNET）。
+4. AGC 上传 HAP → 提交审核（1-3 个工作日）。
+5. 开发者激励：2026 年报名通道（9 月 25 日截止），首次上架需在 9 月 30 日前。
 
-> ⚠️ Channel 名称必须与 Dart 端完全一致（大小写、包名路径均不能错），否则通信失败。
-
-## 测试与优化（W9-W10）
-
-| 测试类型 | 测试内容 | 验收标准 |
-|----------|----------|----------|
-| 功能测试 | 成员 CRUD、活动报名、通知发布 | 所有 P0 功能正常 |
-| 混合通信测试 | 推送发送、扫码签到 | Platform Channel 调用成功 |
-| 性能测试 | 启动速度、列表滑动、内存占用 | 启动<2秒，无卡顿 |
-| 兼容性测试 | 华为云测试平台覆盖主流机型 | 主流机型通过 |
-
-性能优化要点：
-
-- MethodChannel 高频调用：避免循环中频繁调用，考虑批量处理。
-- 列表渲染：使用 `ListView.builder`。
-- 图片加载：使用 `cached_network_image` 做缓存。
-
-## 打包与上架（W11-W12）
-
-### 编译 Release 版 HAP
-
-```bash
-flutter build hap --release
-```
-
-产物路径：`ohos/entry/build/default/outputs/default/entry-default-signed.hap`
-
-### 上架前检查清单
-
-- [ ] 应用图标（`ohos/entry/src/main/resources/base/media/icon.png`）
-- [ ] 启动页（`ohos/entry/src/main/resources/base/media/splash.png`）
-- [ ] 应用名称（`ohos/entry/src/main/resources/base/element/string.json`）
-- [ ] 隐私政策完整（必须在应用内可访问）
-- [ ] 权限申请合理（在 `module.json5` 中声明）
-- [ ] 软件著作权（提前 1-2 个月申请）
-
-### 上架流程
-
-1. 登录 [AppGallery Connect](https://developer.huawei.com/consumer/cn/service/josp/agc/index.html)。
-2. 创建项目 → 添加应用 → 填写应用信息。
-3. 上传 HAP 包 → 提交审核（审核周期通常 1-3 个工作日）。
-
-### 开发者激励申请
-
-- 报名时间：2026年4月15日 至 9月25日。
-- 上架时间：须在 2026年3月12日 至 9月30日 期间首次上架。
-- 激励标准：热门应用每款 1 万元，新应用每款 3000 元。
-- 操作：登录 HarmonyOS 开发者官网报名。
-
-## 常见问题（FAQ）
+## 常见问题
 
 | 问题 | 解决方案 |
 |------|----------|
-| `flutter doctor` 报 OpenHarmony toolchain 缺失 | 检查 `OHOS_SDK_HOME` 路径，确认 SDK 有 `toolchains` 子目录 |
-| 真机运行提示签名失效 | File → Project Structure → Signing Configs，重新勾选自动签名 |
-| MethodChannel 通信失败 | 检查 Dart 端与 ArkTS 端的 Channel 名称是否完全一致 |
-| 第三方库不兼容鸿蒙 | 优先选择**纯 Dart 实现**的库；依赖原生的库查找 `_ohos` 适配版本 |
-| 编译 HAP 报错 | 确认 DevEco Studio 版本≥6.0.2 Release，JDK 版本=17 |
-| 环境变量配置后不生效 | Windows 需重启终端；macOS 执行 `source ~/.zshrc` |
+| `flutter doctor` 报 OpenHarmony toolchain 缺失 | 检查 `DEVECO_SDK_HOME` / `HOS_SDK_HOME`，确认 SDK 含 `toolchains` |
+| 真机签名失效 | DevEco File → Project Structure → Signing Configs 重新生成，并同步 AGC 证书指纹 |
+| 云函数调用报 `160404: Trigger not exist` | 函数未部署或触发器未生效，重新部署 |
+| 云函数报权限错误 | 确认认证类型为 `apigw-client`、证书指纹已登记、对象类型权限已放开管理员 |
+| decode 开启导致 `JSON.parse` 报错 | HTTP 触发器保持「不启用 decode」，body 为原始字符串 |
+| MethodChannel 通信失败 | 核对 Dart 与 ArkTS 两端 Channel 名称、参数 key 完全一致 |
 
 ## 关键资源
 
@@ -383,4 +194,4 @@ flutter build hap --release
 | Flutter-OH 官方文档 / 混编 Demo | https://gitcode.com/openharmony-tpc/flutter_samples |
 | 华为开发者联盟 | https://developer.huawei.com/consumer/cn/ |
 | AppGallery Connect | https://developer.huawei.com/consumer/cn/service/josp/agc/index.html |
-| 混编 Demo 参考 | flutter_samples 仓库中的 `flutter_page_sample2` |
+| 云开发（Serverless）文档 | https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/agc-harmonyos-clouddev-createproject |

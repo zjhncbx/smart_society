@@ -141,6 +141,9 @@ class OrgLabels {
   final String labelDingTalkSettings;
   final String labelSyncNow;
   final String labelLastSync;
+  final String labelCloudSync;
+  final String labelCloudSyncDone;
+  final String labelCloudSyncFail;
   final String labelWebAdmin;
   final String labelWebAdminHint;
   final String labelStartTime;
@@ -266,6 +269,9 @@ class OrgLabels {
     required this.labelDingTalkSettings,
     required this.labelSyncNow,
     required this.labelLastSync,
+    required this.labelCloudSync,
+    required this.labelCloudSyncDone,
+    required this.labelCloudSyncFail,
     required this.labelWebAdmin,
     required this.labelWebAdminHint,
     required this.labelStartTime,
@@ -395,6 +401,9 @@ class OrgLabels {
     labelDingTalkSettings: '钉钉同步设置',
     labelSyncNow: '立即同步',
     labelLastSync: '上次同步',
+    labelCloudSync: '云端数据同步',
+    labelCloudSyncDone: '云端同步完成',
+    labelCloudSyncFail: '云端同步失败',
     labelWebAdmin: 'Web管理后台',
     labelWebAdminHint: '访问Web管理后台进行高级管理',
     labelStartTime: '开始时间',
@@ -524,6 +533,9 @@ class OrgLabels {
     labelDingTalkSettings: '钉钉同步设置',
     labelSyncNow: '立即同步',
     labelLastSync: '上次同步',
+    labelCloudSync: '云端数据同步',
+    labelCloudSyncDone: '云端同步完成',
+    labelCloudSyncFail: '云端同步失败',
     labelWebAdmin: 'Web管理后台',
     labelWebAdminHint: '访问Web管理后台进行高级管理',
     labelStartTime: '开始时间',
@@ -657,6 +669,9 @@ class OrgLabels {
     labelDingTalkSettings: '钉钉同步设置',
     labelSyncNow: '立即同步',
     labelLastSync: '上次同步',
+    labelCloudSync: '云端数据同步',
+    labelCloudSyncDone: '云端同步完成',
+    labelCloudSyncFail: '云端同步失败',
     labelWebAdmin: 'Web管理后台',
     labelWebAdminHint: '访问Web管理后台进行高级管理',
     labelStartTime: '开始时间',
