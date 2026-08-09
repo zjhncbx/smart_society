@@ -3,23 +3,19 @@ import 'package:flutter/foundation.dart';
 import '../models/member.dart';
 import '../services/storage_service.dart';
 
-/// 成员管理状态：列表加载、角色筛选、增删改。
 class MemberProvider extends ChangeNotifier {
   final StorageService _storage = StorageService.instance;
 
   List<Member> _members = [];
-  MemberRole? _roleFilter;
+  String? _roleFilterId;
   String _keyword = '';
 
   List<Member> get members => _members;
+  String? get roleFilterId => _roleFilterId;
 
-  /// 当前筛选（null 表示全部）
-  MemberRole? get roleFilter => _roleFilter;
-
-  /// 筛选后的成员列表
   List<Member> get filteredMembers {
     var list = _members.where((m) {
-      if (_roleFilter != null && m.role != _roleFilter) return false;
+      if (_roleFilterId != null && m.roleId != _roleFilterId) return false;
       if (_keyword.isNotEmpty) {
         final kw = _keyword.toLowerCase();
         if (!m.name.toLowerCase().contains(kw) &&
@@ -51,8 +47,8 @@ class MemberProvider extends ChangeNotifier {
     return null;
   }
 
-  void setRoleFilter(MemberRole? role) {
-    _roleFilter = role;
+  void setRoleFilter(String? roleId) {
+    _roleFilterId = roleId;
     notifyListeners();
   }
 
@@ -78,7 +74,6 @@ class MemberProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 生成不重复的成员 id
   static String nextId(List<Member> members) {
     var max = 0;
     for (final m in members) {

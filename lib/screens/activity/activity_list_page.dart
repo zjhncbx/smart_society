@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/org_config_provider.dart';
+import '../../config/org_labels.dart';
 import '../../models/society_activity.dart';
 import '../../providers/activity_provider.dart';
 import '../../utils/date_format.dart';
@@ -20,13 +22,14 @@ class _ActivityListPageState extends State<ActivityListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     final provider = context.watch<ActivityProvider>();
     final activities = provider.sortedActivities.where((a) {
       return _statusFilter == null || a.status == _statusFilter;
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('活动管理')),
+      appBar: AppBar(title: Text(labels.activityMgmtTitle)),
       body: Column(
         children: [
           SizedBox(
@@ -36,14 +39,14 @@ class _ActivityListPageState extends State<ActivityListPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               children: [
                 _StatusChip(
-                  label: '全部',
+                  label: labels.statusAll,
                   selected: _statusFilter == null,
                   onTap: () => setState(() => _statusFilter = null),
                 ),
-                for (final (value, label) in const [
-                  (0, '未开始'),
-                  (1, '进行中'),
-                  (2, '已结束'),
+                for (final (value, label) in [
+                  (0, labels.statusNotStarted),
+                  (1, labels.statusInProgress),
+                  (2, labels.statusEnded),
                 ])
                   _StatusChip(
                     label: label,
@@ -55,9 +58,9 @@ class _ActivityListPageState extends State<ActivityListPage> {
           ),
           Expanded(
             child: activities.isEmpty
-                ? const EmptyView(
+                ? EmptyView(
                     icon: Icons.event_busy,
-                    message: '暂无符合条件的活动',
+                    message: labels.emptyActivities,
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
@@ -66,6 +69,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                       final activity = activities[index];
                       return _ActivityCard(
                         activity: activity,
+                        labels: labels,
                         onTap: () =>
                             context.push('/activities/${activity.id}'),
                       );
@@ -77,7 +81,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/activities/new'),
         icon: const Icon(Icons.add),
-        label: const Text('创建活动'),
+        label: Text(labels.createButton),
       ),
     );
   }
@@ -108,9 +112,14 @@ class _StatusChip extends StatelessWidget {
 }
 
 class _ActivityCard extends StatelessWidget {
-  const _ActivityCard({required this.activity, required this.onTap});
+  const _ActivityCard({
+    required this.activity,
+    required this.labels,
+    required this.onTap,
+  });
 
   final SocietyActivity activity;
+  final OrgLabels labels;
   final VoidCallback onTap;
 
   @override
@@ -120,6 +129,12 @@ class _ActivityCard extends StatelessWidget {
       0 => const Color(0xFF3D6BD6),
       1 => const Color(0xFF4FB36B),
       _ => const Color(0xFF8A8F99),
+    };
+
+    final statusLabel = switch (activity.status) {
+      0 => labels.statusNotStarted,
+      1 => labels.statusInProgress,
+      _ => labels.statusEnded,
     };
 
     return Card(
@@ -153,7 +168,7 @@ class _ActivityCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      activity.statusLabel,
+                      statusLabel,
                       style: TextStyle(color: statusColor, fontSize: 12),
                     ),
                   ),
@@ -195,7 +210,7 @@ class _ActivityCard extends StatelessWidget {
                   Icon(Icons.group_outlined, size: 16, color: theme.colorScheme.outline),
                   const SizedBox(width: 4),
                   Text(
-                    '${activity.participantCount}/${activity.capacity} 人已报名',
+                    '${activity.participantCount}/${activity.capacity} 人已${labels.labelSignUp.substring(2)}',
                     style: theme.textTheme.bodySmall
                         ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),

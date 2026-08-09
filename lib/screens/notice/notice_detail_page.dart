@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/org_config_provider.dart';
+import '../../config/org_labels.dart';
 import '../../models/notice.dart';
 import '../../providers/notice_provider.dart';
 import '../../utils/date_format.dart';
@@ -29,12 +31,13 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     final provider = context.watch<NoticeProvider>();
     final notice = provider.findById(widget.id);
 
     if (notice == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('公告详情')),
+        appBar: AppBar(title: Text(labels.noticeDetailTitle)),
         body: const EmptyView(icon: Icons.campaign_outlined, message: '公告不存在'),
       );
     }
@@ -42,12 +45,12 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('公告详情'),
+        title: Text(labels.noticeDetailTitle),
         actions: [
           IconButton(
-            tooltip: '删除',
+            tooltip: labels.deleteTooltip,
             icon: const Icon(Icons.delete_outline),
-            onPressed: () => _deleteNotice(context, provider, notice),
+            onPressed: () => _deleteNotice(context, provider, notice, labels),
           ),
         ],
       ),
@@ -64,9 +67,9 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
                     color: const Color(0xFFE06B3D).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    '重要',
-                    style: TextStyle(color: Color(0xFFE06B3D), fontSize: 12),
+                  child: Text(
+                    labels.importantLabel,
+                    style: const TextStyle(color: Color(0xFFE06B3D), fontSize: 12),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -100,12 +103,16 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
     BuildContext context,
     NoticeProvider provider,
     Notice notice,
+    OrgLabels labels,
   ) async {
+    final message = labels.confirmDeleteMsg
+        .replaceAll('{type}', labels.deleteNoticeTitle)
+        .replaceAll('{name}', notice.title);
     final ok = await showConfirmDialog(
       context,
-      title: '删除公告',
-      message: '确定删除公告「${notice.title}」吗？',
-      confirmText: '删除',
+      title: labels.deleteNoticeTitle,
+      message: message,
+      confirmText: labels.confirmDelete,
     );
     if (!ok || !context.mounted) return;
     await provider.delete(notice.id);

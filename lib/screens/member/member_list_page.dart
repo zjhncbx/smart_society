@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/member.dart';
+import '../../config/org_config_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../widgets/common.dart';
 import '../../widgets/member_avatar.dart';
@@ -26,11 +26,12 @@ class _MemberListPageState extends State<MemberListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     final provider = context.watch<MemberProvider>();
     final members = provider.filteredMembers;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('成员管理')),
+      appBar: AppBar(title: Text(labels.memberMgmtTitle)),
       body: Column(
         children: [
           Padding(
@@ -39,7 +40,7 @@ class _MemberListPageState extends State<MemberListPage> {
               controller: _searchController,
               onChanged: provider.setKeyword,
               decoration: InputDecoration(
-                hintText: '搜索姓名 / 学号 / 部门',
+                hintText: labels.searchHint,
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
                 border: OutlineInputBorder(
@@ -55,15 +56,15 @@ class _MemberListPageState extends State<MemberListPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               children: [
                 _RoleChip(
-                  label: '全部',
-                  selected: provider.roleFilter == null,
+                  label: labels.statusAll,
+                  selected: provider.roleFilterId == null,
                   onTap: () => provider.setRoleFilter(null),
                 ),
-                for (final role in MemberRole.values)
+                for (final role in labels.roles)
                   _RoleChip(
                     label: role.label,
-                    selected: provider.roleFilter == role,
-                    onTap: () => provider.setRoleFilter(role),
+                    selected: provider.roleFilterId == role.id,
+                    onTap: () => provider.setRoleFilter(role.id),
                   ),
               ],
             ),
@@ -72,11 +73,11 @@ class _MemberListPageState extends State<MemberListPage> {
             child: members.isEmpty
                 ? EmptyView(
                     icon: Icons.people_outline,
-                    message: '没有符合条件的成员',
+                    message: labels.emptyMembers,
                     action: FilledButton.icon(
                       onPressed: () => context.push('/members/new'),
                       icon: const Icon(Icons.add),
-                      label: const Text('添加成员'),
+                      label: Text(labels.addButton),
                     ),
                   )
                 : ListView.builder(
@@ -84,6 +85,8 @@ class _MemberListPageState extends State<MemberListPage> {
                     itemCount: members.length,
                     itemBuilder: (context, index) {
                       final member = members[index];
+                      final roleIndex = labels.roles
+                          .indexWhere((r) => r.id == member.roleId);
                       return ListTile(
                         leading: MemberAvatar(
                           name: member.name,
@@ -91,11 +94,14 @@ class _MemberListPageState extends State<MemberListPage> {
                         ),
                         title: Text(member.name),
                         subtitle: Text(
-                          '${member.department} · 学号 ${member.studentNo}',
+                          '${member.department} · ${labels.labelStudentNo} ${member.studentNo}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        trailing: _RoleBadge(role: member.role),
+                        trailing: _RoleBadge(
+                          roleLabel: member.roleLabel,
+                          colorIndex: roleIndex,
+                        ),
                         onTap: () => context.push('/members/${member.id}'),
                       );
                     },
@@ -106,7 +112,7 @@ class _MemberListPageState extends State<MemberListPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/members/new'),
         icon: const Icon(Icons.add),
-        label: const Text('添加成员'),
+        label: Text(labels.addButton),
       ),
     );
   }
@@ -138,18 +144,25 @@ class _RoleChip extends StatelessWidget {
 
 /// 成员角色徽标
 class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({required this.role});
+  const _RoleBadge({required this.roleLabel, required this.colorIndex});
 
-  final MemberRole role;
+  final String roleLabel;
+  final int colorIndex;
+
+  static const _colors = [
+    Color(0xFFE06B3D),
+    Color(0xFF3D6BD6),
+    Color(0xFF4FB3A6),
+    Color(0xFF8A8F99),
+    Color(0xFF9B59B6),
+    Color(0xFFE67E22),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (role) {
-      MemberRole.president => const Color(0xFFE06B3D),
-      MemberRole.director => const Color(0xFF3D6BD6),
-      MemberRole.officer => const Color(0xFF4FB3A6),
-      MemberRole.member => const Color(0xFF8A8F99),
-    };
+    final color = colorIndex >= 0
+        ? _colors[colorIndex % _colors.length]
+        : _colors.last;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -157,7 +170,7 @@ class _RoleBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        role.label,
+        roleLabel,
         style: TextStyle(
           color: color,
           fontSize: 12,

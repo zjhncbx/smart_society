@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/org_config_provider.dart';
 import '../../models/notice.dart';
 import '../../providers/notice_provider.dart';
 import '../../utils/date_format.dart';
@@ -13,15 +14,16 @@ class NoticeListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     final provider = context.watch<NoticeProvider>();
     final notices = provider.sortedNotices;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('通知公告'),
+        title: Text(labels.noticeMgmtTitle),
         actions: [
           IconButton(
-            tooltip: '发布公告',
+            tooltip: labels.publishButton,
             icon: const Icon(Icons.edit_note),
             onPressed: () => context.push('/notices/new'),
           ),
@@ -30,11 +32,11 @@ class NoticeListPage extends StatelessWidget {
       body: notices.isEmpty
           ? EmptyView(
               icon: Icons.campaign_outlined,
-              message: '暂无公告',
+              message: labels.emptyNotices,
               action: FilledButton.icon(
                 onPressed: () => context.push('/notices/new'),
                 icon: const Icon(Icons.add),
-                label: const Text('发布公告'),
+                label: Text(labels.publishButton),
               ),
             )
           : ListView.separated(
@@ -61,6 +63,7 @@ class _NoticeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     final theme = Theme.of(context);
     final titleStyle = theme.textTheme.bodyLarge?.copyWith(
       fontWeight: notice.isRead ? FontWeight.normal : FontWeight.w600,
@@ -71,9 +74,15 @@ class _NoticeTile extends StatelessWidget {
 
     return ListTile(
       leading: notice.isImportant
-          ? const Icon(Icons.priority_high, color: Color(0xFFE06B3D))
+          ? Tooltip(
+              message: labels.importantLabel,
+              child: const Icon(Icons.warning_amber_rounded,
+                  color: Color(0xFFE06B3D)),
+            )
           : Icon(
-              notice.isRead ? Icons.mark_email_read_outlined : Icons.mark_email_unread_outlined,
+              notice.isRead
+                  ? Icons.mark_email_read_outlined
+                  : Icons.mark_email_unread_outlined,
               color: notice.isRead
                   ? theme.colorScheme.outlineVariant
                   : theme.colorScheme.primary,
@@ -101,7 +110,7 @@ class _NoticeTile extends StatelessWidget {
         ],
       ),
       subtitle: Text(
-        '${notice.publisher} · ${formatRelative(notice.publishTime)}',
+        '${notice.publisher} · ${formatRelative(notice.publishTime, today: labels.todayLabel, yesterday: labels.yesterdayLabel, daysAgo: labels.daysAgo)}',
         style: theme.textTheme.bodySmall
             ?.copyWith(color: theme.colorScheme.outline),
       ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/member.dart';
+import '../../config/org_config_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../utils/date_format.dart';
 import '../../widgets/common.dart';
@@ -16,29 +16,42 @@ class MemberDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     final provider = context.watch<MemberProvider>();
     final member = provider.findById(id);
 
     if (member == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('成员详情')),
+        appBar: AppBar(title: Text(labels.memberDetailTitle)),
         body: const EmptyView(icon: Icons.person_off, message: '成员不存在'),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('成员详情'),
+        title: Text(labels.memberDetailTitle),
         actions: [
           IconButton(
-            tooltip: '编辑',
+            tooltip: labels.editTooltip,
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => context.push('/members/$id/edit'),
           ),
           IconButton(
-            tooltip: '删除',
+            tooltip: labels.deleteTooltip,
             icon: const Icon(Icons.delete_outline),
-            onPressed: () => _deleteMember(context, provider, member),
+            onPressed: () async {
+              final ok = await showConfirmDialog(
+                context,
+                title: labels.deleteMemberTitle,
+                message: labels.confirmDeleteMsg
+                    .replaceAll('{type}', labels.deleteMemberTitle)
+                    .replaceAll('{name}', member.name),
+                confirmText: '删除',
+              );
+              if (!ok || !context.mounted) return;
+              await provider.deleteMember(member.id);
+              if (context.mounted) context.pop();
+            },
           ),
         ],
       ),
@@ -54,14 +67,16 @@ class MemberDetailPage extends StatelessWidget {
                   radius: 40,
                 ),
                 const SizedBox(height: 12),
-                Text(member.name, style: Theme.of(context).textTheme.headlineSmall),
+                Text(member.name,
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 4),
                 Text(
-                  '${member.department} · ${member.role.label}',
+                  '${member.department} · ${member.roleLabel}',
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
-                      ?.copyWith(color: Theme.of(context).colorScheme.outline),
+                      ?.copyWith(
+                          color: Theme.of(context).colorScheme.outline),
                 ),
               ],
             ),
@@ -70,26 +85,36 @@ class MemberDetailPage extends StatelessWidget {
           Card(
             child: Column(
               children: [
-                _InfoRow(label: '学号', value: member.studentNo, icon: Icons.badge_outlined),
+                _InfoRow(
+                    label: labels.labelStudentNo,
+                    value: member.studentNo,
+                    icon: Icons.badge_outlined),
                 const Divider(height: 1, indent: 52),
-                _InfoRow(label: '部门', value: member.department, icon: Icons.apartment_outlined),
+                _InfoRow(
+                    label: labels.deptLabel,
+                    value: member.department,
+                    icon: Icons.apartment_outlined),
                 const Divider(height: 1, indent: 52),
-                _InfoRow(label: '角色', value: member.role.label, icon: Icons.star_outline),
+                _InfoRow(
+                    label: labels.labelRole,
+                    value: member.roleLabel,
+                    icon: Icons.star_outline),
                 const Divider(height: 1, indent: 52),
                 _InfoRow(
                   label: '电话',
-                  value: member.phone.isEmpty ? '未填写' : member.phone,
+                  value: member.phone.isEmpty ? labels.notFilled : member.phone,
                   icon: Icons.phone_outlined,
                 ),
                 const Divider(height: 1, indent: 52),
                 _InfoRow(
                   label: '邮箱',
-                  value: member.email.isEmpty ? '未填写' : member.email,
+                  value:
+                      member.email.isEmpty ? labels.notFilled : member.email,
                   icon: Icons.mail_outline,
                 ),
                 const Divider(height: 1, indent: 52),
                 _InfoRow(
-                  label: '加入时间',
+                  label: labels.labelJoinDate,
                   value: formatDate(member.joinedAt),
                   icon: Icons.event_outlined,
                 ),
@@ -99,22 +124,6 @@ class MemberDetailPage extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _deleteMember(
-    BuildContext context,
-    MemberProvider provider,
-    Member member,
-  ) async {
-    final ok = await showConfirmDialog(
-      context,
-      title: '删除成员',
-      message: '确定删除成员「${member.name}」吗？',
-      confirmText: '删除',
-    );
-    if (!ok || !context.mounted) return;
-    await provider.deleteMember(member.id);
-    if (context.mounted) context.pop();
   }
 }
 

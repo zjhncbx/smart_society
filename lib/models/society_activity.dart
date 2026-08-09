@@ -32,6 +32,7 @@ class SocietyActivity {
     required this.capacity,
     required this.organizer,
     this.participants = const [],
+    this.volunteerHours,
     required this.createdAt,
   });
 
@@ -44,6 +45,7 @@ class SocietyActivity {
   final int capacity;
   final String organizer;
   final List<ActivityParticipant> participants;
+  final int? volunteerHours;
   final DateTime createdAt;
 
   /// 活动状态：0 未开始 / 1 进行中 / 2 已结束
@@ -77,6 +79,7 @@ class SocietyActivity {
         'capacity': capacity,
         'organizer': organizer,
         'participants': participants.map((p) => p.toJson()).toList(),
+        if (volunteerHours != null) 'volunteerHours': volunteerHours,
         'createdAt': createdAt.millisecondsSinceEpoch,
       };
 
@@ -97,6 +100,7 @@ class SocietyActivity {
         participants: ((json['participants'] as List?) ?? const [])
             .map((e) => ActivityParticipant.fromJson(e as Map<String, dynamic>))
             .toList(),
+        volunteerHours: json['volunteerHours'] as int?,
         createdAt: DateTime.fromMillisecondsSinceEpoch(
           (json['createdAt'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
         ),

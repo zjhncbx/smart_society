@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/org_config_provider.dart';
+import '../../config/org_labels.dart';
 import '../../models/member.dart';
 import '../../providers/member_provider.dart';
 import '../../widgets/common.dart';
@@ -25,7 +27,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
   late final TextEditingController _departmentController;
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
-  MemberRole _role = MemberRole.member;
+  String _roleId = '';
+  String _roleLabel = '';
   Member? _existing;
 
   bool get _isEdit => widget.id != null;
@@ -33,6 +36,9 @@ class _MemberFormPageState extends State<MemberFormPage> {
   @override
   void initState() {
     super.initState();
+    final defaultLabels = OrgLabels.forType(context.orgTypeRead);
+    _roleId = defaultLabels.roles.first.id;
+    _roleLabel = defaultLabels.roles.first.label;
     if (_isEdit) {
       _existing = context.read<MemberProvider>().findById(widget.id!);
     }
@@ -44,7 +50,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
     _phoneController = TextEditingController(text: _existing?.phone ?? '');
     _emailController = TextEditingController(text: _existing?.email ?? '');
     if (_existing != null) {
-      _role = _existing!.role;
+      _roleId = _existing!.roleId;
+      _roleLabel = _existing!.roleLabel;
     }
   }
 
@@ -67,21 +74,27 @@ class _MemberFormPageState extends State<MemberFormPage> {
       name: _nameController.text.trim(),
       studentNo: _studentNoController.text.trim(),
       department: _departmentController.text.trim(),
-      role: _role,
+      roleId: _roleId,
+      roleLabel: _roleLabel,
       phone: _phoneController.text.trim(),
       email: _emailController.text.trim(),
       joinedAt: _existing?.joinedAt ?? DateTime.now(),
     );
     await provider.saveMember(member);
     if (!mounted) return;
-    showToast(context, _isEdit ? '已保存修改' : '成员添加成功');
+    final labels = context.labels;
+    showToast(context, _isEdit ? labels.saveSuccess : labels.addSuccess);
     context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
+
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? '编辑成员' : '添加成员')),
+      appBar: AppBar(
+        title: Text(_isEdit ? labels.editMemberTitle : labels.addMemberTitle),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -97,31 +110,43 @@ class _MemberFormPageState extends State<MemberFormPage> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _studentNoController,
-              decoration: const InputDecoration(labelText: '学号 *'),
+              decoration:
+                  InputDecoration(labelText: '${labels.labelStudentNo} *'),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               textInputAction: TextInputAction.next,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '请输入学号' : null,
+                  (v == null || v.trim().isEmpty)
+                      ? '请输入${labels.labelStudentNo}'
+                      : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _departmentController,
-              decoration: const InputDecoration(labelText: '部门 *'),
+              decoration: InputDecoration(labelText: '${labels.deptLabel} *'),
               textInputAction: TextInputAction.next,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '请输入部门' : null,
+                  (v == null || v.trim().isEmpty)
+                      ? '请输入${labels.deptLabel}'
+                      : null,
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<MemberRole>(
-              initialValue: _role,
-              decoration: const InputDecoration(labelText: '角色'),
+            DropdownButtonFormField<String>(
+              initialValue: _roleId,
+              decoration: InputDecoration(labelText: labels.labelRole),
               items: [
-                for (final role in MemberRole.values)
-                  DropdownMenuItem(value: role, child: Text(role.label)),
+                for (final role in labels.roles)
+                  DropdownMenuItem(value: role.id, child: Text(role.label)),
               ],
               onChanged: (value) {
-                if (value != null) setState(() => _role = value);
+                if (value != null) {
+                  final selected =
+                      labels.roles.firstWhere((r) => r.id == value);
+                  setState(() {
+                    _roleId = value;
+                    _roleLabel = selected.label;
+                  });
+                }
               },
             ),
             const SizedBox(height: 16),
@@ -150,7 +175,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: Text(_isEdit ? '保存修改' : '添加成员'),
+              child: Text(
+                  _isEdit ? labels.saveButton : labels.addMemberTitle),
             ),
           ],
         ),

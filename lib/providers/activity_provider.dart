@@ -70,6 +70,7 @@ class ActivityProvider extends ChangeNotifier {
         ...activity.participants,
         ActivityParticipant(memberId: memberId, joinedAt: DateTime.now()),
       ],
+      volunteerHours: activity.volunteerHours,
       createdAt: activity.createdAt,
     );
     _activities[index] = updated;
@@ -95,6 +96,7 @@ class ActivityProvider extends ChangeNotifier {
       participants: activity.participants
           .where((p) => p.memberId != memberId)
           .toList(),
+      volunteerHours: activity.volunteerHours,
       createdAt: activity.createdAt,
     );
     _activities[index] = updated;

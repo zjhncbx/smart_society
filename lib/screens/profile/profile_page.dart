@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/org_config_provider.dart';
+import '../../config/org_type.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
@@ -14,6 +17,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     final memberProvider = context.watch<MemberProvider>();
     final activityProvider = context.watch<ActivityProvider>();
     final noticeProvider = context.watch<NoticeProvider>();
@@ -21,11 +25,22 @@ class ProfilePage extends StatelessWidget {
 
     final theme = Theme.of(context);
     final signedUpActivities = activityProvider.activities
-        .where((a) => a.contains(CurrentUser.instance.memberId))
-        .length;
+        .where((a) => a.contains(CurrentUser.instance.memberId));
+    final signedUpCount = signedUpActivities.length;
+    final totalVolunteerHours = signedUpActivities.fold<int>(
+        0, (sum, a) => sum + (a.volunteerHours ?? 0));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      appBar: AppBar(
+        title: Text(labels.profileTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: '设置',
+            onPressed: () => context.push('/settings'),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -52,7 +67,7 @@ class ProfilePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${current.role.label} · ${current.department}',
+                            '${current.roleLabel} · ${current.department}',
                             style: theme.textTheme.bodyMedium
                                 ?.copyWith(color: theme.colorScheme.outline),
                           ),
@@ -68,27 +83,37 @@ class ProfilePage extends StatelessWidget {
             child: Column(
               children: [
                 _StatRow(
-                  label: '社团成员总数',
-                  value: '${memberProvider.totalCount} 人',
+                  label: labels.labelTotalMembers,
+                  value:
+                      '${memberProvider.totalCount} ${labels.tabMembers}',
                   icon: Icons.people_outline,
                 ),
                 const Divider(height: 1, indent: 56),
                 _StatRow(
-                  label: '进行中的活动',
+                  label: labels.labelOngoingActs,
                   value:
-                      '${activityProvider.activities.where((a) => a.status == 1).length} 个',
+                      '${activityProvider.activities.where((a) => a.status == 1).length} ${labels.tabActivities}',
                   icon: Icons.event_available_outlined,
                 ),
                 const Divider(height: 1, indent: 56),
                 _StatRow(
-                  label: '我的报名',
-                  value: '$signedUpActivities 个',
+                  label: labels.labelMySignUps,
+                  value: '$signedUpCount ${labels.tabActivities}',
                   icon: Icons.how_to_reg_outlined,
                 ),
+                if (context.orgType == OrgType.volunteerTeam) ...[
+                  const Divider(height: 1, indent: 56),
+                  _StatRow(
+                    label: labels.volunteerHoursLabel,
+                    value: '$totalVolunteerHours ${labels.tabMembers}',
+                    icon: Icons.access_time,
+                  ),
+                ],
                 const Divider(height: 1, indent: 56),
                 _StatRow(
-                  label: '未读公告',
-                  value: '${noticeProvider.unreadCount} 条',
+                  label: labels.labelUnreadNotices,
+                  value:
+                      '${noticeProvider.unreadCount} ${labels.tabNotices}',
                   icon: Icons.campaign_outlined,
                 ),
               ],
@@ -100,15 +125,14 @@ class ProfilePage extends StatelessWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.info_outline),
-                  title: const Text('关于智联社团'),
-                  subtitle: const Text('v1.0.0 · Flutter + HarmonyOS'),
+                  title: Text(labels.aboutTitle),
+                  subtitle: Text(labels.aboutSubtitle),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => showAboutDialog(
                     context: context,
-                    applicationName: '智联社团',
+                    applicationName: labels.aboutDialogTitle,
                     applicationVersion: '1.0.0',
-                    applicationLegalese:
-                        '基于 Flutter-OH 的社团管理应用\n开发周期：第1-12周',
+                    applicationLegalese: labels.aboutContent,
                   ),
                 ),
               ],
@@ -116,10 +140,10 @@ class ProfilePage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            '今天是 ${formatDate(DateTime.now())}',
+            '${labels.todayLabel} ${formatDate(DateTime.now())}',
             textAlign: TextAlign.center,
-            style:
-                theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.outline),
           ),
         ],
       ),

@@ -12,6 +12,8 @@ import 'screens/notice/notice_detail_page.dart';
 import 'screens/notice/notice_form_page.dart';
 import 'screens/notice/notice_list_page.dart';
 import 'screens/profile/profile_page.dart';
+import 'screens/settings/settings_page.dart';
+import 'screens/settings/setup_wizard_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -51,7 +53,6 @@ final GoRouter appRouter = GoRouter(
         ),
       ],
     ),
-    // 以下为全屏推入的二级页面
     GoRoute(
       path: '/members/new',
       parentNavigatorKey: _rootNavigatorKey,
@@ -86,6 +87,16 @@ final GoRouter appRouter = GoRouter(
       path: '/notices/:id',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => NoticeDetailPage(id: s.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/settings',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: '/setup',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const SetupWizardPage(),
     ),
   ],
 );

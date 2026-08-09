@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/org_config_provider.dart';
 import '../../models/society_activity.dart';
 import '../../providers/activity_provider.dart';
 import '../../utils/date_format.dart';
@@ -53,7 +54,8 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     );
     if (time == null) return;
 
-    final picked = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final picked =
+        DateTime(date.year, date.month, date.day, time.hour, time.minute);
     setState(() {
       if (isStart) {
         _startTime = picked;
@@ -89,8 +91,9 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     return Scaffold(
-      appBar: AppBar(title: const Text('创建活动')),
+      appBar: AppBar(title: Text(labels.createActivityTitle)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -147,14 +150,17 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _capacityController,
-                    decoration: const InputDecoration(labelText: '名额上限 *'),
+                    decoration: InputDecoration(
+                        labelText: '${labels.labelCapacity} *'),
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                     validator: (v) {
                       final n = int.tryParse(v ?? '');
-                      if (n == null || n <= 0) return '请输入有效名额';
+                      if (n == null || n <= 0) {
+                        return '请输入有效${labels.labelCapacity}';
+                      }
                       return null;
                     },
                   ),
@@ -163,10 +169,13 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _organizerController,
-                    decoration: const InputDecoration(labelText: '组织者 *'),
+                    decoration: InputDecoration(
+                        labelText: '${labels.labelOrganizer} *'),
                     textInputAction: TextInputAction.done,
                     validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? '请输入组织者' : null,
+                        (v == null || v.trim().isEmpty)
+                            ? '请输入${labels.labelOrganizer}'
+                            : null,
                   ),
                 ),
               ],
@@ -177,7 +186,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text('创建活动'),
+              child: Text(labels.createActivityTitle),
             ),
           ],
         ),

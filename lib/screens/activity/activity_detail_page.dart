@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/org_config_provider.dart';
+import '../../config/org_labels.dart';
+import '../../config/org_type.dart';
 import '../../models/society_activity.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/member_provider.dart';
@@ -18,13 +21,14 @@ class ActivityDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     final activityProvider = context.watch<ActivityProvider>();
     final memberProvider = context.watch<MemberProvider>();
     final activity = activityProvider.findById(id);
 
     if (activity == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('活动详情')),
+        appBar: AppBar(title: Text(labels.activityDetailTitle)),
         body: const EmptyView(icon: Icons.event_busy, message: '活动不存在'),
       );
     }
@@ -35,19 +39,21 @@ class ActivityDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('活动详情'),
+        title: Text(labels.activityDetailTitle),
         actions: [
           IconButton(
-            tooltip: '删除活动',
+            tooltip: labels.deleteTooltip,
             icon: const Icon(Icons.delete_outline),
-            onPressed: () => _deleteActivity(context, activityProvider, activity),
+            onPressed: () =>
+                _deleteActivity(context, activityProvider, activity, labels),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(activity.title, style: Theme.of(context).textTheme.headlineSmall),
+          Text(activity.title,
+              style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 12),
           _InfoTile(
             icon: Icons.schedule,
@@ -63,16 +69,23 @@ class ActivityDetailPage extends StatelessWidget {
           const SizedBox(height: 8),
           _InfoTile(
             icon: Icons.person_outline,
-            child: Text('组织者：${activity.organizer}'),
+            child: Text('${labels.labelOrganizer}：${activity.organizer}'),
           ),
           const SizedBox(height: 8),
           _InfoTile(
             icon: Icons.group_outlined,
             child: Text(
-              '报名进度：${activity.participantCount}/${activity.capacity} 人'
-              '${activity.isFull ? '（已满员）' : ''}',
+              '${labels.signUpProgress}：${activity.participantCount}/${activity.capacity} 人'
+              '${activity.isFull ? '（${labels.labelFull}）' : ''}',
             ),
           ),
+          if (context.orgType == OrgType.volunteerTeam) ...[
+            const SizedBox(height: 8),
+            _InfoTile(
+              icon: Icons.access_time,
+              child: Text('${labels.volunteerHoursLabel}：-'),
+            ),
+          ],
           const SizedBox(height: 16),
           if (activity.description.isNotEmpty) ...[
             Text(
@@ -97,18 +110,19 @@ class ActivityDetailPage extends StatelessWidget {
               Expanded(
                 child: FilledButton.icon(
                   onPressed: canSignUp
-                      ? () => _signUp(context, activityProvider, activity.id, currentId)
+                      ? () => _signUp(context, activityProvider, activity.id,
+                          currentId, labels)
                       : (signedUp
-                          ? () => _cancelSignUp(
-                              context, activityProvider, activity.id, currentId)
+                          ? () => _cancelSignUp(context, activityProvider,
+                              activity.id, currentId, labels)
                           : null),
                   icon: Icon(
                     signedUp ? Icons.check : Icons.how_to_reg_outlined,
                   ),
                   label: Text(
                     signedUp
-                        ? '已报名，点击取消'
-                        : (activity.isFull ? '名额已满' : '立即报名'),
+                        ? labels.labelSignedUp
+                        : (activity.isFull ? labels.labelFull : labels.labelSignUp),
                   ),
                 ),
               ),
@@ -116,7 +130,7 @@ class ActivityDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            '报名成员（${activity.participantCount}）',
+            '${labels.labelSignUp.substring(2)}${labels.tabMembers}（${activity.participantCount}）',
             style: Theme.of(context)
                 .textTheme
                 .titleSmall
@@ -124,7 +138,9 @@ class ActivityDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (activity.participants.isEmpty)
-            const EmptyView(icon: Icons.how_to_reg_outlined, message: '暂无成员报名')
+            EmptyView(
+                icon: Icons.how_to_reg_outlined,
+                message: labels.emptyParticipants)
           else
             ...activity.participants.map((p) {
               final member = memberProvider.findById(p.memberId);
@@ -135,10 +151,13 @@ class ActivityDetailPage extends StatelessWidget {
                   colorIndex: member?.avatarColorIndex ?? 0,
                   radius: 18,
                 ),
-                title: Text(member?.name ?? '未知成员'),
-                subtitle: Text('${member?.department ?? ''} · 报名于 ${formatDateTime(p.joinedAt)}'),
+                title: Text(member?.name ?? labels.unknownMember),
+                subtitle: Text(
+                    '${member?.department ?? ''} · ${labels.labelSignUp.substring(2)}于 ${formatDateTime(p.joinedAt)}'),
                 trailing: member?.id == currentId
-                    ? const Text('我', style: TextStyle(color: Color(0xFF3D6BD6)))
+                    ? Text(labels.meLabel,
+                        style:
+                            const TextStyle(color: Color(0xFF3D6BD6)))
                     : null,
               );
             }),
@@ -152,10 +171,11 @@ class ActivityDetailPage extends StatelessWidget {
     ActivityProvider provider,
     String activityId,
     String memberId,
+    OrgLabels labels,
   ) async {
     final ok = await provider.signUp(activityId, memberId);
     if (context.mounted) {
-      showToast(context, ok ? '报名成功' : '报名失败，请检查名额');
+      showToast(context, ok ? labels.signUpSuccess : labels.signUpFail);
     }
   }
 
@@ -164,10 +184,11 @@ class ActivityDetailPage extends StatelessWidget {
     ActivityProvider provider,
     String activityId,
     String memberId,
+    OrgLabels labels,
   ) async {
     await provider.cancelSignUp(activityId, memberId);
     if (context.mounted) {
-      showToast(context, '已取消报名');
+      showToast(context, labels.cancelSignUp);
     }
   }
 
@@ -175,12 +196,17 @@ class ActivityDetailPage extends StatelessWidget {
     BuildContext context,
     ActivityProvider provider,
     SocietyActivity activity,
+    OrgLabels labels,
   ) async {
+    final activityType =
+        labels.deleteActivityTitle.replaceAll(labels.deleteTooltip, '').trim();
     final ok = await showConfirmDialog(
       context,
-      title: '删除活动',
-      message: '确定删除活动「${activity.title}」吗？',
-      confirmText: '删除',
+      title: labels.deleteActivityTitle,
+      message: labels.confirmDeleteMsg
+          .replaceAll('{type}', activityType)
+          .replaceAll('{name}', activity.title),
+      confirmText: labels.deleteTooltip,
     );
     if (!ok || !context.mounted) return;
     await provider.deleteActivity(activity.id);

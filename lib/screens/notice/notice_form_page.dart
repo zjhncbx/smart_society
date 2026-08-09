@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/org_config_provider.dart';
 import '../../models/notice.dart';
 import '../../providers/notice_provider.dart';
 import '../../widgets/common.dart';
@@ -31,6 +32,7 @@ class _NoticeFormPageState extends State<NoticeFormPage> {
 
   Future<void> _publish() async {
     if (!_formKey.currentState!.validate()) return;
+    final labels = context.labels;
     final provider = context.read<NoticeProvider>();
 
     final notice = Notice(
@@ -43,14 +45,15 @@ class _NoticeFormPageState extends State<NoticeFormPage> {
     );
     await provider.publish(notice);
     if (!mounted) return;
-    showToast(context, '公告发布成功');
+    showToast(context, labels.publishSuccess);
     context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final labels = context.labels;
     return Scaffold(
-      appBar: AppBar(title: const Text('发布公告')),
+      appBar: AppBar(title: Text(labels.publishNoticeTitle)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -97,7 +100,7 @@ class _NoticeFormPageState extends State<NoticeFormPage> {
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text('发布公告'),
+              child: Text(labels.publishButton),
             ),
           ],
         ),
