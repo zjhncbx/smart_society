@@ -100,12 +100,13 @@ class _MemberFormPageState extends State<MemberFormPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            _SectionHeader(title: '基本信息'),
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: '姓名 *'),
+              decoration: InputDecoration(labelText: '${labels.labelName} *'),
               textInputAction: TextInputAction.next,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '请输入姓名' : null,
+                  (v == null || v.trim().isEmpty) ? labels.labelTitleRequired : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -117,7 +118,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
               textInputAction: TextInputAction.next,
               validator: (v) =>
                   (v == null || v.trim().isEmpty)
-                      ? '请输入${labels.labelStudentNo}'
+                      ? labels.labelStudentNoRequired
                       : null,
             ),
             const SizedBox(height: 16),
@@ -127,7 +128,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
               textInputAction: TextInputAction.next,
               validator: (v) =>
                   (v == null || v.trim().isEmpty)
-                      ? '请输入${labels.deptLabel}'
+                      ? labels.labelDeptRequired
                       : null,
             ),
             const SizedBox(height: 16),
@@ -149,24 +150,25 @@ class _MemberFormPageState extends State<MemberFormPage> {
                 }
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+            _SectionHeader(title: '联系方式'),
             TextFormField(
               controller: _phoneController,
-              decoration: const InputDecoration(labelText: '电话'),
+              decoration: InputDecoration(labelText: labels.labelPhone),
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: '邮箱'),
+              decoration: InputDecoration(labelText: labels.labelEmail),
               keyboardType: TextInputType.emailAddress,
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return null;
                 final email = v.trim();
                 final ok = RegExp(r'^[\w.-]+@[\w-]+(\.[\w-]+)+$')
                     .hasMatch(email);
-                return ok ? null : '邮箱格式不正确';
+                return ok ? null : labels.labelEmailInvalid;
               },
             ),
             const SizedBox(height: 32),
@@ -179,6 +181,28 @@ class _MemberFormPageState extends State<MemberFormPage> {
                   _isEdit ? labels.saveButton : labels.addMemberTitle),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: cs.primary,
         ),
       ),
     );

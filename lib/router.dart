@@ -94,6 +94,16 @@ final GoRouter appRouter = GoRouter(
       builder: (c, s) => const SettingsPage(),
     ),
     GoRoute(
+      path: '/settings/roles',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: '/settings/dingtalk',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const SettingsPage(),
+    ),
+    GoRoute(
       path: '/setup',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => const SetupWizardPage(),

@@ -23,7 +23,10 @@ class MemberDetailPage extends StatelessWidget {
     if (member == null) {
       return Scaffold(
         appBar: AppBar(title: Text(labels.memberDetailTitle)),
-        body: const EmptyView(icon: Icons.person_off, message: '成员不存在'),
+        body: EmptyView(
+          icon: Icons.person_off,
+          message: labels.labelMemberNotExist,
+        ),
       );
     }
 
@@ -46,7 +49,7 @@ class MemberDetailPage extends StatelessWidget {
                 message: labels.confirmDeleteMsg
                     .replaceAll('{type}', labels.deleteMemberTitle)
                     .replaceAll('{name}', member.name),
-                confirmText: '删除',
+                confirmText: labels.labelDelete,
               );
               if (!ok || !context.mounted) return;
               await provider.deleteMember(member.id);
@@ -101,13 +104,13 @@ class MemberDetailPage extends StatelessWidget {
                     icon: Icons.star_outline),
                 const Divider(height: 1, indent: 52),
                 _InfoRow(
-                  label: '电话',
+                  label: labels.labelPhone,
                   value: member.phone.isEmpty ? labels.notFilled : member.phone,
                   icon: Icons.phone_outlined,
                 ),
                 const Divider(height: 1, indent: 52),
                 _InfoRow(
-                  label: '邮箱',
+                  label: labels.labelEmail,
                   value:
                       member.email.isEmpty ? labels.notFilled : member.email,
                   icon: Icons.mail_outline,

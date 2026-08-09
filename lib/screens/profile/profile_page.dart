@@ -3,173 +3,257 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/org_config_provider.dart';
-import '../../config/org_type.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
-import '../../services/current_user.dart';
-import '../../utils/date_format.dart';
+import '../../widgets/app_card.dart';
 import '../../widgets/member_avatar.dart';
 
-/// 我的页：当前用户信息与数据概览
+/// 管理概览页：管理仪表盘
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final labels = context.labels;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final memberProvider = context.watch<MemberProvider>();
     final activityProvider = context.watch<ActivityProvider>();
     final noticeProvider = context.watch<NoticeProvider>();
-    final current = memberProvider.findById(CurrentUser.instance.memberId);
 
-    final theme = Theme.of(context);
-    final signedUpActivities = activityProvider.activities
-        .where((a) => a.contains(CurrentUser.instance.memberId));
-    final signedUpCount = signedUpActivities.length;
-    final totalVolunteerHours = signedUpActivities.fold<int>(
-        0, (sum, a) => sum + (a.volunteerHours ?? 0));
+    final ongoingCount =
+        activityProvider.activities.where((a) => a.status == 1).length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(labels.profileTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: '设置',
-            onPressed: () => context.push('/settings'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(labels.profileTitle)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         children: [
-          if (current != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    MemberAvatar(
-                      name: current.name,
-                      colorIndex: current.avatarColorIndex,
-                      radius: 30,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            current.name,
-                            style: theme.textTheme.titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${current.roleLabel} · ${current.department}',
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(color: theme.colorScheme.outline),
-                          ),
-                        ],
+          // Admin profile card
+          AppCard(
+            child: Row(
+              children: [
+                MemberAvatar(name: '管理员', colorIndex: 0, radius: 28),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '管理员',
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        labels.appTitle,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: cs.outline),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  tooltip: labels.labelSettingsTitle,
+                  onPressed: () => context.push('/settings'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Section: Dashboard
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            child: Text(
+              labels.labelDashboard,
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(color: cs.outline, fontWeight: FontWeight.w600),
+            ),
+          ),
+          // Stats grid 2x2
+          Row(
+            children: [
+              Expanded(
+                child: _StatTile(
+                  icon: Icons.people_outline,
+                  iconColor: cs.primary,
+                  value: '${memberProvider.totalCount}',
+                  label: labels.labelTotalMembers,
                 ),
               ),
-            ),
-          const SizedBox(height: 16),
-          Card(
-            child: Column(
-              children: [
-                _StatRow(
-                  label: labels.labelTotalMembers,
-                  value:
-                      '${memberProvider.totalCount} ${labels.tabMembers}',
-                  icon: Icons.people_outline,
-                ),
-                const Divider(height: 1, indent: 56),
-                _StatRow(
-                  label: labels.labelOngoingActs,
-                  value:
-                      '${activityProvider.activities.where((a) => a.status == 1).length} ${labels.tabActivities}',
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatTile(
                   icon: Icons.event_available_outlined,
+                  iconColor: cs.tertiary,
+                  value: '$ongoingCount',
+                  label: labels.labelOngoingActs,
                 ),
-                const Divider(height: 1, indent: 56),
-                _StatRow(
-                  label: labels.labelMySignUps,
-                  value: '$signedUpCount ${labels.tabActivities}',
-                  icon: Icons.how_to_reg_outlined,
-                ),
-                if (context.orgType == OrgType.volunteerTeam) ...[
-                  const Divider(height: 1, indent: 56),
-                  _StatRow(
-                    label: labels.volunteerHoursLabel,
-                    value: '$totalVolunteerHours ${labels.tabMembers}',
-                    icon: Icons.access_time,
-                  ),
-                ],
-                const Divider(height: 1, indent: 56),
-                _StatRow(
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _StatTile(
+                  icon: Icons.notifications_outlined,
+                  iconColor: cs.error,
+                  value: '${noticeProvider.unreadCount}',
                   label: labels.labelUnreadNotices,
-                  value:
-                      '${noticeProvider.unreadCount} ${labels.tabNotices}',
-                  icon: Icons.campaign_outlined,
                 ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatTile(
+                  icon: Icons.sync,
+                  iconColor: cs.outline,
+                  value: '未配置',
+                  label: labels.labelDingTalkSync,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Quick actions row
+          Row(
+            children: [
+              Expanded(
+                child: AppCard(
+                  onTap: () => context.push('/members/new'),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.person_add_outlined, color: cs.primary),
+                      const SizedBox(height: 6),
+                      Text(
+                        labels.addButton,
+                        style: theme.textTheme.labelMedium
+                            ?.copyWith(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: AppCard(
+                  onTap: () => context.push('/activities/new'),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.event_outlined, color: cs.tertiary),
+                      const SizedBox(height: 6),
+                      Text(
+                        labels.createButton,
+                        style: theme.textTheme.labelMedium
+                            ?.copyWith(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: AppCard(
+                  onTap: () => context.push('/notices/new'),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.campaign_outlined, color: cs.error),
+                      const SizedBox(height: 6),
+                      Text(
+                        labels.publishButton,
+                        style: theme.textTheme.labelMedium
+                            ?.copyWith(fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Web Admin card
+          AppCard(
+            onTap: () {
+              // Placeholder for web admin action
+            },
+            child: Row(
+              children: [
+                Icon(Icons.open_in_browser, color: cs.primary, size: 28),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        labels.labelWebAdmin,
+                        style: theme.textTheme.bodyLarge
+                            ?.copyWith(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        labels.labelWebAdminHint,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: cs.outline),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: cs.outline),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: Text(labels.aboutTitle),
-                  subtitle: Text(labels.aboutSubtitle),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => showAboutDialog(
-                    context: context,
-                    applicationName: labels.aboutDialogTitle,
-                    applicationVersion: '1.0.0',
-                    applicationLegalese: labels.aboutContent,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            '${labels.todayLabel} ${formatDate(DateTime.now())}',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline),
-          ),
         ],
       ),
     );
   }
 }
 
-class _StatRow extends StatelessWidget {
-  const _StatRow({
-    required this.label,
-    required this.value,
+class _StatTile extends StatelessWidget {
+  const _StatTile({
     required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.label,
   });
 
-  final String label;
-  final String value;
   final IconData icon;
+  final Color iconColor;
+  final String value;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-      title: Text(label),
-      trailing: Text(
-        value,
-        style: const TextStyle(fontWeight: FontWeight.w600),
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: iconColor, size: 24),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: theme.textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.outline),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }

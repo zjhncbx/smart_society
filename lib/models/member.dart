@@ -10,6 +10,9 @@ class Member {
     this.phone = '',
     this.email = '',
     required this.joinedAt,
+    this.dingTalkUserId = '',
+    this.syncStatus = 'manual',
+    this.lastSyncedAt,
   });
 
   final String id;
@@ -21,6 +24,9 @@ class Member {
   String phone;
   String email;
   final DateTime joinedAt;
+  final String dingTalkUserId;
+  final String syncStatus;
+  final DateTime? lastSyncedAt;
 
   int get avatarColorIndex => name.hashCode.abs() % 8;
 
@@ -34,6 +40,9 @@ class Member {
         'phone': phone,
         'email': email,
         'joinedAt': joinedAt.millisecondsSinceEpoch,
+        'dingTalkUserId': dingTalkUserId,
+        'syncStatus': syncStatus,
+        if (lastSyncedAt != null) 'lastSyncedAt': lastSyncedAt!.millisecondsSinceEpoch,
       };
 
   factory Member.fromJson(Map<String, dynamic> json) => Member(
@@ -49,5 +58,10 @@ class Member {
           (json['joinedAt'] as int?) ??
               DateTime.now().millisecondsSinceEpoch,
         ),
+        dingTalkUserId: (json['dingTalkUserId'] as String?) ?? '',
+        syncStatus: (json['syncStatus'] as String?) ?? 'manual',
+        lastSyncedAt: (json['lastSyncedAt'] as int?) != null
+            ? DateTime.fromMillisecondsSinceEpoch(json['lastSyncedAt'] as int)
+            : null,
       );
 }

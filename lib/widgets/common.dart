@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'app_theme.dart';
+
+extension AppThemeExtension on BuildContext {
+  AppTheme get appTheme => Theme.of(this).extension<AppTheme>() ?? AppTheme();
+}
+
 /// 空态视图
 class EmptyView extends StatelessWidget {
   const EmptyView({

@@ -71,6 +71,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final provider = context.read<ActivityProvider>();
+    final labels = context.labels;
 
     final activity = SocietyActivity(
       id: ActivityProvider.nextId(provider.activities),
@@ -85,7 +86,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     );
     await provider.saveActivity(activity);
     if (!mounted) return;
-    showToast(context, '活动创建成功');
+    showToast(context, labels.labelActivityCreated);
     context.pop();
   }
 
@@ -101,16 +102,20 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
           children: [
             TextFormField(
               controller: _titleController,
-              decoration: const InputDecoration(labelText: '活动标题 *'),
+              decoration: InputDecoration(
+                labelText: '${labels.labelActivityTitle} *',
+              ),
               textInputAction: TextInputAction.next,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '请输入活动标题' : null,
+                  (v == null || v.trim().isEmpty)
+                      ? labels.labelActivityTitleRequired
+                      : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: '活动介绍',
+              decoration: InputDecoration(
+                labelText: labels.labelActivityDesc,
                 alignLabelWithHint: true,
               ),
               maxLines: 5,
@@ -119,17 +124,21 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _locationController,
-              decoration: const InputDecoration(labelText: '活动地点 *'),
+              decoration: InputDecoration(
+                labelText: '${labels.labelActivityLocation} *',
+              ),
               textInputAction: TextInputAction.next,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '请输入活动地点' : null,
+                  (v == null || v.trim().isEmpty)
+                      ? labels.labelActivityLocationRequired
+                      : null,
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: _TimeField(
-                    label: '开始时间 *',
+                    label: '${labels.labelStartTime} *',
                     value: formatDateTime(_startTime),
                     onTap: () => _pickDateTime(isStart: true),
                   ),
@@ -137,7 +146,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _TimeField(
-                    label: '结束时间 *',
+                    label: '${labels.labelEndTime} *',
                     value: formatDateTime(_endTime),
                     onTap: () => _pickDateTime(isStart: false),
                   ),
@@ -159,7 +168,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                     validator: (v) {
                       final n = int.tryParse(v ?? '');
                       if (n == null || n <= 0) {
-                        return '请输入有效${labels.labelCapacity}';
+                        return labels.labelCapacityRequired;
                       }
                       return null;
                     },
@@ -174,7 +183,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                     textInputAction: TextInputAction.done,
                     validator: (v) =>
                         (v == null || v.trim().isEmpty)
-                            ? '请输入${labels.labelOrganizer}'
+                            ? labels.labelOrganizerRequired
                             : null,
                   ),
                 ),

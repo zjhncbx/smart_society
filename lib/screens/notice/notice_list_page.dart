@@ -6,7 +6,8 @@ import '../../config/org_config_provider.dart';
 import '../../models/notice.dart';
 import '../../providers/notice_provider.dart';
 import '../../utils/date_format.dart';
-import '../../widgets/common.dart';
+import '../../widgets/app_badges.dart';
+import '../../widgets/app_empty_state.dart';
 
 /// 通知公告列表页
 class NoticeListPage extends StatelessWidget {
@@ -30,9 +31,9 @@ class NoticeListPage extends StatelessWidget {
         ],
       ),
       body: notices.isEmpty
-          ? EmptyView(
+          ? AppEmptyState(
               icon: Icons.campaign_outlined,
-              message: labels.emptyNotices,
+              title: labels.emptyNotices,
               action: FilledButton.icon(
                 onPressed: () => context.push('/notices/new'),
                 icon: const Icon(Icons.add),
@@ -76,8 +77,8 @@ class _NoticeTile extends StatelessWidget {
       leading: notice.isImportant
           ? Tooltip(
               message: labels.importantLabel,
-              child: const Icon(Icons.warning_amber_rounded,
-                  color: Color(0xFFE06B3D)),
+              child: Icon(Icons.warning_amber_rounded,
+                  color: theme.colorScheme.error),
             )
           : Icon(
               notice.isRead
@@ -97,13 +98,21 @@ class _NoticeTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (notice.isImportant)
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: StatusBadge(
+                label: labels.importantLabel,
+                variant: BadgeVariant.warning,
+              ),
+            ),
           if (!notice.isRead)
             Container(
               width: 8,
               height: 8,
               margin: const EdgeInsets.only(left: 6),
-              decoration: const BoxDecoration(
-                color: Color(0xFFE06B3D),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
                 shape: BoxShape.circle,
               ),
             ),

@@ -61,36 +61,36 @@ class _NoticeFormPageState extends State<NoticeFormPage> {
           children: [
             TextFormField(
               controller: _titleController,
-              decoration: const InputDecoration(labelText: '公告标题 *'),
+              decoration: InputDecoration(labelText: '${labels.labelNoticeTitle} *'),
               textInputAction: TextInputAction.next,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '请输入公告标题' : null,
+                  (v == null || v.trim().isEmpty) ? labels.labelNoticeTitleRequired : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _contentController,
-              decoration: const InputDecoration(
-                labelText: '公告内容 *',
+              decoration: InputDecoration(
+                labelText: '${labels.labelNoticeContent} *',
                 alignLabelWithHint: true,
               ),
               maxLines: 8,
               textInputAction: TextInputAction.newline,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '请输入公告内容' : null,
+                  (v == null || v.trim().isEmpty) ? labels.labelNoticeContentRequired : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _publisherController,
-              decoration: const InputDecoration(labelText: '发布人 *'),
+              decoration: InputDecoration(labelText: '${labels.labelPublisher} *'),
               textInputAction: TextInputAction.done,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '请输入发布人' : null,
+                  (v == null || v.trim().isEmpty) ? labels.labelPublisherRequired : null,
             ),
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('标记为重要公告'),
-              subtitle: const Text('重要公告将在列表中突出显示'),
+              title: Text(labels.labelImportantNotice),
+              subtitle: Text(labels.labelImportantNoticeHint),
               value: _isImportant,
               onChanged: (v) => setState(() => _isImportant = v),
             ),

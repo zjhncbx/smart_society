@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../config/org_config_provider.dart';
 import '../../providers/member_provider.dart';
-import '../../widgets/common.dart';
+import '../../widgets/app_badges.dart';
+import '../../widgets/app_empty_state.dart';
 import '../../widgets/member_avatar.dart';
 
 /// 成员列表页：角色筛选 + 关键字搜索
@@ -71,9 +72,9 @@ class _MemberListPageState extends State<MemberListPage> {
           ),
           Expanded(
             child: members.isEmpty
-                ? EmptyView(
+                ? AppEmptyState(
                     icon: Icons.people_outline,
-                    message: labels.emptyMembers,
+                    title: labels.emptyMembers,
                     action: FilledButton.icon(
                       onPressed: () => context.push('/members/new'),
                       icon: const Icon(Icons.add),
@@ -98,9 +99,9 @@ class _MemberListPageState extends State<MemberListPage> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        trailing: _RoleBadge(
-                          roleLabel: member.roleLabel,
-                          colorIndex: roleIndex,
+                        trailing: StatusBadge(
+                          label: member.roleLabel,
+                          variant: _variantForIndex(roleIndex),
                         ),
                         onTap: () => context.push('/members/${member.id}'),
                       );
@@ -115,6 +116,14 @@ class _MemberListPageState extends State<MemberListPage> {
         label: Text(labels.addButton),
       ),
     );
+  }
+
+  BadgeVariant _variantForIndex(int index) {
+    return switch (index) {
+      0 => BadgeVariant.info,
+      1 => BadgeVariant.success,
+      _ => BadgeVariant.neutral,
+    };
   }
 }
 
@@ -131,50 +140,30 @@ class _RoleChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-      ),
-    );
-  }
-}
-
-/// 成员角色徽标
-class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({required this.roleLabel, required this.colorIndex});
-
-  final String roleLabel;
-  final int colorIndex;
-
-  static const _colors = [
-    Color(0xFFE06B3D),
-    Color(0xFF3D6BD6),
-    Color(0xFF4FB3A6),
-    Color(0xFF8A8F99),
-    Color(0xFF9B59B6),
-    Color(0xFFE67E22),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final color = colorIndex >= 0
-        ? _colors[colorIndex % _colors.length]
-        : _colors.last;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        roleLabel,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? cs.primary : cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(20),
+            border: selected
+                ? Border.all(color: Colors.transparent, width: 0)
+                : Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? cs.onPrimary : cs.onSurface,
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
         ),
       ),
     );

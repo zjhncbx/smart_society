@@ -20,7 +20,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final typeLabels = OrgLabels.forType(_selectedType);
+    final labels = OrgLabels.forType(_selectedType);
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -29,14 +29,17 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 32),
-              Text('欢迎使用', style: Theme.of(context).textTheme.headlineMedium),
+              Text(labels.labelSetupWelcome,
+                  style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 4),
-              Text(typeLabels.appTitle, style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  )),
+              Text(labels.appTitle,
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      )),
               const SizedBox(height: 32),
-              Text('选择组织类型', style: Theme.of(context).textTheme.titleMedium),
+              Text(labels.labelSetupSelectOrg,
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               RadioGroup<OrgType>(
                 groupValue: _selectedType,
@@ -51,8 +54,10 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                           : null,
                       child: ListTile(
                         leading: Radio<OrgType>(value: type),
-                        title: Text(l.appTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text('${l.tabMembers} · ${l.tabActivities} · ${l.tabNotices}'),
+                        title: Text(l.appTitle,
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text(
+                            '${l.tabMembers} · ${l.tabActivities} · ${l.tabNotices}'),
                         onTap: () => setState(() => _selectedType = type),
                       ),
                     );
@@ -60,7 +65,8 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              Text('选择主题风格', style: Theme.of(context).textTheme.titleMedium),
+              Text(labels.labelSetupSelectTheme,
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -87,7 +93,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () => _confirm(),
-                  child: const Text('开始使用'),
+                  child: Text(labels.labelSetupStart),
                 ),
               ),
               const SizedBox(height: 16),

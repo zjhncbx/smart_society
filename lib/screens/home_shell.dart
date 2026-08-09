@@ -16,6 +16,7 @@ class HomeShell extends StatelessWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
+        surfaceTintColor: Colors.transparent,
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) =>
             navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),

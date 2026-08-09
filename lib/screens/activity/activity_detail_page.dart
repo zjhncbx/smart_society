@@ -8,12 +8,13 @@ import '../../config/org_type.dart';
 import '../../models/society_activity.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/member_provider.dart';
-import '../../services/current_user.dart';
 import '../../utils/date_format.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/app_empty_state.dart';
 import '../../widgets/common.dart';
 import '../../widgets/member_avatar.dart';
 
-/// 活动详情页：报名/取消报名、报名列表、名额状态
+/// 活动详情页：管理员管理参与人
 class ActivityDetailPage extends StatelessWidget {
   const ActivityDetailPage({super.key, required this.id});
 
@@ -29,13 +30,12 @@ class ActivityDetailPage extends StatelessWidget {
     if (activity == null) {
       return Scaffold(
         appBar: AppBar(title: Text(labels.activityDetailTitle)),
-        body: const EmptyView(icon: Icons.event_busy, message: '活动不存在'),
+        body: AppEmptyState(
+          icon: Icons.event_busy,
+          title: labels.labelActivityNotExist,
+        ),
       );
     }
-
-    final currentId = CurrentUser.instance.memberId;
-    final signedUp = activity.contains(currentId);
-    final canSignUp = !signedUp && !activity.isFull && activity.status == 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -55,41 +55,48 @@ class ActivityDetailPage extends StatelessWidget {
           Text(activity.title,
               style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 12),
-          _InfoTile(
-            icon: Icons.schedule,
-            child: Text(
-              '${formatDateTime(activity.startTime)} ~ ${formatTime(activity.endTime)}',
+          AppCard(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Column(
+              children: [
+                _InfoTile(
+                  icon: Icons.schedule,
+                  child: Text(
+                    '${formatDateTime(activity.startTime)} ~ ${formatTime(activity.endTime)}',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _InfoTile(
+                  icon: Icons.place_outlined,
+                  child: Text(activity.location),
+                ),
+                const SizedBox(height: 8),
+                _InfoTile(
+                  icon: Icons.person_outline,
+                  child: Text('${labels.labelOrganizer}：${activity.organizer}'),
+                ),
+                const SizedBox(height: 8),
+                _InfoTile(
+                  icon: Icons.group_outlined,
+                  child: Text(
+                    '${labels.signUpProgress}：${activity.participantCount}/${activity.capacity} 人'
+                    '${activity.isFull ? '（${labels.labelFull}）' : ''}',
+                  ),
+                ),
+                if (context.orgType == OrgType.volunteerTeam) ...[
+                  const SizedBox(height: 8),
+                  _InfoTile(
+                    icon: Icons.access_time,
+                    child: Text('${labels.volunteerHoursLabel}：-'),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          _InfoTile(
-            icon: Icons.place_outlined,
-            child: Text(activity.location),
-          ),
-          const SizedBox(height: 8),
-          _InfoTile(
-            icon: Icons.person_outline,
-            child: Text('${labels.labelOrganizer}：${activity.organizer}'),
-          ),
-          const SizedBox(height: 8),
-          _InfoTile(
-            icon: Icons.group_outlined,
-            child: Text(
-              '${labels.signUpProgress}：${activity.participantCount}/${activity.capacity} 人'
-              '${activity.isFull ? '（${labels.labelFull}）' : ''}',
-            ),
-          ),
-          if (context.orgType == OrgType.volunteerTeam) ...[
-            const SizedBox(height: 8),
-            _InfoTile(
-              icon: Icons.access_time,
-              child: Text('${labels.volunteerHoursLabel}：-'),
-            ),
-          ],
           const SizedBox(height: 16),
           if (activity.description.isNotEmpty) ...[
             Text(
-              '活动介绍',
+              labels.labelActivityIntro,
               style: Theme.of(context)
                   .textTheme
                   .titleSmall
@@ -108,29 +115,31 @@ class ActivityDetailPage extends StatelessWidget {
           Row(
             children: [
               Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _manageParticipants(
+                    context, activityProvider, memberProvider, activity, labels,
+                  ),
+                  icon: const Icon(Icons.people_outline),
+                  label: Text(labels.labelManageParticipants),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: FilledButton.icon(
-                  onPressed: canSignUp
-                      ? () => _signUp(context, activityProvider, activity.id,
-                          currentId, labels)
-                      : (signedUp
-                          ? () => _cancelSignUp(context, activityProvider,
-                              activity.id, currentId, labels)
-                          : null),
-                  icon: Icon(
-                    signedUp ? Icons.check : Icons.how_to_reg_outlined,
-                  ),
-                  label: Text(
-                    signedUp
-                        ? labels.labelSignedUp
-                        : (activity.isFull ? labels.labelFull : labels.labelSignUp),
-                  ),
+                  onPressed: activity.isFull
+                      ? null
+                      : () => _addParticipant(
+                          context, activityProvider, memberProvider, activity, labels,
+                        ),
+                  icon: const Icon(Icons.person_add),
+                  label: Text(labels.labelAddParticipant),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
           Text(
-            '${labels.labelSignUp.substring(2)}${labels.tabMembers}（${activity.participantCount}）',
+            '${labels.labelManageParticipants}（${activity.participantCount}）',
             style: Theme.of(context)
                 .textTheme
                 .titleSmall
@@ -138,9 +147,10 @@ class ActivityDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (activity.participants.isEmpty)
-            EmptyView(
-                icon: Icons.how_to_reg_outlined,
-                message: labels.emptyParticipants)
+            AppEmptyState(
+              icon: Icons.how_to_reg_outlined,
+              title: labels.emptyParticipants,
+            )
           else
             ...activity.participants.map((p) {
               final member = memberProvider.findById(p.memberId);
@@ -153,12 +163,7 @@ class ActivityDetailPage extends StatelessWidget {
                 ),
                 title: Text(member?.name ?? labels.unknownMember),
                 subtitle: Text(
-                    '${member?.department ?? ''} · ${labels.labelSignUp.substring(2)}于 ${formatDateTime(p.joinedAt)}'),
-                trailing: member?.id == currentId
-                    ? Text(labels.meLabel,
-                        style:
-                            const TextStyle(color: Color(0xFF3D6BD6)))
-                    : null,
+                    '${member?.department ?? ''} · ${labels.labelSignedUp} ${formatDateTime(p.joinedAt)}'),
               );
             }),
         ],
@@ -166,30 +171,138 @@ class ActivityDetailPage extends StatelessWidget {
     );
   }
 
-  Future<void> _signUp(
+  void _manageParticipants(
     BuildContext context,
-    ActivityProvider provider,
-    String activityId,
-    String memberId,
+    ActivityProvider activityProvider,
+    MemberProvider memberProvider,
+    SocietyActivity activity,
     OrgLabels labels,
-  ) async {
-    final ok = await provider.signUp(activityId, memberId);
-    if (context.mounted) {
-      showToast(context, ok ? labels.signUpSuccess : labels.signUpFail);
-    }
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final fresh =
+                activityProvider.findById(activity.id) ?? activity;
+            return AlertDialog(
+              title: Text(labels.labelManageParticipants),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: fresh.participants.isEmpty
+                    ? AppEmptyState(
+                        icon: Icons.how_to_reg_outlined,
+                        title: labels.emptyParticipants,
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: fresh.participants.length,
+                        itemBuilder: (ctx, index) {
+                          final p = fresh.participants[index];
+                          final member = memberProvider.findById(p.memberId);
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: MemberAvatar(
+                              name: member?.name ?? '?',
+                              colorIndex: member?.avatarColorIndex ?? 0,
+                              radius: 16,
+                            ),
+                            title:
+                                Text(member?.name ?? labels.unknownMember),
+                            subtitle: Text(
+                              member?.department ?? '',
+                            ),
+                            trailing: IconButton(
+                              tooltip: labels.labelRemoveParticipant,
+                              icon: const Icon(Icons.remove_circle_outline,
+                                  color: Colors.red),
+                              onPressed: () async {
+                                await activityProvider.cancelSignUp(
+                                    activity.id, p.memberId);
+                                if (ctx.mounted) {
+                                  showToast(
+                                      context, labels.labelRemoveParticipant);
+                                  setDialogState(() {});
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(labels.labelSwitchCancel),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
-  Future<void> _cancelSignUp(
+  void _addParticipant(
     BuildContext context,
-    ActivityProvider provider,
-    String activityId,
-    String memberId,
+    ActivityProvider activityProvider,
+    MemberProvider memberProvider,
+    SocietyActivity activity,
     OrgLabels labels,
-  ) async {
-    await provider.cancelSignUp(activityId, memberId);
-    if (context.mounted) {
-      showToast(context, labels.cancelSignUp);
-    }
+  ) {
+    final participantIds = activity.participants.map((p) => p.memberId).toSet();
+    final availableMembers =
+        memberProvider.members.where((m) => !participantIds.contains(m.id)).toList();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(labels.labelAddParticipant),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: availableMembers.isEmpty
+              ? AppEmptyState(
+                  icon: Icons.person_off,
+                  title: labels.emptyMembers,
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: availableMembers.length,
+                  itemBuilder: (ctx, index) {
+                    final member = availableMembers[index];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: MemberAvatar(
+                        name: member.name,
+                        colorIndex: member.avatarColorIndex,
+                        radius: 16,
+                      ),
+                      title: Text(member.name),
+                      subtitle: Text(
+                        '${member.department} · ${labels.roleLabel(member.roleId)}',
+                      ),
+                      onTap: () async {
+                        final ok = await activityProvider.signUp(
+                            activity.id, member.id);
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        showToast(
+                          ctx,
+                          ok ? labels.addSuccess : labels.signUpFail,
+                        );
+                      },
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(labels.labelSwitchCancel),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _deleteActivity(

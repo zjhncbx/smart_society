@@ -21,7 +21,7 @@ class ThemeConfig {
   );
   static const youth = ThemeConfig(
     name: '青年风',
-    seedColor: Color(0xFF7C6FE0),
+    seedColor: Color(0xFF2E7D32),
   );
   static const government = ThemeConfig(
     name: '政务风',

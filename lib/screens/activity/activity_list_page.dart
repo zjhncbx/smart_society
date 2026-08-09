@@ -7,7 +7,9 @@ import '../../config/org_labels.dart';
 import '../../models/society_activity.dart';
 import '../../providers/activity_provider.dart';
 import '../../utils/date_format.dart';
-import '../../widgets/common.dart';
+import '../../widgets/app_badges.dart';
+import '../../widgets/app_card.dart';
+import '../../widgets/app_empty_state.dart';
 
 /// 活动列表页：状态筛选
 class ActivityListPage extends StatefulWidget {
@@ -58,9 +60,9 @@ class _ActivityListPageState extends State<ActivityListPage> {
           ),
           Expanded(
             child: activities.isEmpty
-                ? EmptyView(
+                ? AppEmptyState(
                     icon: Icons.event_busy,
-                    message: labels.emptyActivities,
+                    title: labels.emptyActivities,
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
@@ -125,10 +127,12 @@ class _ActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final statusColor = switch (activity.status) {
-      0 => const Color(0xFF3D6BD6),
-      1 => const Color(0xFF4FB36B),
-      _ => const Color(0xFF8A8F99),
+      0 => colorScheme.primary,
+      1 => colorScheme.tertiary,
+      _ => colorScheme.outline,
     };
 
     final statusLabel = switch (activity.status) {
@@ -137,88 +141,75 @@ class _ActivityCard extends StatelessWidget {
       _ => labels.statusEnded,
     };
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final badgeVariant = switch (activity.status) {
+      0 => BadgeVariant.info,
+      1 => BadgeVariant.success,
+      _ => BadgeVariant.neutral,
+    };
+
+    return AppCard(
+      accentColor: statusColor,
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      activity.title,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: TextStyle(color: statusColor, fontSize: 12),
-                    ),
-                  ),
-                ],
+              Expanded(
+                child: Text(
+                  activity.title,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.schedule, size: 16, color: theme.colorScheme.outline),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      '${formatDateTime(activity.startTime)} ~ ${formatTime(activity.endTime)}',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Icons.place_outlined, size: 16, color: theme.colorScheme.outline),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      activity.location,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Icons.group_outlined, size: 16, color: theme.colorScheme.outline),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${activity.participantCount}/${activity.capacity} 人已${labels.labelSignUp.substring(2)}',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
+              StatusBadge(label: statusLabel, variant: badgeVariant),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.schedule, size: 16, color: colorScheme.outline),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  '${formatDateTime(activity.startTime)} ~ ${formatTime(activity.endTime)}',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.place_outlined, size: 16, color: colorScheme.outline),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  activity.location,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.group_outlined, size: 16, color: colorScheme.outline),
+              const SizedBox(width: 4),
+              Text(
+                '${activity.participantCount}/${activity.capacity} 人',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

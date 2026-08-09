@@ -7,6 +7,7 @@ import '../../config/org_labels.dart';
 import '../../models/notice.dart';
 import '../../providers/notice_provider.dart';
 import '../../utils/date_format.dart';
+import '../../widgets/app_empty_state.dart';
 import '../../widgets/common.dart';
 
 /// 通知详情页：进入时自动标记已读
@@ -38,7 +39,10 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
     if (notice == null) {
       return Scaffold(
         appBar: AppBar(title: Text(labels.noticeDetailTitle)),
-        body: const EmptyView(icon: Icons.campaign_outlined, message: '公告不存在'),
+        body: AppEmptyState(
+          icon: Icons.campaign_outlined,
+          title: labels.labelNoticeNotExist,
+        ),
       );
     }
 
@@ -64,12 +68,15 @@ class _NoticeDetailPageState extends State<NoticeDetailPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE06B3D).withValues(alpha: 0.12),
+                    color: theme.colorScheme.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     labels.importantLabel,
-                    style: const TextStyle(color: Color(0xFFE06B3D), fontSize: 12),
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
