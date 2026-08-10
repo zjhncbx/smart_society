@@ -1,0 +1,30 @@
+{
+  "cloudDBZoneName": "default",
+  "objectTypeName": "Notice",
+  "objects": [
+    {
+      "id": "n001",
+      "title": "关于开展秋季招新工作的通知",
+      "content": "为充实社团力量，本学期招新工作将于本周六正式启动。请各部门提前准备宣传物料，组织部负责场地申请，宣传部负责线上推文与海报设计。\n\n招新时间：本周六 9:00-17:00\n招新地点：大学生活动中心门前广场",
+      "publisher": "主席团",
+      "isRead": false,
+      "isImportant": true
+    },
+    {
+      "id": "n002",
+      "title": "编程技能分享会报名开放",
+      "content": "技术部将于本周四下午举办编程技能分享会，欢迎对 Flutter 开发感兴趣的成员在活动模块报名。名额有限，先到先得。",
+      "publisher": "技术部",
+      "isRead": false,
+      "isImportant": false
+    },
+    {
+      "id": "n003",
+      "title": "社团章程修订说明",
+      "content": "经全体成员大会表决通过，社团章程第三章第五条关于成员考核制度的内容已修订，具体细则见章程附件。",
+      "publisher": "主席团",
+      "isRead": false,
+      "isImportant": true
+    }
+  ]
+}

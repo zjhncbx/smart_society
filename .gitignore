@@ -31,6 +31,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/build_temp/
 /coverage/
 
 # Symbolication related
@@ -47,3 +48,20 @@ app.*.map.json
 # AGC config (contains secrets)
 ohos/entry/src/main/resources/rawfile/agconnect-services.json
 agconnect-services.json
+Application/agconnect-services.json
+
+# HarmonyOS / DevEco Studio
+Application/.hvigor/
+Application/build/
+Application/node_modules/
+Application/oh_modules/
+Application/ohos/
+Application/local.properties
+Application/flutter_*.log
+Application/**/oh-package-lock.json5
+
+# Cloud build
+CloudProgram/build/
+CloudProgram/**/node_modules/
+CloudProgram/package-lock.json
+CloudProgram/cloudfunctions/*/package-lock.json

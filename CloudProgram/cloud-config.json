@@ -1,0 +1,20 @@
+{
+  "appSelected": {
+    "appId": "6917613222768381272",
+    "appName": "社易管",
+    "deviceTypes": [
+      {
+        "appAdapters": "5",
+        "deviceType": 4
+      }
+    ],
+    "enableSites": "CN",
+    "installationFree": 0,
+    "packageType": 7,
+    "projectId": "101653523864717338",
+    "projectName": "社易管",
+    "siteId": "CN"
+  },
+  "teamId": "260086000119213729",
+  "uid": "260086000119213729"
+}

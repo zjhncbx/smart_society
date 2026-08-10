@@ -1,0 +1,78 @@
+{
+  "objectTypeName": "Notice",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": true
+    },
+    {
+      "fieldName": "title",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "content",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "publisher",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "publishTime",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "isRead",
+      "fieldType": "Boolean",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "false",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "isImportant",
+      "fieldType": "Boolean",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "false",
+      "belongPrimaryKey": false
+    }
+  ],
+  "indexes": [
+    {
+      "indexName": "notice_id",
+      "indexList": [{ "fieldName": "id", "sortType": "ASC" }]
+    }
+  ],
+  "permissions": [
+    { "role": "World", "rights": ["Read"] },
+    { "role": "Authenticated", "rights": ["Read"] },
+    { "role": "Creator", "rights": ["Read", "Upsert", "Delete"] },
+    { "role": "Administrator", "rights": ["Read", "Upsert", "Delete"] }
+  ]
+}

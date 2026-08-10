@@ -1,0 +1,62 @@
+{
+  "cloudDBZoneName": "default",
+  "objectTypeName": "Member",
+  "objects": [
+    {
+      "id": "m001",
+      "name": "张伟",
+      "studentNo": "20230001",
+      "department": "主席团",
+      "roleId": "president",
+      "roleLabel": "社长",
+      "phone": "13800000001",
+      "email": "zhangwei@example.com",
+      "dingTalkUserId": "",
+      "syncStatus": "manual"
+    },
+    {
+      "id": "m002",
+      "name": "李娜",
+      "studentNo": "20230002",
+      "department": "宣传部",
+      "roleId": "director",
+      "roleLabel": "部长",
+      "phone": "13800000002",
+      "dingTalkUserId": "",
+      "syncStatus": "manual"
+    },
+    {
+      "id": "m003",
+      "name": "王强",
+      "studentNo": "20230003",
+      "department": "组织部",
+      "roleId": "director",
+      "roleLabel": "部长",
+      "phone": "13800000003",
+      "dingTalkUserId": "",
+      "syncStatus": "manual"
+    },
+    {
+      "id": "m004",
+      "name": "赵敏",
+      "studentNo": "20230004",
+      "department": "技术部",
+      "roleId": "director",
+      "roleLabel": "部长",
+      "phone": "13800000004",
+      "dingTalkUserId": "",
+      "syncStatus": "manual"
+    },
+    {
+      "id": "m005",
+      "name": "陈杰",
+      "studentNo": "20230005",
+      "department": "技术部",
+      "roleId": "director",
+      "roleLabel": "部长",
+      "phone": "13800000005",
+      "dingTalkUserId": "",
+      "syncStatus": "manual"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "cloudDBZoneName": "default",
+  "objectTypeName": "Activity",
+  "objects": [
+    {
+      "id": "a001",
+      "title": "编程技能分享会",
+      "description": "邀请技术部骨干分享 Flutter 开发经验与项目实战技巧，涵盖状态管理、网络层封装与鸿蒙混合通信等内容。",
+      "location": "大学生活动中心 302",
+      "capacity": 50,
+      "organizer": "技术部",
+      "participants": "[]"
+    },
+    {
+      "id": "a002",
+      "title": "秋季社团招新宣讲会",
+      "description": "面向全校新生的社团介绍会，介绍各部门职责、往期活动成果及本学期活动计划。",
+      "location": "学术报告厅",
+      "capacity": 200,
+      "organizer": "主席团",
+      "participants": "[]"
+    },
+    {
+      "id": "a003",
+      "title": "社区环保志愿活动",
+      "description": "前往幸福社区开展垃圾分类宣传与街道清扫志愿活动，提供志愿服务时长证明。",
+      "location": "幸福社区服务中心",
+      "capacity": 30,
+      "organizer": "外联部",
+      "participants": "[]"
+    }
+  ]
+}
