@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/org_config_provider.dart';
-import '../../config/org_labels.dart';
 import '../../config/org_type.dart';
 import '../../config/theme_config.dart';
 import '../../providers/role_config_provider.dart';
@@ -62,48 +61,12 @@ class _SettingsPageState extends State<SettingsPage> {
     final labels = context.labels;
     final theme = Theme.of(context);
     final orgType = context.watch<SettingsProvider>().orgType;
+    final isSocialOrg = orgType == OrgType.socialOrg;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.save_outlined),
-          tooltip: labels.saveButton,
-          onPressed: () {
-            _saveRoles(context.read<SettingsProvider>().orgType);
-            _saveDingTalkConfig();
-          },
-        ),
-        title: Text(labels.labelSettingsTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: '返回',
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(labels.labelSettingsTitle)),
       body: ListView(
         children: [
-          _SectionHeader(title: labels.orgTypeLabel),
-          RadioGroup<OrgType>(
-            groupValue: orgType,
-            onChanged: (v) {
-              if (v != null) _switchOrgType(context, v);
-            },
-            child: Column(
-              children: OrgType.values.map((type) {
-                final typeLabels = OrgLabels.forType(type);
-                return ListTile(
-                  leading: Radio<OrgType>(value: type),
-                  title: Text(typeLabels.appTitle),
-                  subtitle: Text(
-                      '${typeLabels.tabMembers} · ${typeLabels.tabProjects} · ${typeLabels.tabNotices}'),
-                  onTap: () => _switchOrgType(context, type),
-                );
-              }).toList(),
-            ),
-          ),
-          const Divider(),
           _SectionHeader(title: labels.themeLabel),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -126,7 +89,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const Divider(),
-          // ── 角色名称编辑 ──
           _SectionHeader(title: labels.labelEditRoles),
           ...labels.roles.map((role) {
             final controller = _getRoleController(role.id, role.label);
@@ -144,74 +106,89 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             );
           }),
-          ListTile(
-            leading: Icon(Icons.save_outlined, color: theme.colorScheme.primary),
-            title: Text(labels.saveButton),
-            onTap: () => _saveRoles(orgType),
-          ),
-          ListTile(
-            leading: Icon(Icons.refresh, color: theme.colorScheme.outline),
-            title: Text(labels.labelResetRoles),
-            onTap: () => _resetRoles(orgType),
-          ),
-          const Divider(),
-          // ── 钉钉同步设置（凭证按组织配置）──
-          _SectionHeader(title: labels.labelDingTalkSettings),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: TextField(
-              controller: _clientIdController,
-              decoration: const InputDecoration(
-                labelText: 'Client ID (AppKey)',
-                isDense: true,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Wrap(
+              spacing: 8,
+              children: [
+                ChoiceChip(
+                  label: Text(labels.saveButton),
+                  selected: false,
+                  onSelected: (_) => _saveRoles(orgType),
+                ),
+                ChoiceChip(
+                  label: Text(labels.labelResetRoles),
+                  selected: false,
+                  onSelected: (_) => _resetRoles(orgType),
+                ),
+              ],
+            ),
+          ),
+          if (isSocialOrg) ...[
+            const Divider(),
+            _SectionHeader(title: labels.labelDingTalkSettings),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: TextField(
+                controller: _clientIdController,
+                decoration: const InputDecoration(
+                  labelText: 'Client ID (AppKey)',
+                  isDense: true,
+                ),
+                textInputAction: TextInputAction.next,
               ),
-              textInputAction: TextInputAction.next,
-              onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: TextField(
-              controller: _clientSecretController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Client Secret (AppSecret)',
-                isDense: true,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: TextField(
+                controller: _clientSecretController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Client Secret (AppSecret)',
+                  isDense: true,
+                ),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _saveDingTalkConfig(),
               ),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _saveDingTalkConfig(),
             ),
-          ),
-          ListTile(
-            leading: Icon(Icons.save_outlined, color: theme.colorScheme.primary),
-            title: Text(labels.saveButton),
-            onTap: _saveDingTalkConfig,
-          ),
-          ListTile(
-            leading: _syncing
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2,
-                        color: theme.colorScheme.primary),
-                  )
-                : Icon(Icons.sync, color: theme.colorScheme.outline),
-            title: Text(_syncing
-                ? labels.labelDingTalkSyncing
-                : labels.labelSyncNow),
-            enabled: !_syncing && _dingTalkConfigured,
-            onTap: _syncing ? null : _syncDingTalk,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text(
-              _lastSyncText,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.outline),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: Text(labels.saveButton),
+                    selected: false,
+                    onSelected: (_) => _saveDingTalkConfig(),
+                  ),
+                  ChoiceChip(
+                    label: Text(_syncing
+                        ? labels.labelDingTalkSyncing
+                        : labels.labelSyncNow),
+                    selected: false,
+                    avatar: _syncing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.sync, size: 18),
+                    onSelected: _syncing || !_dingTalkConfigured
+                        ? null
+                        : (_) => _syncDingTalk(),
+                  ),
+                ],
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                _lastSyncText,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.outline),
+              ),
+            ),
+          ],
           const Divider(),
-          // ── Web管理后台 ──
           AppCard(
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             onTap: () => _openWebAdmin(),
@@ -240,21 +217,6 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
-  }
-
-  void _switchOrgType(BuildContext context, OrgType type) {
-    final labels = context.labels;
-    showConfirmDialog(
-      context,
-      title: labels.labelOrgTypeSwitchTitle,
-      message: labels.labelOrgTypeSwitchMsg,
-      confirmText: labels.confirmDelete,
-      cancelText: labels.labelSwitchCancel,
-    ).then((confirmed) {
-      if (confirmed && context.mounted) {
-        context.read<SettingsProvider>().setOrgType(type);
-      }
-    });
   }
 
   void _saveRoles(OrgType type) {
@@ -291,10 +253,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   String get _lastSyncText {
     final settings = context.read<SettingsProvider>();
-    return settings.dingTalkLastResult(_orgId) ?? labelsText.labelDingTalkNeverSynced;
+    return settings.dingTalkLastResult(_orgId) ??
+        context.labels.labelDingTalkNeverSynced;
   }
-
-  OrgLabels get labelsText => context.labels;
 
   Future<void> _saveDingTalkConfig() async {
     FocusScope.of(context).unfocus();

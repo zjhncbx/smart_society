@@ -133,21 +133,22 @@ class SmartSocietyApp extends StatelessWidget {
       ],
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
+          final settings = context.watch<SettingsProvider>();
           if (!auth.isAuthenticated) {
             return MaterialApp(
               title: '社易管',
               debugShowCheckedModeBanner: false,
-              theme: _buildTheme(settingsProvider.theme),
+              theme: _buildTheme(settings.theme),
               home: const LoginPage(),
             );
           }
           return Consumer<OrganizationProvider>(
             builder: (context, orgProvider, _) {
-              if (!orgProvider.hasOrg && !settingsProvider.isInitialized) {
+              if (!orgProvider.hasOrg && !settings.isInitialized) {
                 return MaterialApp(
                   title: '社易管',
                   debugShowCheckedModeBanner: false,
-                  theme: _buildTheme(settingsProvider.theme),
+                  theme: _buildTheme(settings.theme),
                   home: const SetupWizardPage(),
                 );
               }
@@ -155,20 +156,19 @@ class SmartSocietyApp extends StatelessWidget {
                 return MaterialApp(
                   title: '社易管',
                   debugShowCheckedModeBanner: false,
-                  theme: _buildTheme(settingsProvider.theme),
+                  theme: _buildTheme(settings.theme),
                   home: const SetupWizardPage(),
                 );
               }
-              // Sync currentOrgId to SettingsProvider
               if (orgProvider.currentOrgId != null &&
-                  settingsProvider.currentOrgId != orgProvider.currentOrgId) {
-                settingsProvider.setCurrentOrgId(orgProvider.currentOrgId);
+                  settings.currentOrgId != orgProvider.currentOrgId) {
+                settings.setCurrentOrgId(orgProvider.currentOrgId);
               }
-              final labels = OrgLabels.forType(settingsProvider.orgType);
+              final labels = OrgLabels.forType(settings.orgType);
               return MaterialApp.router(
                 title: labels.appTitle,
                 debugShowCheckedModeBanner: false,
-                theme: _buildTheme(settingsProvider.theme),
+                theme: _buildTheme(settings.theme),
                 routerConfig: appRouter,
               );
             },
