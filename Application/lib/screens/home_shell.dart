@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../config/org_config_provider.dart';
 import '../providers/notice_provider.dart';
+import '../providers/organization_provider.dart';
 
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.navigationShell});
@@ -13,7 +14,9 @@ class HomeShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final labels = context.labels;
+    final org = context.watch<OrganizationProvider>().currentOrg;
     return Scaffold(
+      appBar: AppBar(title: Text(org?.name ?? labels.appTitle)),
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         surfaceTintColor: Colors.transparent,

@@ -9,16 +9,21 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
   try {
     const params = event.body ? JSON.parse(event.body) : event;
     const id = params?.id;
+    const orgId = params?.orgId;
     if (!id) {
       callback({ ret: { code: -1, message: '缺少 id 字段' } });
+      return;
+    }
+    if (!orgId) {
+      callback({ ret: { code: -1, message: '缺少 orgId 字段' } });
       return;
     }
 
     const db = cloud.database({ zoneName: ZONE_NAME });
     const col: CloudDBCollection<Member> = db.collection(Member);
-    // 构建仅含主键的对象用于删除
     const obj = new Member();
     obj.id = id;
+    obj.orgId = orgId;
     await col.delete([obj]);
 
     logger.info(`delete-member done: id=${id}`);

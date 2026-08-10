@@ -9,8 +9,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
   try {
     const params = event.body ? JSON.parse(event.body) : event;
     const id = params?.id;
+    const orgId = params?.orgId;
     if (!id) {
       callback({ ret: { code: -1, message: '缺少 id 字段' } });
+      return;
+    }
+    if (!orgId) {
+      callback({ ret: { code: -1, message: '缺少 orgId 字段' } });
       return;
     }
 
@@ -18,6 +23,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const col: CloudDBCollection<Notice> = db.collection(Notice);
     const obj = new Notice();
     obj.id = id;
+    obj.orgId = orgId;
     await col.delete([obj]);
 
     logger.info(`delete-notice done: id=${id}`);

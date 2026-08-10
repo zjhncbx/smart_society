@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/notice.dart';
 import '../services/storage_service.dart';
+import 'sync_provider.dart';
 
 /// 通知公告状态：列表、发布、已读标记。
 class NoticeProvider extends ChangeNotifier {
@@ -39,6 +40,7 @@ class NoticeProvider extends ChangeNotifier {
     _notices.add(notice);
     await _storage.noticesBox.put(notice.id, notice.toJson());
     notifyListeners();
+    SyncProvider.instance.enqueue('notice', notice.id, SyncOp.upsert, notice.toJson());
   }
 
   Future<void> markRead(String id) async {
@@ -65,7 +67,10 @@ class NoticeProvider extends ChangeNotifier {
     _notices.removeWhere((n) => n.id == id);
     await _storage.noticesBox.delete(id);
     notifyListeners();
+    SyncProvider.instance.enqueue('notice', id, SyncOp.delete, {'id': id, 'orgId': _orgId()});
   }
+
+  String _orgId() => _notices.isNotEmpty ? _notices.first.orgId : '';
 
   /// 生成不重复的通知 id
   static String nextId(List<Notice> notices) {

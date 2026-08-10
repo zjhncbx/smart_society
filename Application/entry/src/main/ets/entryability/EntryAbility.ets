@@ -3,6 +3,7 @@ import { AbilityConstant, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { cloudCommon, cloudFunction } from '@kit.CloudFoundationKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { authentication } from '@kit.AccountKit';
 import {
   FlutterAbility,
   FlutterEngine,
@@ -14,8 +15,11 @@ import {
 import { GeneratedPluginRegistrant } from '../plugins/GeneratedPluginRegistrant';
 
 const CLOUD_TAG = 'CloudChannel';
+const AUTH_TAG = 'AuthChannel';
 
 export default class EntryAbility extends FlutterAbility {
+  private authController: authentication.AuthenticationController | null = null;
+
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
     super.onCreate(want, launchParam)
     // 云函数免鉴权，无需 authProvider；云数据库/云存储需通过云函数访问
@@ -31,6 +35,7 @@ export default class EntryAbility extends FlutterAbility {
     GeneratedPluginRegistrant.registerWith(flutterEngine)
     this.registerStorageChannel(flutterEngine)
     this.registerCloudChannel(flutterEngine)
+    this.registerAuthChannel(flutterEngine)
   }
 
   private registerCloudChannel(flutterEngine: FlutterEngine) {
@@ -123,5 +128,81 @@ export default class EntryAbility extends FlutterAbility {
       },
     }
     channel.setMethodCallHandler(handler)
+  }
+
+  private registerAuthChannel(flutterEngine: FlutterEngine) {
+    const channel = new MethodChannel(
+      flutterEngine.dartExecutor.getBinaryMessenger(),
+      'com.smartsociety/auth',
+    )
+    const handler: MethodCallHandler = {
+      onMethodCall: (call: MethodCall, result: MethodResult): void => {
+        if (call.method === 'signIn') {
+          this.handleSignIn(result)
+        } else if (call.method === 'signOut') {
+          this.handleSignOut(result)
+        } else if (call.method === 'getUserInfo') {
+          this.handleGetUserInfo(result)
+        } else {
+          result.notImplemented()
+        }
+      },
+    }
+    channel.setMethodCallHandler(handler)
+    hilog.info(0x0000, AUTH_TAG, 'auth channel registered')
+  }
+
+  private handleSignIn(result: MethodResult) {
+    try {
+      const provider = new authentication.HuaweiIDProvider()
+      const request = provider.createLoginWithHuaweiIDRequest()
+      this.authController = new authentication.AuthenticationController(this.context)
+      this.authController.executeRequest(request).then((res) => {
+        const credential = res?.data
+        if (!credential) {
+          result.error('AUTH_FAILED', 'login returned no credential', null)
+          return
+        }
+        const userInfo: Record<string, string> = {}
+        if (credential.openID) userInfo['openId'] = credential.openID
+        if (credential.unionID) userInfo['unionId'] = credential.unionID
+        if (credential.displayName) userInfo['displayName'] = credential.displayName
+        if (credential.avatarUri) userInfo['avatarUri'] = credential.avatarUri
+        hilog.info(0x0000, AUTH_TAG, 'signIn success: openId=%{public}s', credential.openID ?? '')
+        result.success(JSON.stringify(userInfo))
+      }).catch((err: BusinessError) => {
+        hilog.error(0x0000, AUTH_TAG, 'signIn failed: code=%{public}d msg=%{public}s', err.code, err.message)
+        result.error(String(err.code), err.message, null)
+      })
+    } catch (e) {
+      hilog.error(0x0000, AUTH_TAG, 'signIn exception: %{public}s', JSON.stringify(e))
+      result.error('AUTH_ERROR', JSON.stringify(e), null)
+    }
+  }
+
+  private handleSignOut(result: MethodResult) {
+    try {
+      if (this.authController) {
+        const provider = new authentication.HuaweiIDProvider()
+        const request = provider.createCancelAuthorizationRequest()
+        this.authController.executeRequest(request).then(() => {
+          hilog.info(0x0000, AUTH_TAG, 'signOut success')
+          this.authController = null
+          result.success(true)
+        }).catch((err: BusinessError) => {
+          hilog.error(0x0000, AUTH_TAG, 'signOut failed: code=%{public}d msg=%{public}s', err.code, err.message)
+          result.error(String(err.code), err.message, null)
+        })
+      } else {
+        result.success(true)
+      }
+    } catch (e) {
+      hilog.error(0x0000, AUTH_TAG, 'signOut exception: %{public}s', JSON.stringify(e))
+      result.error('AUTH_ERROR', JSON.stringify(e), null)
+    }
+  }
+
+  private handleGetUserInfo(result: MethodResult) {
+    result.notImplemented()
   }
 }

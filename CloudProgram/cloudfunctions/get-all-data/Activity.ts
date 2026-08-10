@@ -10,6 +10,8 @@ export class Activity {
   participants: string = '[]';
   volunteerHours: number | null = null;
   createdAt: Date = new Date();
+  orgId: string = '';
+  updatedAt: Date | null = null;
 
   getClassName(): string {
     return 'Activity';
@@ -28,6 +30,8 @@ export class Activity {
     map.set('participants', 'String');
     map.set('volunteerHours', 'Integer');
     map.set('createdAt', 'Date');
+    map.set('orgId', 'String');
+    map.set('updatedAt', 'Date');
     return map;
   }
 
@@ -57,6 +61,8 @@ export class Activity {
       obj.participants = data.participants ?? '[]';
       obj.volunteerHours = data.volunteerHours ?? null;
       obj.createdAt = data.createdAt ? new Date(data.createdAt) : new Date();
+      obj.orgId = data.orgId ?? '';
+      obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     }
     return obj;
   }

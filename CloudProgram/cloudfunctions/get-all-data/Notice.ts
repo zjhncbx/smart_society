@@ -6,6 +6,8 @@ export class Notice {
   publishTime: Date = new Date();
   isRead: boolean = false;
   isImportant: boolean = false;
+  orgId: string = '';
+  updatedAt: Date | null = null;
 
   getClassName(): string {
     return 'Notice';
@@ -20,6 +22,8 @@ export class Notice {
     map.set('publishTime', 'Date');
     map.set('isRead', 'Boolean');
     map.set('isImportant', 'Boolean');
+    map.set('orgId', 'String');
+    map.set('updatedAt', 'Date');
     return map;
   }
 
@@ -45,6 +49,8 @@ export class Notice {
       obj.publishTime = data.publishTime ? new Date(data.publishTime) : new Date();
       obj.isRead = data.isRead ?? false;
       obj.isImportant = data.isImportant ?? false;
+      obj.orgId = data.orgId ?? '';
+      obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     }
     return obj;
   }

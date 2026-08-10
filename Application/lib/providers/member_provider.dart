@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/member.dart';
 import '../services/storage_service.dart';
+import 'sync_provider.dart';
 
 class MemberProvider extends ChangeNotifier {
   final StorageService _storage = StorageService.instance;
@@ -66,13 +67,17 @@ class MemberProvider extends ChangeNotifier {
     }
     await _storage.membersBox.put(member.id, member.toJson());
     notifyListeners();
+    SyncProvider.instance.enqueue('member', member.id, SyncOp.upsert, member.toJson());
   }
 
   Future<void> deleteMember(String id) async {
     _members.removeWhere((m) => m.id == id);
     await _storage.membersBox.delete(id);
     notifyListeners();
+    SyncProvider.instance.enqueue('member', id, SyncOp.delete, {'id': id, 'orgId': _orgId()});
   }
+
+  String _orgId() => _members.isNotEmpty ? _members.first.orgId : '';
 
   static String nextId(List<Member> members) {
     var max = 0;

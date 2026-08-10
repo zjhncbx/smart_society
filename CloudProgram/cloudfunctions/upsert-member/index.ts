@@ -12,10 +12,15 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       callback({ ret: { code: -1, message: '缺少 id 字段' } });
       return;
     }
+    if (!record.orgId) {
+      callback({ ret: { code: -1, message: '缺少 orgId 字段' } });
+      return;
+    }
 
     const db = cloud.database({ zoneName: ZONE_NAME });
     const col: CloudDBCollection<Member> = db.collection(Member);
     const obj = Member.parseFrom(record);
+    obj.updatedAt = new Date();
     await col.upsert([obj]);
 
     logger.info(`upsert-member done: id=${record.id}`);

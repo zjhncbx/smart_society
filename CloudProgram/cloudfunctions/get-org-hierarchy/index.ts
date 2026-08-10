@@ -1,0 +1,50 @@
+import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
+import { Organization } from './Organization';
+import { OrganizationRelationship } from './OrganizationRelationship';
+
+const ZONE_NAME = 'default';
+
+let myHandler = async function (event: any, context: any, callback: any, logger: any) {
+  logger.info('get-org-hierarchy called');
+
+  try {
+    const params = event.body ? JSON.parse(event.body) : event;
+    const orgId = params?.orgId as string;
+
+    if (!orgId) {
+      callback({ ret: { code: -1, message: '缺少 orgId 参数' } });
+      return;
+    }
+
+    const db = cloud.database({ zoneName: ZONE_NAME });
+    const orgCol: CloudDBCollection<Organization> = db.collection(Organization);
+    const relCol: CloudDBCollection<OrganizationRelationship> = db.collection(OrganizationRelationship);
+
+    const [orgList, relList] = await Promise.all([
+      orgCol.query().get(),
+      relCol.query().get(),
+    ]);
+
+    // 构建关系图
+    const children = relList.filter((r: any) => r.orgId === orgId && r.relType === 'child');
+    const partners = relList.filter((r: any) => r.orgId === orgId && r.relType === 'partner');
+    const parents = relList.filter((r: any) => r.relatedOrgId === orgId && r.relType === 'child');
+
+    const findOrg = (id: string) => orgList.find((o: any) => o.orgId === id);
+
+    const result: any = {};
+    const currentOrg = findOrg(orgId);
+    if (currentOrg) result.org = currentOrg;
+    if (parents.length > 0) result.parents = parents.map((r: any) => findOrg(r.orgId)).filter(Boolean);
+    result.children = children.map((r: any) => ({ org: findOrg(r.relatedOrgId), shareMembers: r.shareMembers, shareActivities: r.shareActivities, shareNotices: r.shareNotices })).filter((x: any) => x.org);
+    result.partners = partners.map((r: any) => ({ org: findOrg(r.relatedOrgId), shareMembers: r.shareMembers, shareActivities: r.shareActivities, shareNotices: r.shareNotices })).filter((x: any) => x.org);
+
+    logger.info(`get-org-hierarchy done: orgId=${orgId}`);
+    callback({ ret: { code: 0, message: 'ok', data: result } });
+  } catch (err: any) {
+    logger.error(`get-org-hierarchy error: ${err.message}`);
+    callback({ ret: { code: -1, message: err.message } });
+  }
+};
+
+export { myHandler };

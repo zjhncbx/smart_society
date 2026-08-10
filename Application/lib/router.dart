@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'screens/activity/activity_detail_page.dart';
 import 'screens/activity/activity_form_page.dart';
 import 'screens/activity/activity_list_page.dart';
+import 'screens/auth/login_page.dart';
 import 'screens/home_shell.dart';
 import 'screens/member/member_detail_page.dart';
 import 'screens/member/member_form_page.dart';
@@ -11,6 +12,8 @@ import 'screens/member/member_list_page.dart';
 import 'screens/notice/notice_detail_page.dart';
 import 'screens/notice/notice_form_page.dart';
 import 'screens/notice/notice_list_page.dart';
+import 'screens/org/org_create_page.dart';
+import 'screens/org/org_selector_page.dart';
 import 'screens/profile/profile_page.dart';
 import 'screens/settings/settings_page.dart';
 import 'screens/settings/setup_wizard_page.dart';
@@ -32,18 +35,12 @@ final GoRouter appRouter = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/activities',
-              builder: (c, s) => const ActivityListPage(),
-            ),
+            GoRoute(path: '/activities', builder: (c, s) => const ActivityListPage()),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/notices',
-              builder: (c, s) => const NoticeListPage(),
-            ),
+            GoRoute(path: '/notices', builder: (c, s) => const NoticeListPage()),
           ],
         ),
         StatefulShellBranch(
@@ -52,6 +49,21 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
       ],
+    ),
+    GoRoute(
+      path: '/login',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const LoginPage(),
+    ),
+    GoRoute(
+      path: '/orgs/create',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const OrgCreatePage(),
+    ),
+    GoRoute(
+      path: '/orgs/select',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const OrgSelectorPage(),
     ),
     GoRoute(
       path: '/members/new',
@@ -95,11 +107,6 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/settings/roles',
-      parentNavigatorKey: _rootNavigatorKey,
-      builder: (c, s) => const SettingsPage(),
-    ),
-    GoRoute(
-      path: '/settings/dingtalk',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => const SettingsPage(),
     ),

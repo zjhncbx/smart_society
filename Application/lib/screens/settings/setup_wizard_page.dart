@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../config/org_labels.dart';
 import '../../config/org_type.dart';
 import '../../config/theme_config.dart';
+import '../../providers/organization_provider.dart';
 import '../../providers/settings_provider.dart';
 
 class SetupWizardPage extends StatefulWidget {
@@ -17,6 +18,7 @@ class SetupWizardPage extends StatefulWidget {
 class _SetupWizardPageState extends State<SetupWizardPage> {
   OrgType _selectedType = OrgType.schoolClub;
   ThemeConfig _selectedTheme = ThemeConfig.campus;
+  bool _creating = false;
 
   @override
   Widget build(BuildContext context) {
@@ -92,8 +94,10 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () => _confirm(),
-                  child: Text(labels.labelSetupStart),
+                  onPressed: _creating ? null : () => _confirm(),
+                  child: _creating
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Text(labels.labelSetupStart),
                 ),
               ),
               const SizedBox(height: 16),
@@ -105,12 +109,27 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
   }
 
   Future<void> _confirm() async {
-    final settings = context.read<SettingsProvider>();
-    await settings.setOrgType(_selectedType);
-    await settings.setTheme(_selectedTheme);
-    await settings.completeSetup();
-    if (mounted) {
-      context.go('/members');
+    setState(() => _creating = true);
+    try {
+      final settings = context.read<SettingsProvider>();
+      await settings.setOrgType(_selectedType);
+      await settings.setTheme(_selectedTheme);
+
+      // 创建首个组织
+      final labels = OrgLabels.forType(_selectedType);
+      final orgProvider = context.read<OrganizationProvider>();
+      await orgProvider.createOrg(
+        name: '我的${labels.appTitle}',
+        orgType: _selectedType.name,
+      );
+
+      await settings.completeSetup();
+      if (mounted) context.go('/members');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('创建失败: $e')));
+        setState(() => _creating = false);
+      }
     }
   }
 }

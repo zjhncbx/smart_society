@@ -34,6 +34,8 @@ class SocietyActivity {
     this.participants = const [],
     this.volunteerHours,
     required this.createdAt,
+    this.orgId = '',
+    this.updatedAt,
   });
 
   final String id;
@@ -47,6 +49,8 @@ class SocietyActivity {
   final List<ActivityParticipant> participants;
   final int? volunteerHours;
   final DateTime createdAt;
+  final String orgId;
+  final DateTime? updatedAt;
 
   /// 活动状态：0 未开始 / 1 进行中 / 2 已结束
   int get status {
@@ -81,6 +85,8 @@ class SocietyActivity {
         'participants': participants.map((p) => p.toJson()).toList(),
         if (volunteerHours != null) 'volunteerHours': volunteerHours,
         'createdAt': createdAt.millisecondsSinceEpoch,
+        'orgId': orgId,
+        if (updatedAt != null) 'updatedAt': updatedAt!.millisecondsSinceEpoch,
       };
 
   factory SocietyActivity.fromJson(Map<String, dynamic> json) =>
@@ -104,5 +110,9 @@ class SocietyActivity {
         createdAt: DateTime.fromMillisecondsSinceEpoch(
           (json['createdAt'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
         ),
+        orgId: (json['orgId'] as String?) ?? '',
+        updatedAt: (json['updatedAt'] as int?) != null
+            ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt'] as int)
+            : null,
       );
 }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/society_activity.dart';
 import '../services/storage_service.dart';
+import 'sync_provider.dart';
 
 /// 活动管理状态：列表、创建、报名/取消报名、删除。
 class ActivityProvider extends ChangeNotifier {
@@ -42,13 +43,17 @@ class ActivityProvider extends ChangeNotifier {
     }
     await _storage.activitiesBox.put(activity.id, activity.toJson());
     notifyListeners();
+    SyncProvider.instance.enqueue('activity', activity.id, SyncOp.upsert, activity.toJson());
   }
 
   Future<void> deleteActivity(String id) async {
     _activities.removeWhere((a) => a.id == id);
     await _storage.activitiesBox.delete(id);
     notifyListeners();
+    SyncProvider.instance.enqueue('activity', id, SyncOp.delete, {'id': id, 'orgId': _orgId()});
   }
+
+  String _orgId() => _activities.isNotEmpty ? _activities.first.orgId : '';
 
   /// 报名活动；满员时返回 false。
   Future<bool> signUp(String activityId, String memberId) async {

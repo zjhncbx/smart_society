@@ -9,6 +9,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
   logger.info('get-all-data called');
 
   try {
+    const params = event.body ? JSON.parse(event.body) : event;
+    const orgId = params?.orgId as string;
+    if (!orgId) {
+      callback({ ret: { code: -1, message: '缺少 orgId 参数' } });
+      return;
+    }
+
     const db = cloud.database({ zoneName: ZONE_NAME });
 
     const memberCol: CloudDBCollection<Member> = db.collection(Member);
@@ -16,9 +23,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const noticeCol: CloudDBCollection<Notice> = db.collection(Notice);
 
     const [memberRes, activityRes, noticeRes] = await Promise.all([
-      memberCol.query().get(),
-      activityCol.query().get(),
-      noticeCol.query().get(),
+      memberCol.query().equalTo('orgId', orgId).get(),
+      activityCol.query().equalTo('orgId', orgId).get(),
+      noticeCol.query().equalTo('orgId', orgId).get(),
     ]);
 
     logger.info(`get-all-data done: members=${memberRes.length}, activities=${activityRes.length}, notices=${noticeRes.length}`);

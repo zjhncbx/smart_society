@@ -45,4 +45,20 @@ class CloudFunctionService {
     }
     return body['data'];
   }
+
+  /// 带重试的 callChecked，最多尝试 3 次，指数退避。
+  Future<dynamic> callWithRetry(String name, {Map<String, dynamic>? params, int maxRetries = 3}) async {
+    Exception? lastError;
+    for (int i = 0; i < maxRetries; i++) {
+      try {
+        return await callChecked(name, params: params);
+      } catch (e) {
+        lastError = e is Exception ? e : Exception('$e');
+        if (i < maxRetries - 1) {
+          await Future.delayed(Duration(milliseconds: 500 * (1 << i)));
+        }
+      }
+    }
+    throw lastError!;
+  }
 }

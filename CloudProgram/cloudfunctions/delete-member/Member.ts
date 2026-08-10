@@ -11,6 +11,8 @@ export class Member {
   dingTalkUserId: string = '';
   syncStatus: string = '';
   lastSyncedAt: Date | null = null;
+  orgId: string = '';
+  updatedAt: Date | null = null;
 
   getClassName(): string {
     return 'Member';
@@ -30,6 +32,8 @@ export class Member {
     map.set('dingTalkUserId', 'String');
     map.set('syncStatus', 'String');
     map.set('lastSyncedAt', 'Date');
+    map.set('orgId', 'String');
+    map.set('updatedAt', 'Date');
     return map;
   }
 
@@ -60,6 +64,8 @@ export class Member {
       obj.dingTalkUserId = data.dingTalkUserId ?? '';
       obj.syncStatus = data.syncStatus ?? '';
       obj.lastSyncedAt = data.lastSyncedAt ? new Date(data.lastSyncedAt) : null;
+      obj.orgId = data.orgId ?? '';
+      obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     }
     return obj;
   }

@@ -8,6 +8,8 @@ class Notice {
     required this.publishTime,
     this.isRead = false,
     this.isImportant = false,
+    this.orgId = '',
+    this.updatedAt,
   });
 
   final String id;
@@ -17,6 +19,8 @@ class Notice {
   final DateTime publishTime;
   bool isRead;
   final bool isImportant;
+  final String orgId;
+  final DateTime? updatedAt;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -26,6 +30,8 @@ class Notice {
         'publishTime': publishTime.millisecondsSinceEpoch,
         'isRead': isRead,
         'isImportant': isImportant,
+        'orgId': orgId,
+        if (updatedAt != null) 'updatedAt': updatedAt!.millisecondsSinceEpoch,
       };
 
   factory Notice.fromJson(Map<String, dynamic> json) => Notice(
@@ -38,5 +44,9 @@ class Notice {
         ),
         isRead: (json['isRead'] as bool?) ?? false,
         isImportant: (json['isImportant'] as bool?) ?? false,
+        orgId: (json['orgId'] as String?) ?? '',
+        updatedAt: (json['updatedAt'] as int?) != null
+            ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt'] as int)
+            : null,
       );
 }

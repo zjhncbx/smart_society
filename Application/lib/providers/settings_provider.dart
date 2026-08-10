@@ -8,14 +8,17 @@ class SettingsProvider extends ChangeNotifier {
   static const _orgTypeKey = 'orgType';
   static const _themeIndexKey = 'themeIndex';
   static const _initializedKey = 'initialized';
+  static const _currentOrgIdKey = 'currentOrgId';
 
   OrgType _orgType = OrgType.schoolClub;
   ThemeConfig _theme = ThemeConfig.campus;
   bool _isInitialized = false;
+  String? _currentOrgId;
 
   OrgType get orgType => _orgType;
   ThemeConfig get theme => _theme;
   bool get isInitialized => _isInitialized;
+  String? get currentOrgId => _currentOrgId;
 
   Future<void> init() async {
     final box = await Hive.openBox(_boxName);
@@ -28,7 +31,15 @@ class SettingsProvider extends ChangeNotifier {
       _theme = ThemeConfig.all[themeIndex as int];
     }
     _isInitialized = box.get(_initializedKey, defaultValue: false) as bool;
+    _currentOrgId = box.get(_currentOrgIdKey) as String?;
     notifyListeners();
+  }
+
+  Future<void> setCurrentOrgId(String? orgId) async {
+    _currentOrgId = orgId;
+    notifyListeners();
+    final box = await Hive.openBox(_boxName);
+    await box.put(_currentOrgIdKey, orgId);
   }
 
   Future<void> setOrgType(OrgType type) async {

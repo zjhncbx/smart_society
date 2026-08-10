@@ -5,16 +5,13 @@ import '../../config/org_config_provider.dart';
 import '../../config/org_labels.dart';
 import '../../config/org_type.dart';
 import '../../config/theme_config.dart';
-import '../../models/member.dart';
-import '../../models/notice.dart';
-import '../../models/society_activity.dart';
 import '../../providers/activity_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
 import '../../providers/role_config_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../services/cloud_function_service.dart';
-import '../../services/storage_service.dart';
 import '../../utils/date_format.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/common.dart';
@@ -320,96 +317,30 @@ class _SettingsPageState extends State<SettingsPage> {
     _cancelRequested = false;
     setState(() {
       _syncing = true;
-      _syncStatus = '正在连接云端...';
+      _syncStatus = '正在同步...';
     });
     final labels = context.labels;
     try {
       _checkCancelled();
-      final pong = await CloudFunctionService.instance.ping();
-      debugPrint('CLOUDSYNC_PING_OK: $pong');
-
+      final orgId = context.read<SettingsProvider>().currentOrgId ?? '';
+      await SyncProvider.instance.flush(orgId: orgId);
       _checkCancelled();
-      _updateStatus('正在下载数据...');
-      final data =
-          await CloudFunctionService.instance.callChecked('get-all-data');
-
-      _checkCancelled();
-      _updateStatus('正在解析数据...');
-      final members = ((data['Member'] as List?) ?? const [])
-          .map((e) => Member.fromJson(e as Map<String, dynamic>))
-          .toList();
-      final activities = ((data['Activity'] as List?) ?? const [])
-          .map((e) => SocietyActivity.fromJson(e as Map<String, dynamic>))
-          .toList();
-      final notices = ((data['Notice'] as List?) ?? const [])
-          .map((e) => Notice.fromJson(e as Map<String, dynamic>))
-          .toList();
-
-      if (members.isEmpty && activities.isEmpty && notices.isEmpty) {
-        if (mounted) {
-          setState(() => _lastCloudSync = '${labels.labelCloudSyncFail}: 云端暂无数据');
-          showToast(context, '${labels.labelCloudSyncFail}: 云端暂无数据');
-        }
-        return;
-      }
-
-      _checkCancelled();
-      _updateStatus('正在保存到本地...');
-      final storage = StorageService.instance;
-      await storage.membersBox.clear();
-      for (final m in members) {
-        await storage.membersBox.put(m.id, m.toJson());
-      }
-      await storage.activitiesBox.clear();
-      for (final a in activities) {
-        await storage.activitiesBox.put(a.id, a.toJson());
-      }
-      await storage.noticesBox.clear();
-      for (final n in notices) {
-        await storage.noticesBox.put(n.id, n.toJson());
-      }
-
-      _checkCancelled();
-      _updateStatus('正在刷新界面...');
       if (mounted) {
         context.read<MemberProvider>().load();
         context.read<ActivityProvider>().load();
         context.read<NoticeProvider>().load();
-        setState(() => _lastCloudSync =
-            formatDateTime(DateTime.now()).substring(5));
+        setState(() => _lastCloudSync = formatDateTime(DateTime.now()).substring(5));
       }
-      debugPrint('CLOUDSYNC_OK: members=${members.length} '
-          'activities=${activities.length} notices=${notices.length}');
       if (mounted) {
-        showToast(
-          context,
-          '${labels.labelCloudSyncDone}'
-          '（${labels.tabMembers} ${members.length} · '
-          '${labels.tabActivities} ${activities.length} · '
-          '${labels.tabNotices} ${notices.length}）',
-        );
+        showToast(context, labels.labelCloudSyncDone);
       }
     } on SyncCancelled catch (_) {
-      debugPrint('CLOUDSYNC_CANCELLED');
-      if (mounted) {
-        showToast(context, '同步已取消');
-      }
+      if (mounted) showToast(context, '同步已取消');
     } catch (e) {
-      debugPrint('CLOUDSYNC_ERROR: $e');
-      final errMsg = e.toString();
-      String userMsg;
-      if (errMsg.contains('CLOUD_NOT_READY')) {
-        userMsg = '云服务未就绪，请检查云开发配置';
-      } else if (errMsg.contains('CLOUD_TIMEOUT') || errMsg.contains('TimeoutException')) {
-        userMsg = '云端响应超时，请检查网络后重试';
-      } else if (errMsg.contains('MissingPluginException')) {
-        userMsg = '云通道未注册，请重启应用';
-      } else {
-        userMsg = '${labels.labelCloudSyncFail}: $e';
-      }
+      debugPrint('SYNC_ERROR: $e');
       if (mounted) {
-        setState(() => _lastCloudSync = userMsg);
-        showToast(context, userMsg);
+        setState(() => _lastCloudSync = '${labels.labelCloudSyncFail}: $e');
+        showToast(context, '${labels.labelCloudSyncFail}: $e');
       }
     } finally {
       if (mounted) {

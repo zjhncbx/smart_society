@@ -4,8 +4,11 @@ import 'package:provider/provider.dart';
 
 import '../../config/org_config_provider.dart';
 import '../../providers/activity_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
+import '../../providers/organization_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/member_avatar.dart';
 
@@ -21,7 +24,12 @@ class ProfilePage extends StatelessWidget {
     final memberProvider = context.watch<MemberProvider>();
     final activityProvider = context.watch<ActivityProvider>();
     final noticeProvider = context.watch<NoticeProvider>();
+    final auth = context.watch<AuthProvider>();
+    final orgProvider = context.watch<OrganizationProvider>();
+    final sync = context.watch<SyncProvider>();
 
+    final user = auth.user;
+    final org = orgProvider.currentOrg;
     final ongoingCount =
         activityProvider.activities.where((a) => a.status == 1).length;
 
@@ -30,24 +38,28 @@ class ProfilePage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          // Admin profile card
+          // User profile card
           AppCard(
             child: Row(
               children: [
-                MemberAvatar(name: '管理员', colorIndex: 0, radius: 28),
+                MemberAvatar(
+                  name: user?.displayNameOrId ?? '管理员',
+                  colorIndex: 0,
+                  radius: 28,
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '管理员',
+                        user?.displayNameOrId ?? '管理员',
                         style: theme.textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        labels.appTitle,
+                        org?.name ?? labels.appTitle,
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: cs.outline),
                       ),
@@ -61,6 +73,44 @@ class ProfilePage extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 8),
+          // Org switcher row
+          Row(
+            children: [
+              Expanded(
+                child: AppCard(
+                  onTap: () => context.push('/orgs/select'),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.swap_horiz, size: 18, color: cs.primary),
+                      const SizedBox(width: 6),
+                      Text('切换组织', style: theme.textTheme.labelMedium),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AppCard(
+                  onTap: () {
+                    auth.signOut();
+                    context.go('/login');
+                  },
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.logout, size: 18, color: cs.error),
+                      const SizedBox(width: 6),
+                      Text('退出登录', style: theme.textTheme.labelMedium?.copyWith(color: cs.error)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           // Section: Dashboard
@@ -109,9 +159,9 @@ class ProfilePage extends StatelessWidget {
               Expanded(
                 child: _StatTile(
                   icon: Icons.sync,
-                  iconColor: cs.outline,
-                  value: '未配置',
-                  label: labels.labelDingTalkSync,
+                  iconColor: sync.pendingCount > 0 ? cs.error : cs.outline,
+                  value: sync.pendingCount > 0 ? '${sync.pendingCount}' : '--',
+                  label: '待同步',
                 ),
               ),
             ],

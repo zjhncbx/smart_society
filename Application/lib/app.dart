@@ -4,10 +4,14 @@ import 'package:provider/provider.dart';
 import 'config/org_labels.dart';
 import 'config/theme_config.dart';
 import 'providers/activity_provider.dart';
+import 'providers/auth_provider.dart';
 import 'providers/member_provider.dart';
 import 'providers/notice_provider.dart';
+import 'providers/organization_provider.dart';
 import 'providers/role_config_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/sync_provider.dart';
+import 'screens/auth/login_page.dart';
 import 'screens/settings/setup_wizard_page.dart';
 import 'router.dart';
 import 'services/api_client.dart';
@@ -18,24 +22,39 @@ Future<void> mainApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   ApiClient.instance.init();
   await StorageService.instance.init();
+
+  final authProvider = AuthProvider();
+  await authProvider.init();
+
   final settingsProvider = SettingsProvider();
   await settingsProvider.init();
+
   final roleConfigProvider = RoleConfigProvider();
   await roleConfigProvider.init();
+
+  final syncProvider = SyncProvider.instance;
+  await syncProvider.init();
+
   runApp(SmartSocietyApp(
+    authProvider: authProvider,
     settingsProvider: settingsProvider,
     roleConfigProvider: roleConfigProvider,
+    syncProvider: syncProvider,
   ));
 }
 
 class SmartSocietyApp extends StatelessWidget {
+  final AuthProvider authProvider;
   final SettingsProvider settingsProvider;
   final RoleConfigProvider roleConfigProvider;
+  final SyncProvider syncProvider;
 
   const SmartSocietyApp({
     super.key,
+    required this.authProvider,
     required this.settingsProvider,
     required this.roleConfigProvider,
+    required this.syncProvider,
   });
 
   ThemeData _buildTheme(ThemeConfig config) {
@@ -76,28 +95,55 @@ class SmartSocietyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider.value(value: settingsProvider),
         ChangeNotifierProvider.value(value: roleConfigProvider),
+        ChangeNotifierProvider(create: (_) => OrganizationProvider()..init(userId: authProvider.user?.openId ?? '')),
         ChangeNotifierProvider(create: (_) => MemberProvider()..load()),
         ChangeNotifierProvider(create: (_) => ActivityProvider()..load()),
         ChangeNotifierProvider(create: (_) => NoticeProvider()..load()),
       ],
-      child: Consumer<SettingsProvider>(
-        builder: (context, settings, _) {
-          if (!settings.isInitialized) {
+      child: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          if (!auth.isAuthenticated) {
             return MaterialApp(
-              title: '智联社团',
+              title: '社易管',
               debugShowCheckedModeBanner: false,
-              theme: _buildTheme(settings.theme),
-              home: const SetupWizardPage(),
+              theme: _buildTheme(settingsProvider.theme),
+              home: const LoginPage(),
             );
           }
-          final labels = OrgLabels.forType(settings.orgType);
-          return MaterialApp.router(
-            title: labels.appTitle,
-            debugShowCheckedModeBanner: false,
-            theme: _buildTheme(settings.theme),
-            routerConfig: appRouter,
+          return Consumer<OrganizationProvider>(
+            builder: (context, orgProvider, _) {
+              if (!orgProvider.hasOrg && !settingsProvider.isInitialized) {
+                return MaterialApp(
+                  title: '社易管',
+                  debugShowCheckedModeBanner: false,
+                  theme: _buildTheme(settingsProvider.theme),
+                  home: const SetupWizardPage(),
+                );
+              }
+              if (!orgProvider.hasOrg) {
+                return MaterialApp(
+                  title: '社易管',
+                  debugShowCheckedModeBanner: false,
+                  theme: _buildTheme(settingsProvider.theme),
+                  home: const SetupWizardPage(),
+                );
+              }
+              // Sync currentOrgId to SettingsProvider
+              if (orgProvider.currentOrgId != null &&
+                  settingsProvider.currentOrgId != orgProvider.currentOrgId) {
+                settingsProvider.setCurrentOrgId(orgProvider.currentOrgId);
+              }
+              final labels = OrgLabels.forType(settingsProvider.orgType);
+              return MaterialApp.router(
+                title: labels.appTitle,
+                debugShowCheckedModeBanner: false,
+                theme: _buildTheme(settingsProvider.theme),
+                routerConfig: appRouter,
+              );
+            },
           );
         },
       ),
