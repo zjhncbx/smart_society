@@ -7,6 +7,7 @@ import '../../config/org_config_provider.dart';
 import '../../config/org_labels.dart';
 import '../../models/member.dart';
 import '../../providers/member_provider.dart';
+import '../../providers/organization_provider.dart';
 import '../../providers/role_config_provider.dart';
 import '../../widgets/common.dart';
 
@@ -38,10 +39,11 @@ class _MemberFormPageState extends State<MemberFormPage> {
   void initState() {
     super.initState();
     final roleConfig = context.read<RoleConfigProvider>();
+    final orgId = context.read<OrganizationProvider>().currentOrgId ?? '';
     final defaultLabels = OrgLabels.forType(context.orgTypeRead);
     _roleId = defaultLabels.roles.first.id;
     _roleLabel = roleConfig.getLabel(
-      context.orgTypeRead,
+      orgId,
       _roleId,
       defaultLabels.roles.first.label,
     );
@@ -97,7 +99,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
   Widget build(BuildContext context) {
     final labels = context.labels;
     final roleConfig = context.read<RoleConfigProvider>();
-    final orgType = context.orgTypeRead;
+    final orgId = context.read<OrganizationProvider>().currentOrgId ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -148,7 +150,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
                   DropdownMenuItem(
                     value: role.id,
                     child: Text(
-                      roleConfig.getLabel(orgType, role.id, role.label),
+                      roleConfig.getLabel(orgId, role.id, role.label),
                     ),
                   ),
               ],
@@ -159,7 +161,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
                   setState(() {
                     _roleId = value;
                     _roleLabel = roleConfig.getLabel(
-                      orgType,
+                      orgId,
                       value,
                       selected.label,
                     );

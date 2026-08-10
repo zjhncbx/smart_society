@@ -6,6 +6,7 @@ import '../models/organization.dart';
 import '../services/cloud_function_service.dart';
 import '../services/storage_service.dart';
 import 'auth_provider.dart';
+import 'role_config_provider.dart';
 import 'settings_provider.dart';
 import 'sync_provider.dart';
 
@@ -18,12 +19,15 @@ class OrganizationProvider extends ChangeNotifier {
   final CloudFunctionService _cloud = CloudFunctionService.instance;
   final AuthProvider _auth;
   final SettingsProvider _settings;
+  final RoleConfigProvider _roleConfig;
 
   OrganizationProvider({
     required AuthProvider auth,
     required SettingsProvider settings,
+    required RoleConfigProvider roleConfig,
   }) : _auth = auth,
-       _settings = settings;
+       _settings = settings,
+       _roleConfig = roleConfig;
 
   List<Organization> _orgs = [];
   String? _currentOrgId;
@@ -68,13 +72,17 @@ class OrganizationProvider extends ChangeNotifier {
     notifyListeners();
     // 本地缓存先对齐一次组织类型，云端刷新失败也能保持正确
     await _syncOrgType();
+    // 拉取用户级设置（主题/昵称，会设置 SettingsProvider._userId）
+    await _settings.loadUserSettings(userId);
     // 从云端刷新
     try {
       await loadMyOrgs();
     } catch (_) {}
-    // 自动拉取当前组织的最新数据（成员/项目/公告）
+    // 自动拉取当前组织的设置与最新数据（成员/项目/公告）
     final orgId = _currentOrgId;
     if (orgId != null && orgId.isNotEmpty) {
+      final roleLabels = await _settings.loadOrgSettings(orgId);
+      _roleConfig.loadFromCloud(orgId, roleLabels);
       SyncProvider.instance.pullAndRefresh(orgId);
     }
   }
@@ -127,6 +135,9 @@ class OrganizationProvider extends ChangeNotifier {
     await box.put(_currentKey, orgId);
     await _settings.setCurrentOrgId(orgId);
     await loadMyOrgs();
+    // 拉取新组织设置（角色名/钉钉配置；新组织为空则清本地缓存）
+    final roleLabels = await _settings.loadOrgSettings(orgId);
+    _roleConfig.loadFromCloud(orgId, roleLabels);
     return orgId;
   }
 
@@ -138,6 +149,8 @@ class OrganizationProvider extends ChangeNotifier {
     await _settings.setCurrentOrgId(orgId);
     notifyListeners();
     await _syncOrgType();
+    final roleLabels = await _settings.loadOrgSettings(orgId);
+    _roleConfig.loadFromCloud(orgId, roleLabels);
     // 切换组织后自动拉取该组织最新数据
     SyncProvider.instance.pullAndRefresh(orgId);
   }
@@ -215,6 +228,8 @@ class OrganizationProvider extends ChangeNotifier {
     await _syncOrgType();
     notifyListeners();
     if (nextOrgId != null) {
+      final roleLabels = await _settings.loadOrgSettings(nextOrgId);
+      _roleConfig.loadFromCloud(nextOrgId, roleLabels);
       await sync.pullAndRefresh(nextOrgId);
     }
     return false;

@@ -5,6 +5,8 @@ import { OrganizationRelationship } from './OrganizationRelationship';
 import { Member } from './Member';
 import { Notice } from './Notice';
 import { Project } from './Project';
+import { OrgSettings } from './OrgSettings';
+import { UserSettings } from './UserSettings';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -58,6 +60,7 @@ async function deleteOrgData(db: any, orgId: string, logger: any): Promise<void>
   const projectCol: CloudDBCollection<Project> = db.collection(Project);
   const relCol: CloudDBCollection<OrganizationRelationship> = db.collection(OrganizationRelationship);
   const orgCol: CloudDBCollection<Organization> = db.collection(Organization);
+  const settingsCol: CloudDBCollection<OrgSettings> = db.collection(OrgSettings);
 
   await deleteWhere(uoCol, 'orgId', orgId, logger);
   await deleteWhere(memberCol, 'orgId', orgId, logger);
@@ -65,6 +68,7 @@ async function deleteOrgData(db: any, orgId: string, logger: any): Promise<void>
   await deleteWhere(projectCol, 'orgId', orgId, logger);
   await deleteWhere(relCol, 'orgId', orgId, logger);
   await deleteWhere(relCol, 'relatedOrgId', orgId, logger);
+  await deleteWhere(settingsCol, 'orgId', orgId, logger);
 
   // 清理子组织的孤儿 parentOrgId 引用
   const children = await orgCol.query().equalTo('parentOrgId', orgId).limit(PAGE_SIZE).get();
@@ -91,6 +95,12 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
 
     const db = cloud.database({ zoneName: ZONE_NAME });
     const uoCol: CloudDBCollection<UserOrganization> = db.collection(UserOrganization);
+
+    // 删除用户级设置（用户数据）
+    const usCol: CloudDBCollection<UserSettings> = db.collection(UserSettings);
+    const us = new UserSettings();
+    us.userId = userId;
+    await usCol.delete([us]);
 
     const memberships = await uoCol.query().equalTo('userId', userId).limit(500).get();
 

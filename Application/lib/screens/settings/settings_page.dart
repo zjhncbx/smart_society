@@ -48,7 +48,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (!_roleControllers.containsKey(roleId)) {
       final roleConfig = context.read<RoleConfigProvider>();
       final currentLabel = roleConfig.getLabel(
-        context.orgTypeRead,
+        _orgId,
         roleId,
         label,
       );
@@ -112,7 +112,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         isDense: true,
                       ),
                       textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _saveRoles(orgType),
+                      onSubmitted: (_) => _saveRoles(),
                     ),
                   );
                 }),
@@ -127,12 +127,12 @@ class _SettingsPageState extends State<SettingsPage> {
                       ChoiceChip(
                         label: Text(labels.saveButton),
                         selected: false,
-                        onSelected: (_) => _saveRoles(orgType),
+                        onSelected: (_) => _saveRoles(),
                       ),
                       ChoiceChip(
                         label: Text(labels.labelResetRoles),
                         selected: false,
-                        onSelected: (_) => _resetRoles(orgType),
+                        onSelected: (_) => _resetRoles(),
                       ),
                     ],
                   ),
@@ -290,29 +290,45 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _saveRoles(OrgType type) async {
+  Future<void> _saveRoles() async {
     final provider = context.read<RoleConfigProvider>();
     final labels = context.labels;
-    for (final role in labels.roles) {
-      final controller = _roleControllers[role.id];
-      if (controller != null && controller.text.trim().isNotEmpty) {
-        await provider.setLabel(type, role.id, controller.text.trim());
-      }
+    final orgId = _orgId;
+    if (orgId.isEmpty) {
+      showToast(context, '请先加入组织');
+      return;
     }
-    if (!mounted) return;
-    showToast(context, labels.saveSuccess);
+    try {
+      for (final role in labels.roles) {
+        final controller = _roleControllers[role.id];
+        if (controller != null && controller.text.trim().isNotEmpty) {
+          await provider.setLabel(orgId, role.id, controller.text.trim());
+        }
+      }
+      if (!mounted) return;
+      showToast(context, labels.saveSuccess);
+    } catch (e) {
+      if (!mounted) return;
+      showToast(context, '保存失败: $e');
+    }
   }
 
-  void _resetRoles(OrgType type) {
+  Future<void> _resetRoles() async {
     final provider = context.read<RoleConfigProvider>();
-    provider.resetToDefaults(type);
-    for (final c in _roleControllers.values) {
-      c.dispose();
-    }
-    _roleControllers.clear();
-    setState(() {});
-    if (mounted) {
+    final orgId = _orgId;
+    if (orgId.isEmpty) return;
+    try {
+      await provider.resetToDefaults(orgId);
+      for (final c in _roleControllers.values) {
+        c.dispose();
+      }
+      _roleControllers.clear();
+      if (!mounted) return;
+      setState(() {});
       showToast(context, context.labels.saveSuccess);
+    } catch (e) {
+      if (!mounted) return;
+      showToast(context, '恢复失败: $e');
     }
   }
 
@@ -383,7 +399,7 @@ class _SettingsPageState extends State<SettingsPage> {
       orElse: () => labels.roles.last,
     );
     final roleLabel = roleConfig.getLabel(
-      context.orgTypeRead,
+      _orgId,
       defaultRole.id,
       defaultRole.label,
     );

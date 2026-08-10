@@ -29,7 +29,8 @@ Future<void> mainApp() async {
   final settingsProvider = SettingsProvider();
   await settingsProvider.init();
 
-  final roleConfigProvider = RoleConfigProvider();
+  final roleConfigProvider = RoleConfigProvider()
+    ..userId = authProvider.user?.openId;
   await roleConfigProvider.init();
 
   final syncProvider = SyncProvider.instance;
@@ -106,8 +107,11 @@ class SmartSocietyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: roleConfigProvider),
         ChangeNotifierProvider.value(value: syncProvider),
         ChangeNotifierProvider(
-          create: (_) => OrganizationProvider(auth: authProvider, settings: settingsProvider)
-            ..init(userId: authProvider.user?.openId ?? ''),
+          create: (_) => OrganizationProvider(
+            auth: authProvider,
+            settings: settingsProvider,
+            roleConfig: roleConfigProvider,
+          )..init(userId: authProvider.user?.openId ?? ''),
         ),
         ChangeNotifierProvider(
           create: (_) {
