@@ -18,3 +18,6 @@
 **/libs/**/libapp.so
 **/libs/**/libflutter.so
 **/libs/**/libvmservice_snapshot.so
+
+# DevEco 生成的 CloudDB schema 镜像（源：CloudProgram/clouddb/objecttype）
+**/schema.json
