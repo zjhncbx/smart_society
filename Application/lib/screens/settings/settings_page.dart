@@ -64,7 +64,24 @@ class _SettingsPageState extends State<SettingsPage> {
     final orgType = context.watch<SettingsProvider>().orgType;
 
     return Scaffold(
-      appBar: AppBar(title: Text(labels.labelSettingsTitle)),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.save_outlined),
+          tooltip: labels.saveButton,
+          onPressed: () {
+            _saveRoles(context.read<SettingsProvider>().orgType);
+            _saveDingTalkConfig();
+          },
+        ),
+        title: Text(labels.labelSettingsTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: '返回',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
       body: ListView(
         children: [
           _SectionHeader(title: labels.orgTypeLabel),
@@ -122,24 +139,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   hintText: labels.labelRoleNameHint,
                   isDense: true,
                 ),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _saveRoles(orgType),
               ),
             );
           }),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                FilledButton(
-                  onPressed: () => _saveRoles(orgType),
-                  child: Text(labels.saveButton),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton(
-                  onPressed: () => _resetRoles(orgType),
-                  child: Text(labels.labelResetRoles),
-                ),
-              ],
-            ),
+          ListTile(
+            leading: Icon(Icons.save_outlined, color: theme.colorScheme.primary),
+            title: Text(labels.saveButton),
+            onTap: () => _saveRoles(orgType),
+          ),
+          ListTile(
+            leading: Icon(Icons.refresh, color: theme.colorScheme.outline),
+            title: Text(labels.labelResetRoles),
+            onTap: () => _resetRoles(orgType),
           ),
           const Divider(),
           // ── 钉钉同步设置（凭证按组织配置）──
@@ -152,6 +165,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 labelText: 'Client ID (AppKey)',
                 isDense: true,
               ),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             ),
           ),
           Padding(
@@ -163,36 +178,32 @@ class _SettingsPageState extends State<SettingsPage> {
                 labelText: 'Client Secret (AppSecret)',
                 isDense: true,
               ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _saveDingTalkConfig(),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                FilledButton(
-                  onPressed: _saveDingTalkConfig,
-                  child: Text(labels.saveButton),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: _syncing || !_dingTalkConfigured
-                      ? null
-                      : _syncDingTalk,
-                  icon: _syncing
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.sync, size: 18),
-                  label: Text(
-                      _syncing ? labels.labelDingTalkSyncing : labels.labelSyncNow),
-                ),
-              ],
-            ),
+          ListTile(
+            leading: Icon(Icons.save_outlined, color: theme.colorScheme.primary),
+            title: Text(labels.saveButton),
+            onTap: _saveDingTalkConfig,
+          ),
+          ListTile(
+            leading: _syncing
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2,
+                        color: theme.colorScheme.primary),
+                  )
+                : Icon(Icons.sync, color: theme.colorScheme.outline),
+            title: Text(_syncing
+                ? labels.labelDingTalkSyncing
+                : labels.labelSyncNow),
+            enabled: !_syncing && _dingTalkConfigured,
+            onTap: _syncing ? null : _syncDingTalk,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
               _lastSyncText,
               style: theme.textTheme.bodySmall
@@ -261,7 +272,6 @@ class _SettingsPageState extends State<SettingsPage> {
   void _resetRoles(OrgType type) {
     final provider = context.read<RoleConfigProvider>();
     provider.resetToDefaults(type);
-    // Clear cached controllers so they get re-initialized with defaults
     for (final c in _roleControllers.values) {
       c.dispose();
     }
@@ -272,9 +282,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  void _openWebAdmin() {
-    // Placeholder for opening web admin
-  }
+  void _openWebAdmin() {}
 
   String get _orgId => context.read<SettingsProvider>().currentOrgId ?? '';
 
@@ -288,7 +296,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   OrgLabels get labelsText => context.labels;
 
-  void _saveDingTalkConfig() {
+  Future<void> _saveDingTalkConfig() async {
+    FocusScope.of(context).unfocus();
     final labels = context.labels;
     final orgId = _orgId;
     if (orgId.isEmpty) {
@@ -301,11 +310,21 @@ class _SettingsPageState extends State<SettingsPage> {
       showToast(context, '请填写 Client ID 与 Client Secret');
       return;
     }
-    context.read<SettingsProvider>().setDingTalkConfig(orgId, clientId, clientSecret);
-    showToast(context, labels.saveSuccess);
+    try {
+      await context
+          .read<SettingsProvider>()
+          .setDingTalkConfig(orgId, clientId, clientSecret);
+      if (!mounted) return;
+      setState(() {});
+      showToast(context, labels.saveSuccess);
+    } catch (e) {
+      if (!mounted) return;
+      showToast(context, '保存失败：$e');
+    }
   }
 
   Future<void> _syncDingTalk() async {
+    FocusScope.of(context).unfocus();
     final labels = context.labels;
     final settings = context.read<SettingsProvider>();
     final orgId = _orgId;
@@ -319,7 +338,6 @@ class _SettingsPageState extends State<SettingsPage> {
       showToast(context, '请先保存 Client ID 与 Client Secret');
       return;
     }
-    // 默认角色：第一个不限人数的角色（社长/队长/会长之外的执行角色）
     final roleConfig = context.read<RoleConfigProvider>();
     final defaultRole = labels.roles.firstWhere(
       (r) => r.maxCount != 1,
