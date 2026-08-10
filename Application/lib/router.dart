@@ -17,12 +17,20 @@ import 'screens/org/org_selector_page.dart';
 import 'screens/profile/profile_page.dart';
 import 'screens/settings/settings_page.dart';
 import 'screens/settings/setup_wizard_page.dart';
+import 'services/auth_gate.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/members',
+  // 路由是全局单例，登出后位置可能残留 /login；重新登录时兜底跳回内容页
+  redirect: (context, state) {
+    final loc = state.uri.path;
+    if (!isAuthenticated && loc != '/login') return '/login';
+    if (isAuthenticated && loc == '/login') return '/members';
+    return null;
+  },
   routes: [
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>

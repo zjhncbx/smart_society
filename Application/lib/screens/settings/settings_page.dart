@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../config/org_config_provider.dart';
 import '../../config/org_type.dart';
 import '../../config/theme_config.dart';
+import '../../providers/organization_provider.dart';
 import '../../providers/role_config_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/dingtalk_sync_service.dart';
@@ -62,160 +63,230 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = Theme.of(context);
     final orgType = context.watch<SettingsProvider>().orgType;
     final isSocialOrg = orgType == OrgType.socialOrg;
+    // 非管理员（含角色未刷新的 null）不允许修改设置
+    final isAdmin =
+        context.watch<OrganizationProvider>().currentOrgRole == 'admin';
 
     return Scaffold(
       appBar: AppBar(title: Text(labels.labelSettingsTitle)),
-      body: ListView(
-        children: [
-          _SectionHeader(title: labels.themeLabel),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              spacing: 8,
-              children: ThemeConfig.all.map((themeConfig) {
-                final selected =
-                    context.watch<SettingsProvider>().theme == themeConfig;
-                return ChoiceChip(
-                  label: Text(themeConfig.name),
-                  selected: selected,
-                  avatar: CircleAvatar(
-                    backgroundColor: themeConfig.seedColor,
-                    radius: 10,
-                  ),
-                  onSelected: (_) =>
-                      context.read<SettingsProvider>().setTheme(themeConfig),
-                );
-              }).toList(),
-            ),
-          ),
-          const Divider(),
-          _SectionHeader(title: labels.labelEditRoles),
-          ...labels.roles.map((role) {
-            final controller = _getRoleController(role.id, role.label);
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  labelText: role.label,
-                  hintText: labels.labelRoleNameHint,
-                  isDense: true,
-                ),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _saveRoles(orgType),
-              ),
-            );
-          }),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Wrap(
-              spacing: 8,
+      body: isAdmin
+          ? ListView(
               children: [
-                ChoiceChip(
-                  label: Text(labels.saveButton),
-                  selected: false,
-                  onSelected: (_) => _saveRoles(orgType),
-                ),
-                ChoiceChip(
-                  label: Text(labels.labelResetRoles),
-                  selected: false,
-                  onSelected: (_) => _resetRoles(orgType),
-                ),
-              ],
-            ),
-          ),
-          if (isSocialOrg) ...[
-            const Divider(),
-            _SectionHeader(title: labels.labelDingTalkSettings),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: TextField(
-                controller: _clientIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Client ID (AppKey)',
-                  isDense: true,
-                ),
-                textInputAction: TextInputAction.next,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: TextField(
-                controller: _clientSecretController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Client Secret (AppSecret)',
-                  isDense: true,
-                ),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _saveDingTalkConfig(),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Wrap(
-                spacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: Text(labels.saveButton),
-                    selected: false,
-                    onSelected: (_) => _saveDingTalkConfig(),
+                _SectionHeader(title: labels.themeLabel),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Wrap(
+                    spacing: 8,
+                    children: ThemeConfig.all.map((themeConfig) {
+                      final selected =
+                          context.watch<SettingsProvider>().theme ==
+                          themeConfig;
+                      return ChoiceChip(
+                        label: Text(themeConfig.name),
+                        selected: selected,
+                        avatar: CircleAvatar(
+                          backgroundColor: themeConfig.seedColor,
+                          radius: 10,
+                        ),
+                        onSelected: (_) => context
+                            .read<SettingsProvider>()
+                            .setTheme(themeConfig),
+                      );
+                    }).toList(),
                   ),
-                  ChoiceChip(
-                    label: Text(_syncing
-                        ? labels.labelDingTalkSyncing
-                        : labels.labelSyncNow),
-                    selected: false,
-                    avatar: _syncing
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.sync, size: 18),
-                    onSelected: _syncing || !_dingTalkConfigured
-                        ? null
-                        : (_) => _syncDingTalk(),
+                ),
+                const Divider(),
+                _SectionHeader(title: labels.labelEditRoles),
+                ...labels.roles.map((role) {
+                  final controller = _getRoleController(role.id, role.label);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: role.label,
+                        hintText: labels.labelRoleNameHint,
+                        isDense: true,
+                      ),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _saveRoles(orgType),
+                    ),
+                  );
+                }),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                _lastSyncText,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline),
-              ),
-            ),
-          ],
-          const Divider(),
-          AppCard(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            onTap: () => _openWebAdmin(),
-            child: Row(
-              children: [
-                Icon(Icons.open_in_browser,
-                    color: theme.colorScheme.primary, size: 28),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Wrap(
+                    spacing: 8,
                     children: [
-                      Text(labels.labelWebAdmin,
-                          style: theme.textTheme.titleSmall),
-                      const SizedBox(height: 2),
-                      Text(labels.labelWebAdminHint,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.outline)),
+                      ChoiceChip(
+                        label: Text(labels.saveButton),
+                        selected: false,
+                        onSelected: (_) => _saveRoles(orgType),
+                      ),
+                      ChoiceChip(
+                        label: Text(labels.labelResetRoles),
+                        selected: false,
+                        onSelected: (_) => _resetRoles(orgType),
+                      ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: theme.colorScheme.outline),
+                if (isSocialOrg) ...[
+                  const Divider(),
+                  _SectionHeader(title: labels.labelDingTalkSettings),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: TextField(
+                      controller: _clientIdController,
+                      decoration: const InputDecoration(
+                        labelText: 'Client ID (AppKey)',
+                        isDense: true,
+                      ),
+                      textInputAction: TextInputAction.next,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    child: TextField(
+                      controller: _clientSecretController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Client Secret (AppSecret)',
+                        isDense: true,
+                      ),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _saveDingTalkConfig(),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: Text(labels.saveButton),
+                          selected: false,
+                          onSelected: (_) => _saveDingTalkConfig(),
+                        ),
+                        ChoiceChip(
+                          label: Text(
+                            _syncing
+                                ? labels.labelDingTalkSyncing
+                                : labels.labelSyncNow,
+                          ),
+                          selected: false,
+                          avatar: _syncing
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.sync, size: 18),
+                          onSelected: _syncing || !_dingTalkConfigured
+                              ? null
+                              : (_) => _syncDingTalk(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      _lastSyncText,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                  ),
+                ],
+                const Divider(),
+                AppCard(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  onTap: () => _openWebAdmin(),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.open_in_browser,
+                        color: theme.colorScheme.primary,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              labels.labelWebAdmin,
+                              style: theme.textTheme.titleSmall,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              labels.labelWebAdminHint,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.outline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: theme.colorScheme.outline,
+                      ),
+                    ],
+                  ),
+                ),
               ],
+            )
+          : Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      size: 48,
+                      color: theme.colorScheme.outline,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '仅组织管理员可以修改设置',
+                      style: theme.textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '如需修改请由组织管理员操作，或切换到您担任管理员的组织',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -272,9 +343,11 @@ class _SettingsPageState extends State<SettingsPage> {
       return;
     }
     try {
-      await context
-          .read<SettingsProvider>()
-          .setDingTalkConfig(orgId, clientId, clientSecret);
+      await context.read<SettingsProvider>().setDingTalkConfig(
+        orgId,
+        clientId,
+        clientSecret,
+      );
       if (!mounted) return;
       setState(() {});
       showToast(context, labels.saveSuccess);
@@ -342,8 +415,8 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }

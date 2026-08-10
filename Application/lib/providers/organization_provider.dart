@@ -18,16 +18,19 @@ class OrganizationProvider extends ChangeNotifier {
   final AuthProvider _auth;
   final SettingsProvider _settings;
 
-  OrganizationProvider({required AuthProvider auth, required SettingsProvider settings})
-      : _auth = auth,
-        _settings = settings;
+  OrganizationProvider({
+    required AuthProvider auth,
+    required SettingsProvider settings,
+  }) : _auth = auth,
+       _settings = settings;
 
   List<Organization> _orgs = [];
   String? _currentOrgId;
   String? _userId;
 
   List<Organization> get orgs => _orgs;
-  Organization? get currentOrg => _orgs.where((o) => o.orgId == _currentOrgId).firstOrNull;
+  Organization? get currentOrg =>
+      _orgs.where((o) => o.orgId == _currentOrgId).firstOrNull;
   String? get currentOrgId => _currentOrgId;
   bool get hasOrg => _orgs.isNotEmpty;
 
@@ -40,7 +43,9 @@ class OrganizationProvider extends ChangeNotifier {
     final raw = box.get(_orgsKey);
     if (raw != null) {
       _orgs = (raw as List)
-          .map((e) => Organization.fromJson(Map<String, dynamic>.from(e as Map)))
+          .map(
+            (e) => Organization.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
           .toList();
     }
     _currentOrgId = box.get(_currentKey) as String?;
@@ -58,13 +63,19 @@ class OrganizationProvider extends ChangeNotifier {
 
   Future<void> loadMyOrgs() async {
     if (_userId == null) return;
-    final data = await _cloud.callChecked('get-my-orgs', params: {'userId': _userId});
+    final data = await _cloud.callChecked(
+      'get-my-orgs',
+      params: {'userId': _userId},
+    );
     if (data is List) {
-      _orgs = data.map((e) => Organization.fromJson(e as Map<String, dynamic>)).toList();
+      _orgs = data
+          .map((e) => Organization.fromJson(e as Map<String, dynamic>))
+          .toList();
       final box = await Hive.openBox(_boxName);
       await box.put(_orgsKey, _orgs.map((o) => o.toJson()).toList());
       // 如果当前 org 不在列表中则清除
-      if (_currentOrgId != null && !_orgs.any((o) => o.orgId == _currentOrgId)) {
+      if (_currentOrgId != null &&
+          !_orgs.any((o) => o.orgId == _currentOrgId)) {
         _currentOrgId = _orgs.isNotEmpty ? _orgs.first.orgId : null;
         await box.put(_currentKey, _currentOrgId);
       }
@@ -79,13 +90,16 @@ class OrganizationProvider extends ChangeNotifier {
     String description = '',
   }) async {
     if (_userId == null) throw Exception('未登录');
-    final res = await _cloud.callChecked('create-org', params: {
-      'userId': _userId,
-      'name': name,
-      'orgType': orgType,
-      'creditCode': creditCode,
-      'description': description,
-    });
+    final res = await _cloud.callChecked(
+      'create-org',
+      params: {
+        'userId': _userId,
+        'name': name,
+        'orgType': orgType,
+        'creditCode': creditCode,
+        'description': description,
+      },
+    );
     final orgId = (res as Map<String, dynamic>)['orgId'] as String;
     await loadMyOrgs();
     return orgId;
@@ -103,21 +117,53 @@ class OrganizationProvider extends ChangeNotifier {
 
   Future<void> joinOrg(String orgId) async {
     if (_userId == null) throw Exception('未登录');
-    await _cloud.callChecked('join-org', params: {
-      'userId': _userId,
-      'orgId': orgId,
-    });
+    await _cloud.callChecked(
+      'join-org',
+      params: {'userId': _userId, 'orgId': orgId},
+    );
     await loadMyOrgs();
+  }
+
+  /// 按手机号绑定当前组织的会员（云端存 UserOrganization.memberId，本地缓存展示用）。
+  Future<Map<String, dynamic>> bindMember(String phone) async {
+    final orgId = _currentOrgId;
+    if (_userId == null || orgId == null) throw Exception('未登录或未加入组织');
+    final res = await _cloud.callChecked(
+      'bind-member',
+      params: {'orgId': orgId, 'userId': _userId, 'phone': phone},
+    );
+    final map = res is Map<String, dynamic> ? res : <String, dynamic>{};
+    final memberId = map['memberId'] as String? ?? '';
+    final memberName = map['memberName'] as String? ?? '';
+    if (memberId.isNotEmpty) {
+      await _settings.setMemberBinding(orgId, memberId, memberName);
+    }
+    return map;
+  }
+
+  /// 变更管理员：目标账号（已绑定会员）升为管理员，操作者降为普通成员。
+  Future<Map<String, dynamic>> transferAdmin(String memberId) async {
+    final orgId = _currentOrgId;
+    if (_userId == null || orgId == null) throw Exception('未登录或未加入组织');
+    final res = await _cloud.callChecked(
+      'set-org-admin',
+      params: {'orgId': orgId, 'userId': _userId, 'memberId': memberId},
+    );
+    // 操作者已不再是管理员，刷新本地角色；刷新失败不影响云端结果
+    try {
+      await loadMyOrgs();
+    } catch (_) {}
+    return res is Map<String, dynamic> ? res : <String, dynamic>{};
   }
 
   /// 注销组织：删除云端该组织全部数据；若这是用户唯一组织，用户数据一并注销。
   /// 返回 true 表示用户已被注销（调用方应跳转登录页）。
   Future<bool> deleteOrg(String orgId) async {
     if (_userId == null) throw Exception('未登录');
-    final res = await _cloud.callChecked('delete-org', params: {
-      'orgId': orgId,
-      'userId': _userId,
-    });
+    final res = await _cloud.callChecked(
+      'delete-org',
+      params: {'orgId': orgId, 'userId': _userId},
+    );
     final map = res is Map<String, dynamic> ? res : <String, dynamic>{};
     final userDeregistered = map['userDeregistered'] == true;
 

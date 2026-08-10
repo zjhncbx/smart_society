@@ -9,18 +9,24 @@ class SettingsProvider extends ChangeNotifier {
   static const _themeIndexKey = 'themeIndex';
   static const _initializedKey = 'initialized';
   static const _currentOrgIdKey = 'currentOrgId';
+  static const _nicknameKey = 'nickname';
 
-  static String _credsKey(String orgId, String suffix) => 'dingtalk_${suffix}_$orgId';
+  static String _credsKey(String orgId, String suffix) =>
+      'dingtalk_${suffix}_$orgId';
+  static String _bindKey(String orgId, String suffix) =>
+      'memberBind_${suffix}_$orgId';
 
   OrgType _orgType = OrgType.schoolClub;
   ThemeConfig _theme = ThemeConfig.campus;
   bool _isInitialized = false;
   String? _currentOrgId;
+  String _nickname = '';
 
   OrgType get orgType => _orgType;
   ThemeConfig get theme => _theme;
   bool get isInitialized => _isInitialized;
   String? get currentOrgId => _currentOrgId;
+  String get nickname => _nickname;
 
   Future<void> init() async {
     final box = await Hive.openBox(_boxName);
@@ -34,7 +40,17 @@ class SettingsProvider extends ChangeNotifier {
     }
     _isInitialized = box.get(_initializedKey, defaultValue: false) as bool;
     _currentOrgId = box.get(_currentOrgIdKey) as String?;
+    _nickname = box.get(_nicknameKey, defaultValue: '') as String;
     notifyListeners();
+  }
+
+  /// 用户名（本地昵称，登出后保留）
+  Future<void> setNickname(String nickname) async {
+    if (_nickname == nickname) return;
+    _nickname = nickname.trim();
+    notifyListeners();
+    final box = await Hive.openBox(_boxName);
+    await box.put(_nicknameKey, _nickname);
   }
 
   Future<void> setCurrentOrgId(String? orgId) async {
@@ -88,7 +104,10 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setDingTalkConfig(
-      String orgId, String clientId, String clientSecret) async {
+    String orgId,
+    String clientId,
+    String clientSecret,
+  ) async {
     if (orgId.isEmpty) return;
     final box = await Hive.openBox(_boxName);
     await box.put(_credsKey(orgId, 'clientId'), clientId);
@@ -108,7 +127,10 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> setDingTalkLastSync(
-      String orgId, DateTime at, String result) async {
+    String orgId,
+    DateTime at,
+    String result,
+  ) async {
     if (orgId.isEmpty) return;
     final box = await Hive.openBox(_boxName);
     await box.put(_credsKey(orgId, 'lastSyncAt'), at.millisecondsSinceEpoch);
@@ -116,13 +138,44 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 清除某组织的全部本地配置（钉钉凭证与上次同步记录，组织注销时调用）
+  /// 本组织下当前账号绑定的会员（本地缓存，云端以 UserOrganization.memberId 为准）
+  ({String memberId, String memberName})? memberBinding(String orgId) {
+    if (orgId.isEmpty) return null;
+    final box = Hive.box(_boxName);
+    final id = box.get(_bindKey(orgId, 'id')) as String?;
+    if (id == null || id.isEmpty) return null;
+    return (
+      memberId: id,
+      memberName: (box.get(_bindKey(orgId, 'name')) as String?) ?? '',
+    );
+  }
+
+  Future<void> setMemberBinding(
+    String orgId,
+    String memberId,
+    String memberName,
+  ) async {
+    if (orgId.isEmpty) return;
+    final box = await Hive.openBox(_boxName);
+    await box.put(_bindKey(orgId, 'id'), memberId);
+    await box.put(_bindKey(orgId, 'name'), memberName);
+    notifyListeners();
+  }
+
+  /// 清除某组织的全部本地配置（钉钉凭证、同步记录与会员绑定，组织注销时调用）
   Future<void> clearOrgData(String orgId) async {
     if (orgId.isEmpty) return;
     final box = await Hive.openBox(_boxName);
-    for (final suffix in ['clientId', 'clientSecret', 'lastSyncAt', 'lastResult']) {
+    for (final suffix in [
+      'clientId',
+      'clientSecret',
+      'lastSyncAt',
+      'lastResult',
+    ]) {
       await box.delete(_credsKey(orgId, suffix));
     }
+    await box.delete(_bindKey(orgId, 'id'));
+    await box.delete(_bindKey(orgId, 'name'));
   }
 
   /// 清空全部设置（用户注销时调用）
@@ -131,6 +184,7 @@ class SettingsProvider extends ChangeNotifier {
     _theme = ThemeConfig.campus;
     _isInitialized = false;
     _currentOrgId = null;
+    _nickname = '';
     final box = await Hive.openBox(_boxName);
     await box.clear();
     notifyListeners();

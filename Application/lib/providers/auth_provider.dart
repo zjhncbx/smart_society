@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../models/auth_user.dart';
+import '../services/auth_gate.dart' as gate;
 import '../services/auth_service.dart';
 
 /// 认证状态管理：登录、登出、会话持久化。
@@ -26,17 +27,21 @@ class AuthProvider extends ChangeNotifier {
     if (raw != null) {
       _user = AuthUser.fromJson(Map<String, dynamic>.from(raw as Map));
     }
+    gate.isAuthenticated = _user != null;
     notifyListeners();
   }
 
   Future<void> signIn() async {
     if (_loading) return;
+    // 本地会话已存在（如 router 尚未跳转的窗口期），避免重复唤起原生登录
+    if (_user != null) return;
     _loading = true;
     _error = null;
     notifyListeners();
     debugPrint('[AuthProvider] signIn: 开始登录');
     try {
       _user = await _authService.signIn();
+      gate.isAuthenticated = true;
       final box = await Hive.openBox(_boxName);
       await box.put(_userKey, _user!.toJson());
       debugPrint('[AuthProvider] signIn: 登录成功，用户=${_user!.displayName}');
@@ -56,6 +61,7 @@ class AuthProvider extends ChangeNotifier {
       // 即使原生登出失败也清除本地状态
     }
     _user = null;
+    gate.isAuthenticated = false;
     final box = await Hive.openBox(_boxName);
     await box.delete(_userKey);
     notifyListeners();
