@@ -152,7 +152,14 @@ flutter run --debug -d <deviceId>
 
 在 DevEco Studio 中右键 `objecttype/*.json` → **Generate Server Model** 可自动生成各云函数的 TypeScript 模型类；右键对象类型 → **Deploy** 将 schema 与种子数据部署至 AGC 云端。
 
-权限配置：所有角色（World / Authenticated / Creator / Administrator）均开放 Read/Upsert/Delete，端侧不直连云数据库，由云函数服务端 SDK 访问。
+> **注意**：手动编写云函数模型类时，必须实现 CloudDB SDK 要求的 `getClassName()`、`getFieldTypeMap()`、`getPrimaryKeyList()`、`getIndexList()`、`getEncryptedFieldList()` 五个方法，否则云函数运行时会报 `2047: the input class is invalid`。
+
+权限配置（2026-08-10 更新）：
+- **World**：Read（仅可读，不可写入或删除）
+- **Authenticated**：Read（仅可读，不可写入或删除）
+- **Creator**：Read / Upsert / Delete
+- **Administrator**：Read / Upsert / Delete
+端侧不直连云数据库，由云函数服务端 SDK 访问。
 
 ### 4. 云函数
 
