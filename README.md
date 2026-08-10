@@ -7,7 +7,7 @@
 基于 **Flutter + HarmonyOS 混合开发** 的多组织社团管理平台，支持华为账号登录、多组织管理、自动双向同步、组织层级与数据共享。
 
 - 应用显示名：社易管（英文 SmartSociety），包名 `com.hnmrxz.smart_society`
-- 文档版本：V3.1
+- 文档版本：V3.2
 - 适用平台：Windows / macOS（开发），HarmonyOS NEXT（真机）
 - 真机验证：华为 Mate 70 Pro+（HarmonyOS NEXT）
 
@@ -17,6 +17,7 @@
 - **移动管理端**：面向社长/队长/会长等管理人员，提供成员、项目、公告的全量管理能力。
 - **华为账号认证**：集成华为 Account Kit，用户使用华为账号一键登录，端云全链路身份透传。
 - **自动双向同步**：离线操作入队，联网后自动推送；云端数据变更可拉取合并，无需手动触发。
+- **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储，换设备或重新登录自动恢复；角色名按组织独立存储，钉钉凭证仅组织管理员可见。
 
 ## 技术栈
 
@@ -35,13 +36,13 @@
 
 ## 功能清单
 
-### 已实现（V3.0）
+### 已实现（V3.2）
 
 - **华为账号认证**：一键登录/退出，用户身份端云透传（`cloudCommon.init(authProvider)`）
 - **多组织管理**：创建组织（学校社团/志愿服务队→自动生成 ID，社会团体→统一社会信用代码）、切换组织、加入已有组织
 - **组织类型**：学校社团、志愿服务队、社会团体，引导页首次选择后自动创建首个组织
 - **主题**：校园风（蓝）、志愿风（橙）、青年风（绿）、政务风（红）
-- **角色体系**：分级角色 + 人数上限约束，名称可在设置中自定义并持久化
+- **角色体系**：分级角色 + 人数上限约束，名称可在设置中自定义，按组织独立存储并云端同步（`OrgSettings.roleLabels`）
   - 学校社团：社长(1)、部长(不限)
   - 志愿服务队：队长(1)、部长(不限)
   - 社会团体：会长(1)、副会长(不限)、秘书长(1)、理事(不限)、监事长(1)、监事(不限)
@@ -53,6 +54,7 @@
 - **组织层级**：父-子组织和合作伙伴关系，支持成员/项目/公告选择性共享
 - **多语言文案体系**：全部 UI 文案经 `OrgLabels` 按组织类型分发
 - **钉钉通讯录单向同步**：按组织配置钉钉 Client ID/Secret，一键同步通讯录成员到本应用（`d+userid` 幂等 upsert、只增改不删）；启用钉钉的组织成员列表只读
+- **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
 
 ### 规划中
 
@@ -103,29 +105,37 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
     ├── cloud-config.json
     ├── clouddb/
     │   ├── db-config.json
-    │   ├── objecttype/             # 6 个对象类型定义
+    │   ├── objecttype/             # 8 个对象类型定义
     │   │   ├── Member.json         # +orgId +updatedAt
     │   │   ├── Project.json        # +orgId +updatedAt，tasks/milestones 为 JSON 字符串
     │   │   ├── Notice.json         # +orgId +updatedAt
     │   │   ├── Organization.json   # (new)
     │   │   ├── OrganizationRelationship.json  # (new)
-    │   │   └── UserOrganization.json          # (new)
+    │   │   ├── UserOrganization.json          # (new)
+    │   │   ├── OrgSettings.json               # (new) 组织级设置：角色名/钉钉配置
+    │   │   └── UserSettings.json              # (new) 用户级设置：主题/昵称
     │   └── dataentry/              # 种子数据
-    └── cloudfunctions/             # 13 个云函数
-        ├── common/                 # 共享 TS 模型 (new)
+    └── cloudfunctions/             # 21 个云函数
+        ├── common/                 # 共享 TS 模型
         │   ├── Organization.ts
         │   ├── OrganizationRelationship.ts
         │   └── UserOrganization.ts
         ├── get-all-data/           # 全量拉取（按 orgId 过滤）
-        ├── dingtalk-sync-contacts/ # (new) 钉钉通讯录单向同步
+        ├── dingtalk-sync-contacts/ # 钉钉通讯录单向同步
         ├── upsert-member/  delete-member/
         ├── upsert-project/  delete-project/
         ├── upsert-notice/  delete-notice/
-        ├── create-org/             # (new) 创建组织
-        ├── get-my-orgs/            # (new) 获取用户所属组织列表
-        ├── join-org/               # (new) 加入已有组织
-        ├── set-org-relationship/   # (new) 设置组织间关系
-        └── get-org-hierarchy/      # (new) 获取组织层级树
+        ├── create-org/             # 创建组织
+        ├── get-my-orgs/            # 获取用户所属组织列表
+        ├── join-org/               # 加入已有组织
+        ├── set-org-relationship/   # 设置组织间关系
+        ├── get-org-hierarchy/      # 获取组织层级树
+        ├── set-org-admin/          # 管理员变更
+        ├── delete-org/             # 注销组织（级联删数据与设置）
+        ├── bind-member/            # 按手机号绑定会员
+        ├── delete-user/            # 注销账号（级联删组织与设置）
+        ├── get-org-settings/  save-org-settings/    # 组织设置读写（钉钉凭证仅管理员）
+        └── get-user-settings/  save-user-settings/  # 用户设置读写
 ```
 
 > **注意**：`Application/ohos/` 是 NTFS Junction（目录联结），指向 `Application/` 自身，供 Flutter 工具链（`flutter build/run`）与 `flutter-hvigor-plugin` 解析 `ohos/local.properties`。**根目录无需创建 `ohos/` Junction**，否则 DevEco Studio 无法识别端云一体化工程（根目录必须仅含 `Application/` 与 `CloudProgram/` 两个目录）。
@@ -174,7 +184,7 @@ flutter run --debug -d <deviceId>
 
 ### 3. 云数据库
 
-6 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
+8 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
 
 | 对象类型 | 主键 | 说明 |
 |----------|------|------|
@@ -184,24 +194,25 @@ flutter run --debug -d <deviceId>
 | Organization | orgId | 组织信息 |
 | OrganizationRelationship | relId | 组织间关系 |
 | UserOrganization | id | 用户-组织关联 |
+| OrgSettings | orgId | 组织级设置（roleLabels 为 JSON 字符串、钉钉凭证与同步记录） |
+| UserSettings | userId | 用户级设置（主题序号、昵称） |
 
-权限配置：World/Authenticated 仅可读，Creator/Administrator 可读写删。端侧不直连云数据库，由云函数服务端 SDK 访问。
+权限配置：World/Authenticated 仅可读，Creator/Administrator 可读写删。端侧不直连云数据库，由云函数服务端 SDK 访问；`OrgSettings` 中的钉钉凭证由 `get-org-settings` 按角色裁剪，普通成员不可见。
 
 ### 4. 云函数
 
-13 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
+21 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
 
-**数据 CRUD（8 个，按 orgId 隔离）**：
+**数据 CRUD（7 个，按 orgId 隔离）**：
 
 | 函数 | 说明 |
 |------|------|
 | `get-all-data` | 全量拉取 Member / Project / Notice（按 orgId 过滤） |
-| `dingtalk-sync-contacts` | 钉钉通讯录单向同步（凭证入参，`d+userid` 幂等批量 upsert） |
 | `upsert-member` / `delete-member` | 成员 upsert / 删除 |
 | `upsert-project` / `delete-project` | 项目 upsert（含 tasks/milestones）/ 删除 |
 | `upsert-notice` / `delete-notice` | 公告 upsert / 删除 |
 
-**组织管理（5 个，新增）**：
+**组织管理（7 个）**：
 
 | 函数 | 说明 |
 |------|------|
@@ -210,6 +221,30 @@ flutter run --debug -d <deviceId>
 | `join-org` | 加入已有组织 |
 | `set-org-relationship` | 设置父-子或伙伴关系及数据共享策略 |
 | `get-org-hierarchy` | 获取组织层级树 |
+| `set-org-admin` | 变更组织管理员 |
+| `delete-org` | 注销组织，级联删除该组织全部数据与设置 |
+
+**用户与绑定（2 个）**：
+
+| 函数 | 说明 |
+|------|------|
+| `bind-member` | 按手机号绑定会员 |
+| `delete-user` | 注销账号，级联删除所属组织（唯一账号时）与用户设置 |
+
+**钉钉同步（1 个）**：
+
+| 函数 | 说明 |
+|------|------|
+| `dingtalk-sync-contacts` | 钉钉通讯录单向同步（凭证入参，`d+userid` 幂等批量 upsert） |
+
+**设置（4 个，新增）**：
+
+| 函数 | 说明 |
+|------|------|
+| `get-org-settings` | 读取组织设置；校验成员身份，钉钉凭证仅 admin 可见，member 仅返回配置状态与同步记录 |
+| `save-org-settings` | 保存组织设置（仅管理员）；roleLabels 以 JSON 字符串存储 |
+| `get-user-settings` | 读取用户设置（主题/昵称） |
+| `save-user-settings` | 保存用户设置 |
 
 ## 混合通信
 
@@ -252,8 +287,9 @@ flutter run --debug -d <deviceId>
 | 端云一体化工程结构 | ✅ | Application/ + CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
-| 云函数部署 + 真机联调 | ⏳ | 13 个云函数 + 6 张表部署至 AGC |
+| 云函数部署 + 真机联调 | ✅ | 21 个云函数 + 8 张表部署至 AGC |
 | 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
+| **设置数据上云（V3.2）** | ✅ | 角色名/钉钉配置/主题/昵称云端存储，按组织隔离，凭证仅管理员可见 |
 | 测试优化 | ⏳ | 功能回归、性能、兼容性 |
 | 打包上架 | ⏳ | 签名证书、隐私政策、上架审核 |
 
@@ -270,6 +306,8 @@ flutter run --debug -d <deviceId>
 | 华为账号登录失败 | 确认 AGC 已开通 Account Kit、OAuth 回调已配置 |
 | 同步队列堆积 | 检查网络连接，恢复后 30s 周期内自动推送 |
 | MethodChannel 通信失败 | 核对 Dart 与 ArkTS 两端 Channel 名称、参数 key 完全一致 |
+| 云数据库部署报 `Failed to decode response body. createDataBaseResource` | 多为云数据库服务未开通/登录态失效/网络代理拦截；先在 AGC 控制台确认云数据库已开通、DevEco 重新登录，再重试部署 |
+| 设置保存报"保存失败" | 设置保存必须先云端成功后本地生效，检查网络与云函数是否已部署（get/save-org-settings、get/save-user-settings） |
 
 ## 关键资源
 
