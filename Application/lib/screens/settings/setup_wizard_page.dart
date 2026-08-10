@@ -7,6 +7,7 @@ import '../../config/org_type.dart';
 import '../../config/theme_config.dart';
 import '../../providers/organization_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../widgets/common.dart';
 
 class SetupWizardPage extends StatefulWidget {
   const SetupWizardPage({super.key});
@@ -53,6 +54,8 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
   Widget build(BuildContext context) {
     final labels = OrgLabels.forType(_selectedType);
     final isSocialOrg = _selectedType == OrgType.socialOrg;
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -62,61 +65,50 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
             children: [
               const SizedBox(height: 32),
               Text(labels.labelSetupWelcome,
-                  style: Theme.of(context).textTheme.headlineMedium),
+                  style: theme.textTheme.headlineMedium),
               const SizedBox(height: 4),
               Text(labels.appTitle,
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
                       )),
               const SizedBox(height: 32),
               Text(labels.labelSetupSelectOrg,
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              RadioGroup<OrgType>(
-                groupValue: _selectedType,
-                onChanged: (v) => _selectType(v!),
-                child: Column(
-                  children: OrgType.values.map((type) {
-                    final l = OrgLabels.forType(type);
-                    final isSelected = _selectedType == type;
-                    return Card(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : null,
-                      child: ListTile(
-                        leading: Radio<OrgType>(value: type),
-                        title: Text(l.appTitle,
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(
-                            '${l.tabMembers} · ${l.tabProjects} · ${l.tabNotices}'),
-                        onTap: () => _selectType(type),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(labels.labelSetupSelectTheme,
-                  style: Theme.of(context).textTheme.titleMedium),
+                  style: theme.textTheme.titleMedium),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: ThemeConfig.all.map((theme) {
-                  final selected = _selectedTheme == theme;
+                children: OrgType.values.map((type) {
+                  final l = OrgLabels.forType(type);
                   return ChoiceChip(
-                    label: Text(theme.name),
-                    selected: selected,
+                    label: Text(l.appTitle),
+                    selected: _selectedType == type,
+                    onSelected: (_) => _selectType(type),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+              Text(labels.labelSetupSelectTheme,
+                  style: theme.textTheme.titleMedium),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ThemeConfig.all.map((themeConfig) {
+                  return ChoiceChip(
+                    label: Text(themeConfig.name),
+                    selected: _selectedTheme == themeConfig,
                     avatar: Container(
                       width: 16,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: theme.seedColor,
+                        color: themeConfig.seedColor,
                         shape: BoxShape.circle,
                       ),
                     ),
-                    onSelected: (_) => setState(() => _selectedTheme = theme),
+                    onSelected: (_) =>
+                        setState(() => _selectedTheme = themeConfig),
                   );
                 }).toList(),
               ),
@@ -124,10 +116,15 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
               TextField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: '组织名称',
-                  hintText: '请输入组织名称，不可与其他组织重复',
-                  border: OutlineInputBorder(),
+                  labelText: '组织全称',
+                  hintText: '请输入组织全称，不可与其他组织重复',
                 ),
+                textInputAction: isSocialOrg
+                    ? TextInputAction.next
+                    : TextInputAction.done,
+                onSubmitted: isSocialOrg
+                    ? (_) => FocusScope.of(context).nextFocus()
+                    : (_) => _confirm(),
               ),
               if (isSocialOrg) ...[
                 const SizedBox(height: 12),
@@ -136,22 +133,48 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                   decoration: const InputDecoration(
                     labelText: '统一社会信用代码',
                     hintText: '18位统一社会信用代码',
-                    border: OutlineInputBorder(),
                   ),
                   maxLength: 18,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _confirm(),
                 ),
               ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
-                  onPressed: _creating ? null : () => _confirm(),
-                  child: _creating
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                child: ChoiceChip(
+                  label: _creating
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2))
                       : Text(labels.labelSetupStart),
+                  selected: false,
+                  onSelected: _creating ? null : (_) => _confirm(),
                 ),
               ),
               const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('或者',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: theme.colorScheme.outline)),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ChoiceChip(
+                  label: const Text('加入已有组织'),
+                  selected: false,
+                  onSelected: (_) => _joinOrg(),
+                ),
+              ),
             ],
           ),
         ),
@@ -161,19 +184,14 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
 
   Future<void> _confirm() async {
     final name = _nameController.text.trim();
-    debugPrint('[_confirm] name="$name" type=${_selectedType.name}');
     if (name.isEmpty) {
-      debugPrint('[_confirm] name empty -> show snackbar');
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('请输入组织名称')));
+      showToast(context, '请输入组织全称');
       return;
     }
     if (_selectedType == OrgType.socialOrg) {
       final code = _creditCodeController.text.trim();
       if (code.length != 18) {
-        debugPrint('[_confirm] creditCode invalid len=${code.length}');
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('请输入18位统一社会信用代码')));
+        showToast(context, '请输入18位统一社会信用代码');
         return;
       }
     }
@@ -183,24 +201,59 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
       final orgProvider = context.read<OrganizationProvider>();
       await settings.setOrgType(_selectedType);
       await settings.setTheme(_selectedTheme);
-      debugPrint('[_confirm] calling createOrg name="$name"');
-
-      // 创建首个组织
       await orgProvider.createOrg(
         name: name,
         orgType: _selectedType.name,
         creditCode: _creditCodeController.text.trim(),
       );
-
       await settings.completeSetup();
-      debugPrint('[_confirm] createOrg OK, goto /members');
       if (!mounted) return;
       context.go('/members');
     } catch (e) {
-      debugPrint('[_confirm] FAILED: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('创建失败: $e')));
+      showToast(context, '创建失败: $e');
       setState(() => _creating = false);
     }
+  }
+
+  void _joinOrg() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('加入组织'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: '输入组织ID'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final id = controller.text.trim();
+              if (id.isEmpty) return;
+              try {
+                await context.read<OrganizationProvider>().joinOrg(id);
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) {
+                  context.read<SettingsProvider>().completeSetup();
+                  context.go('/members');
+                }
+              } catch (e) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx)
+                      .showSnackBar(SnackBar(content: Text('加入失败: $e')));
+                }
+              }
+            },
+            child: const Text('加入'),
+          ),
+        ],
+      ),
+    );
   }
 }

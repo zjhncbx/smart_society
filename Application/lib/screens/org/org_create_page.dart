@@ -75,12 +75,15 @@ class _OrgCreatePageState extends State<OrgCreatePage> {
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
-            height: 48,
-            child: FilledButton(
-              onPressed: _saving ? null : _create,
-              child: _saving
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+            child: ChoiceChip(
+              label: _saving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text('注册组织'),
+              selected: false,
+              onSelected: _saving ? null : (_) => _create(),
             ),
           ),
         ],

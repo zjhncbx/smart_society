@@ -57,16 +57,27 @@ class OrgSelectorPage extends StatelessWidget {
             );
           }),
           const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: () => context.push('/orgs/create'),
-            icon: const Icon(Icons.add),
-            label: const Text('注册新组织'),
+          AppCard(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            onTap: () => context.push('/orgs/create'),
+            child: Row(
+              children: [
+                Icon(Icons.add, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Text('注册新组织', style: theme.textTheme.titleSmall),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () => _joinOrg(context),
-            icon: const Icon(Icons.group_add),
-            label: const Text('加入已有组织'),
+          AppCard(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            onTap: () => _joinOrg(context),
+            child: Row(
+              children: [
+                Icon(Icons.group_add, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Text('加入已有组织', style: theme.textTheme.titleSmall),
+              ],
+            ),
           ),
         ],
       ),
