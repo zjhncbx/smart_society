@@ -13,10 +13,12 @@ class AuthProvider extends ChangeNotifier {
 
   AuthUser? _user;
   bool _loading = false;
+  String? _error;
 
   AuthUser? get user => _user;
   bool get isAuthenticated => _user != null;
   bool get loading => _loading;
+  String? get error => _error;
 
   Future<void> init() async {
     final box = await Hive.openBox(_boxName);
@@ -30,11 +32,14 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signIn() async {
     if (_loading) return;
     _loading = true;
+    _error = null;
     notifyListeners();
     try {
       _user = await _authService.signIn();
       final box = await Hive.openBox(_boxName);
       await box.put(_userKey, _user!.toJson());
+    } catch (e) {
+      _error = e.toString();
     } finally {
       _loading = false;
       notifyListeners();
