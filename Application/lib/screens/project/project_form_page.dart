@@ -76,7 +76,7 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final provider = context.read<ProjectProvider>();
-    final labels = context.labels;
+    final labels = context.labelsRead;
 
     if (_isEdit && _existing != null) {
       _existing!.name = _nameController.text.trim();

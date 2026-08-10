@@ -32,7 +32,7 @@ class _NoticeFormPageState extends State<NoticeFormPage> {
 
   Future<void> _publish() async {
     if (!_formKey.currentState!.validate()) return;
-    final labels = context.labels;
+    final labels = context.labelsRead;
     final provider = context.read<NoticeProvider>();
 
     final notice = Notice(

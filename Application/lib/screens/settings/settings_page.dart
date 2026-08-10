@@ -292,7 +292,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveRoles() async {
     final provider = context.read<RoleConfigProvider>();
-    final labels = context.labels;
+    final labels = context.labelsRead;
     final orgId = _orgId;
     if (orgId.isEmpty) {
       showToast(context, '请先加入组织');
@@ -325,7 +325,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _roleControllers.clear();
       if (!mounted) return;
       setState(() {});
-      showToast(context, context.labels.saveSuccess);
+      showToast(context, context.labelsRead.saveSuccess);
     } catch (e) {
       if (!mounted) return;
       showToast(context, '恢复失败: $e');
@@ -351,7 +351,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveDingTalkConfig() async {
     FocusScope.of(context).unfocus();
-    final labels = context.labels;
+    final labels = context.labelsRead;
     final orgId = _orgId;
     if (orgId.isEmpty) {
       showToast(context, '请先加入组织');
@@ -380,7 +380,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _syncDingTalk() async {
     FocusScope.of(context).unfocus();
-    final labels = context.labels;
+    final labels = context.labelsRead;
     final settings = context.read<SettingsProvider>();
     final orgId = _orgId;
     if (orgId.isEmpty) {

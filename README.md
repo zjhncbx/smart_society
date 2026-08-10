@@ -7,7 +7,7 @@
 基于 **Flutter + HarmonyOS 混合开发** 的多组织社团管理平台，支持华为账号登录、多组织管理、自动双向同步、组织层级与数据共享。
 
 - 应用显示名：社易管（英文 SmartSociety），包名 `com.hnmrxz.smart_society`
-- 文档版本：V3.2
+- 文档版本：V3.2.1
 - 适用平台：Windows / macOS（开发），HarmonyOS NEXT（真机）
 - 真机验证：华为 Mate 70 Pro+（HarmonyOS NEXT）
 
@@ -308,6 +308,8 @@ flutter run --debug -d <deviceId>
 | MethodChannel 通信失败 | 核对 Dart 与 ArkTS 两端 Channel 名称、参数 key 完全一致 |
 | 云数据库部署报 `Failed to decode response body. createDataBaseResource` | 多为云数据库服务未开通/登录态失效/网络代理拦截；先在 AGC 控制台确认云数据库已开通、DevEco 重新登录，再重试部署 |
 | 设置保存报"保存失败" | 设置保存必须先云端成功后本地生效，检查网络与云函数是否已部署（get/save-org-settings、get/save-user-settings） |
+| 设置页点击"保存"无反应 / 设置数据不上云 | 事件回调中误用 `context.labels`（内部为 `context.watch`，只能在 build 方法中调用）会在调试模式抛错且被吞掉；事件回调应使用 `context.labelsRead`（`read` 版本）。已修复设置页与成员/项目/公告表单页 |
+| 登录后保存设置报"缺少 orgId/userId 参数" | Provider 的 userId 原仅在启动时初始化，冷启动未登录、之后再登录时仍为空；已增加登录态监听，登录后自动同步 userId 并重新拉取云端用户/组织设置 |
 
 ## 关键资源
 

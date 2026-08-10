@@ -90,7 +90,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
     );
     await provider.saveMember(member);
     if (!mounted) return;
-    final labels = context.labels;
+    final labels = context.labelsRead;
     showToast(context, _isEdit ? labels.saveSuccess : labels.addSuccess);
     context.pop();
   }

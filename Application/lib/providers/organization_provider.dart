@@ -57,6 +57,8 @@ class OrganizationProvider extends ChangeNotifier {
 
   Future<void> init({required String userId}) async {
     _userId = userId;
+    // 登录态变化时同步各 Provider 的 userId（首次启动未登录、之后才登录的场景）
+    _auth.addListener(_onAuthChanged);
     final box = await Hive.openBox(_boxName);
     final raw = box.get(_orgsKey);
     if (raw != null) {
@@ -85,6 +87,28 @@ class OrganizationProvider extends ChangeNotifier {
       _roleConfig.loadFromCloud(orgId, roleLabels);
       SyncProvider.instance.pullAndRefresh(orgId);
     }
+  }
+
+  /// 登录/登出后刷新本地 userId，并补齐云端设置与组织数据。
+  void _onAuthChanged() {
+    final uid = _auth.user?.openId ?? '';
+    if (uid == _userId) return;
+    _userId = uid.isEmpty ? null : uid;
+    _roleConfig.userId = uid.isEmpty ? null : uid;
+    if (uid.isEmpty) return;
+    // 重新拉取用户设置（同时设置 SettingsProvider._userId）与当前组织设置
+    _settings.loadUserSettings(uid).then((_) async {
+      final orgId = _currentOrgId;
+      if (orgId != null && orgId.isNotEmpty) {
+        final roleLabels = await _settings.loadOrgSettings(orgId);
+        _roleConfig.loadFromCloud(orgId, roleLabels);
+      }
+    }).catchError((Object e) {
+      debugPrint('loadUserSettings after auth change failed: $e');
+    });
+    loadMyOrgs().catchError((Object e) {
+      debugPrint('loadMyOrgs after auth change failed: $e');
+    });
   }
 
   Future<void> loadMyOrgs() async {
