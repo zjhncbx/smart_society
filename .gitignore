@@ -46,6 +46,7 @@ app.*.map.json
 /android/app/release
 
 # AGC config (contains secrets)
+ohos/
 ohos/entry/src/main/resources/rawfile/agconnect-services.json
 agconnect-services.json
 Application/agconnect-services.json
