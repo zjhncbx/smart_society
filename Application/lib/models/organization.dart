@@ -8,6 +8,7 @@ class Organization {
   final String creatorUserId;
   final DateTime createdAt;
   final String status;
+  final String? userRole;
 
   const Organization({
     required this.orgId,
@@ -19,6 +20,7 @@ class Organization {
     required this.creatorUserId,
     required this.createdAt,
     this.status = 'active',
+    this.userRole,
   });
 
   bool get isSchoolClub => orgType == 'schoolClub';
@@ -35,6 +37,7 @@ class Organization {
         'creatorUserId': creatorUserId,
         'createdAt': createdAt.toIso8601String(),
         'status': status,
+        if (userRole != null) 'userRole': userRole,
       };
 
   factory Organization.fromJson(Map<String, dynamic> json) => Organization(
@@ -49,5 +52,6 @@ class Organization {
             ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
             : DateTime.now(),
         status: (json['status'] as String?) ?? 'active',
+        userRole: json['userRole'] as String?,
       );
 }

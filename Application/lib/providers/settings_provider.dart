@@ -115,4 +115,24 @@ class SettingsProvider extends ChangeNotifier {
     await box.put(_credsKey(orgId, 'lastResult'), result);
     notifyListeners();
   }
+
+  /// 清除某组织的全部本地配置（钉钉凭证与上次同步记录，组织注销时调用）
+  Future<void> clearOrgData(String orgId) async {
+    if (orgId.isEmpty) return;
+    final box = await Hive.openBox(_boxName);
+    for (final suffix in ['clientId', 'clientSecret', 'lastSyncAt', 'lastResult']) {
+      await box.delete(_credsKey(orgId, suffix));
+    }
+  }
+
+  /// 清空全部设置（用户注销时调用）
+  Future<void> clearAll() async {
+    _orgType = OrgType.schoolClub;
+    _theme = ThemeConfig.campus;
+    _isInitialized = false;
+    _currentOrgId = null;
+    final box = await Hive.openBox(_boxName);
+    await box.clear();
+    notifyListeners();
+  }
 }

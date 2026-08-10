@@ -219,4 +219,22 @@ class SyncProvider extends ChangeNotifier {
     final box = await Hive.openBox(_boxName);
     await box.put('queue', _queue.map((e) => e.toJson()).toList());
   }
+
+  /// 移除指定组织的全部待同步项（组织注销后云端已无对应数据，避免死循环重试）
+  Future<void> removeQueueForOrg(String orgId) async {
+    final before = _queue.length;
+    _queue.removeWhere((e) => e.data['orgId'] == orgId);
+    if (_queue.length != before) {
+      await _persist();
+      notifyListeners();
+    }
+  }
+
+  /// 清空全部待同步项（用户注销时）
+  Future<void> clearAll() async {
+    if (_queue.isEmpty) return;
+    _queue.clear();
+    await _persist();
+    notifyListeners();
+  }
 }

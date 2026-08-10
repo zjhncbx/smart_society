@@ -105,7 +105,10 @@ class SmartSocietyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: settingsProvider),
         ChangeNotifierProvider.value(value: roleConfigProvider),
         ChangeNotifierProvider.value(value: syncProvider),
-        ChangeNotifierProvider(create: (_) => OrganizationProvider()..init(userId: authProvider.user?.openId ?? '')),
+        ChangeNotifierProvider(
+          create: (_) => OrganizationProvider(auth: authProvider, settings: settingsProvider)
+            ..init(userId: authProvider.user?.openId ?? ''),
+        ),
         ChangeNotifierProvider(
           create: (_) {
             final p = MemberProvider(orgIdGetter: orgIdGetter(), isDingTalkManaged: isDingTalkManaged());

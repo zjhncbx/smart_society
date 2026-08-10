@@ -13,8 +13,15 @@ import '../../widgets/app_card.dart';
 import '../../widgets/member_avatar.dart';
 
 /// 管理概览页：管理仪表盘
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  bool _deleting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -262,9 +269,156 @@ class ProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // Danger zone
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            child: Text(
+              '危险操作',
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(color: cs.error, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (orgProvider.currentOrgRole == 'admin')
+            AppCard(
+              onTap: _deleting ? null : () => _confirmDeleteOrg(context),
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.delete_forever_outlined, color: cs.error, size: 28),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '注销当前组织',
+                          style: theme.textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          org?.name ?? '',
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: cs.outline),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: cs.outline),
+                ],
+              ),
+            ),
+          AppCard(
+            onTap: _deleting ? null : () => _confirmDeleteUser(context),
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Icon(Icons.person_off_outlined, color: cs.error, size: 28),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '注销账号',
+                        style: theme.textTheme.bodyLarge
+                            ?.copyWith(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '删除云端本账号所有数据，不可恢复',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: cs.outline),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: cs.outline),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteOrg(BuildContext context) async {
+    final orgProvider = context.read<OrganizationProvider>();
+    final org = orgProvider.currentOrg;
+    final isOnlyOrg = orgProvider.orgs.length == 1;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('注销组织'),
+        content: Text(isOnlyOrg
+            ? '确定注销组织「${org?.name ?? ''}」？将永久删除该组织的全部成员、项目、公告及关联数据，不可恢复。这是您唯一的组织，注销后您的账号数据也将一并删除。'
+            : '确定注销组织「${org?.name ?? ''}」？将永久删除该组织的全部成员、项目、公告及关联数据，不可恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('确认注销'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _deleting = true);
+    try {
+      final userDeregistered = await orgProvider.deleteOrg(orgProvider.currentOrgId ?? '');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(userDeregistered ? '组织已注销，账号数据已清除' : '组织已注销'),
+      ));
+      context.go(userDeregistered ? '/login' : '/members');
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('注销失败: $e')));
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
+
+  Future<void> _confirmDeleteUser(BuildContext context) async {
+    final orgProvider = context.read<OrganizationProvider>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('注销账号'),
+        content: const Text(
+            '确定注销账号？将永久删除云端本账号所有数据；若某组织仅您一个账号，该组织将一并注销。数据不可恢复，账号本身可重新登录。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('确认注销'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _deleting = true);
+    try {
+      await orgProvider.deleteUser();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('账号已注销')));
+      context.go('/login');
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('注销失败: $e')));
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
   }
 }
 

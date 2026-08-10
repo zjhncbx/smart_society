@@ -52,4 +52,23 @@ class StorageService {
     final dir = await Directory.systemTemp.createTemp('smart_society');
     return dir.path;
   }
+
+  /// 移除某组织的全部本地数据（多组织混存，只能按 orgId 扫描删除，不能清空 box）
+  Future<void> removeOrgData(String orgId) async {
+    for (final box in [membersBox, projectsBox, noticesBox]) {
+      for (final key in box.keys.toList()) {
+        final v = box.get(key);
+        if (v is Map && v['orgId'] == orgId) {
+          await box.delete(key);
+        }
+      }
+    }
+  }
+
+  /// 清空全部业务数据（用户注销时调用；auth/organizations/settings/sync_queue 由对应 Provider 清理）
+  Future<void> clearAllData() async {
+    await membersBox.clear();
+    await projectsBox.clear();
+    await noticesBox.clear();
+  }
 }
