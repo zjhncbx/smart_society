@@ -2,13 +2,31 @@ import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Organization } from './Organization';
 import { OrganizationRelationship } from './OrganizationRelationship';
 
+// 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
+function parseParams(event: any): any {
+  let body: any = event && event.body !== undefined ? event.body : event;
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { return {}; }
+  }
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { return {}; }
+  }
+  if (body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 && 'data' in body) {
+    body = body.data;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { return {}; }
+    }
+  }
+  return body ?? {};
+}
+
 const ZONE_NAME = 'default';
 
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('set-org-relationship called');
 
   try {
-    const params = event.body ? JSON.parse(event.body) : event;
+    const params = parseParams(event);
     const orgId = params?.orgId as string;
     const relatedOrgId = params?.relatedOrgId as string;
     const relType = params?.relType as string || 'partner';

@@ -98,6 +98,7 @@ class SmartSocietyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider.value(value: settingsProvider),
         ChangeNotifierProvider.value(value: roleConfigProvider),
+        ChangeNotifierProvider.value(value: syncProvider),
         ChangeNotifierProvider(create: (_) => OrganizationProvider()..init(userId: authProvider.user?.openId ?? '')),
         ChangeNotifierProvider(create: (_) => MemberProvider()..load()),
         ChangeNotifierProvider(create: (_) => ActivityProvider()..load()),

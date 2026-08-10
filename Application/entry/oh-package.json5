@@ -6,6 +6,8 @@
   "main": "",
   "author": "",
   "license": "",
-  "dependencies": {},
+  "dependencies": {
+    "@hw-agconnect/auth": "^1.0.5"
+  },
 }
 

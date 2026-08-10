@@ -1,9 +1,10 @@
 
 import { AbilityConstant, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { buffer } from '@kit.ArkTS';
 import { cloudCommon, cloudFunction } from '@kit.CloudFoundationKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { authentication } from '@kit.AccountKit';
+import auth from '@hw-agconnect/auth';
 import {
   FlutterAbility,
   FlutterEngine,
@@ -18,10 +19,17 @@ const CLOUD_TAG = 'CloudChannel';
 const AUTH_TAG = 'AuthChannel';
 
 export default class EntryAbility extends FlutterAbility {
-  private authController: authentication.AuthenticationController | null = null;
-
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
     super.onCreate(want, launchParam)
+    // 初始化 AGC 认证服务 SDK，需在登录前完成
+    try {
+      const file = this.context.resourceManager.getRawFileContentSync('agconnect-services.json')
+      const json: string = buffer.from(file.buffer).toString()
+      auth.init(this.context, json)
+      hilog.info(0x0000, AUTH_TAG, 'agc auth init success')
+    } catch (e) {
+      hilog.error(0x0000, AUTH_TAG, 'agc auth init failed: %{public}s', JSON.stringify(e))
+    }
     // 云函数免鉴权，无需 authProvider；云数据库/云存储需通过云函数访问
     cloudCommon.init({
       region: cloudCommon.CloudRegion.CHINA,
@@ -70,7 +78,19 @@ export default class EntryAbility extends FlutterAbility {
             timeout: timeout ?? 8000,
           }
           if (data != null) {
-            functionParams.data = data
+            // MethodChannel 解码的 Map 经 JSON.stringify 会变成 {}，需转成普通对象
+            let payload: Object = data
+            if (typeof data === 'string') {
+              payload = data
+            } else if (data instanceof Map) {
+              const obj: Record<string, Object> = {}
+              data.forEach((v: Object, k: string) => {
+                obj[k] = v
+              })
+              payload = obj
+            }
+            functionParams.data = payload
+            hilog.info(0x0000, CLOUD_TAG, 'callFunction %{public}s data=%{public}s', name, JSON.stringify(payload))
           }
           // 看门狗：云函数调用超过 20s 未返回时强制回错误，避免端侧无限转圈
           const watchdog = setTimeout(() => {
@@ -153,80 +173,55 @@ export default class EntryAbility extends FlutterAbility {
   }
 
   private handleSignIn(result: MethodResult) {
-    try {
-      const provider = new authentication.HuaweiIDProvider()
-      const request = provider.createLoginWithHuaweiIDRequest()
-      this.authController = new authentication.AuthenticationController(this.context)
-      this.authController.executeRequest(request).then((res: authentication.AuthenticationResponse) => {
-        const loginResponse = res as authentication.LoginWithHuaweiIDResponse
-        const credential = loginResponse?.data
-        if (!credential) {
-          result.error('AUTH_FAILED', 'login returned no credential', null)
-          return
-        }
-        hilog.info(0x0000, AUTH_TAG, 'signIn success: openId=%{public}s', credential.openID ?? '')
-        this.fetchUserProfile(credential.openID ?? '', result)
-      }).catch((err: BusinessError) => {
-        hilog.error(0x0000, AUTH_TAG, 'signIn failed: code=%{public}d msg=%{public}s', err.code, err.message)
-        result.error(String(err.code), err.message, null)
-      })
-    } catch (e) {
-      hilog.error(0x0000, AUTH_TAG, 'signIn exception: %{public}s', JSON.stringify(e))
-      result.error('AUTH_ERROR', JSON.stringify(e), null)
-    }
-  }
-
-  // 授权获取用户昵称/头像（scopes=profile）；失败时降级为仅返回 openId
-  private fetchUserProfile(openId: string, result: MethodResult) {
-    if (!this.authController) {
-      result.success(JSON.stringify({ 'openId': openId }))
-      return
-    }
-    try {
-      const provider = new authentication.HuaweiIDProvider()
-      const authRequest = provider.createAuthorizationWithHuaweiIDRequest()
-      authRequest.scopes = ['profile']
-      this.authController.executeRequest(authRequest).then((res: authentication.AuthenticationResponse) => {
-        const authResponse = res as authentication.AuthorizationWithHuaweiIDResponse
-        const credential = authResponse?.data
-        const userInfo: Record<string, string> = { 'openId': openId }
-        if (credential?.unionID) userInfo['unionId'] = credential.unionID
-        if (credential?.nickName) userInfo['displayName'] = credential.nickName
-        if (credential?.avatarUri) userInfo['avatarUri'] = credential.avatarUri
-        result.success(JSON.stringify(userInfo))
-      }).catch((err: BusinessError) => {
-        hilog.warn(0x0000, AUTH_TAG, 'fetchUserProfile failed: code=%{public}d msg=%{public}s', err.code, err.message)
-        result.success(JSON.stringify({ 'openId': openId }))
-      })
-    } catch (e) {
-      hilog.warn(0x0000, AUTH_TAG, 'fetchUserProfile exception: %{public}s', JSON.stringify(e))
-      result.success(JSON.stringify({ 'openId': openId }))
-    }
+    hilog.info(0x0000, AUTH_TAG, 'signIn: calling AGC auth signIn with hwid')
+    auth.signIn({
+      autoCreateUser: true,
+      credentialInfo: { kind: 'hwid' },
+    }).then((signInResult) => {
+      const user = signInResult.getUser()
+      const uid = user.getUid()
+      const displayName = user.getDisplayName()
+      const photoUrl = user.getPhotoUrl()
+      hilog.info(0x0000, AUTH_TAG, 'signIn success: uid=%{public}s displayName=%{public}s', uid, displayName)
+      const userInfo: Record<string, string> = { 'openId': uid }
+      if (displayName) userInfo['displayName'] = displayName
+      if (photoUrl) userInfo['avatarUri'] = photoUrl
+      result.success(JSON.stringify(userInfo))
+    }).catch((err: BusinessError) => {
+      hilog.error(0x0000, AUTH_TAG, 'signIn failed: code=%{public}d msg=%{public}s', err.code, err.message)
+      result.error(String(err.code), err.message, null)
+    })
   }
 
   private handleSignOut(result: MethodResult) {
-    try {
-      if (this.authController) {
-        const provider = new authentication.HuaweiIDProvider()
-        const request = provider.createCancelAuthorizationRequest()
-        this.authController.executeRequest(request).then(() => {
-          hilog.info(0x0000, AUTH_TAG, 'signOut success')
-          this.authController = null
-          result.success(true)
-        }).catch((err: BusinessError) => {
-          hilog.error(0x0000, AUTH_TAG, 'signOut failed: code=%{public}d msg=%{public}s', err.code, err.message)
-          result.error(String(err.code), err.message, null)
-        })
-      } else {
-        result.success(true)
-      }
-    } catch (e) {
-      hilog.error(0x0000, AUTH_TAG, 'signOut exception: %{public}s', JSON.stringify(e))
-      result.error('AUTH_ERROR', JSON.stringify(e), null)
-    }
+    hilog.info(0x0000, AUTH_TAG, 'signOut: calling AGC auth signOut')
+    auth.signOut().then(() => {
+      hilog.info(0x0000, AUTH_TAG, 'signOut success')
+      result.success(true)
+    }).catch((err: BusinessError) => {
+      hilog.error(0x0000, AUTH_TAG, 'signOut failed: code=%{public}d msg=%{public}s', err.code, err.message)
+      result.error(String(err.code), err.message, null)
+    })
   }
 
   private handleGetUserInfo(result: MethodResult) {
-    result.notImplemented()
+    auth.getCurrentUser().then((user) => {
+      if (user == null) {
+        hilog.info(0x0000, AUTH_TAG, 'getUserInfo: no user logged in')
+        result.error('NOT_LOGGED_IN', 'no user logged in', null)
+        return
+      }
+      const uid = user.getUid()
+      const displayName = user.getDisplayName()
+      const photoUrl = user.getPhotoUrl()
+      hilog.info(0x0000, AUTH_TAG, 'getUserInfo success: uid=%{public}s', uid)
+      const userInfo: Record<string, string> = { 'openId': uid }
+      if (displayName) userInfo['displayName'] = displayName
+      if (photoUrl) userInfo['avatarUri'] = photoUrl
+      result.success(JSON.stringify(userInfo))
+    }).catch((err: BusinessError) => {
+      hilog.error(0x0000, AUTH_TAG, 'getUserInfo failed: code=%{public}d msg=%{public}s', err.code, err.message)
+      result.error(String(err.code), err.message, null)
+    })
   }
 }

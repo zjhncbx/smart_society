@@ -19,13 +19,43 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
   OrgType _selectedType = OrgType.schoolClub;
   ThemeConfig _selectedTheme = ThemeConfig.campus;
   bool _creating = false;
+  final _nameController = TextEditingController();
+  final _creditCodeController = TextEditingController();
+
+  static const _defaultNames = {
+    OrgType.schoolClub: '我的社团',
+    OrgType.volunteerTeam: '我的志愿队',
+    OrgType.socialOrg: '我的组织',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.text = _defaultNames[_selectedType] ?? '';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _creditCodeController.dispose();
+    super.dispose();
+  }
+
+  void _selectType(OrgType type) {
+    setState(() {
+      _selectedType = type;
+      _nameController.text = _defaultNames[type] ?? '';
+      _creditCodeController.clear();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final labels = OrgLabels.forType(_selectedType);
+    final isSocialOrg = _selectedType == OrgType.socialOrg;
     return Scaffold(
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,7 +75,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
               const SizedBox(height: 12),
               RadioGroup<OrgType>(
                 groupValue: _selectedType,
-                onChanged: (v) => setState(() => _selectedType = v!),
+                onChanged: (v) => _selectType(v!),
                 child: Column(
                   children: OrgType.values.map((type) {
                     final l = OrgLabels.forType(type);
@@ -60,7 +90,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                             style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(
                             '${l.tabMembers} · ${l.tabActivities} · ${l.tabNotices}'),
-                        onTap: () => setState(() => _selectedType = type),
+                        onTap: () => _selectType(type),
                       ),
                     );
                   }).toList(),
@@ -90,7 +120,28 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                   );
                 }).toList(),
               ),
-              const Spacer(),
+              const SizedBox(height: 24),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: '组织名称',
+                  hintText: '请输入组织名称，不可与其他组织重复',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (isSocialOrg) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _creditCodeController,
+                  decoration: const InputDecoration(
+                    labelText: '统一社会信用代码',
+                    hintText: '18位统一社会信用代码',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLength: 18,
+                ),
+              ],
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -109,24 +160,44 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
   }
 
   Future<void> _confirm() async {
+    final name = _nameController.text.trim();
+    debugPrint('[_confirm] name="$name" type=${_selectedType.name}');
+    if (name.isEmpty) {
+      debugPrint('[_confirm] name empty -> show snackbar');
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('请输入组织名称')));
+      return;
+    }
+    if (_selectedType == OrgType.socialOrg) {
+      final code = _creditCodeController.text.trim();
+      if (code.length != 18) {
+        debugPrint('[_confirm] creditCode invalid len=${code.length}');
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('请输入18位统一社会信用代码')));
+        return;
+      }
+    }
     setState(() => _creating = true);
     try {
       final settings = context.read<SettingsProvider>();
       final orgProvider = context.read<OrganizationProvider>();
       await settings.setOrgType(_selectedType);
       await settings.setTheme(_selectedTheme);
+      debugPrint('[_confirm] calling createOrg name="$name"');
 
       // 创建首个组织
-      final labels = OrgLabels.forType(_selectedType);
       await orgProvider.createOrg(
-        name: '我的${labels.appTitle}',
+        name: name,
         orgType: _selectedType.name,
+        creditCode: _creditCodeController.text.trim(),
       );
 
       await settings.completeSetup();
+      debugPrint('[_confirm] createOrg OK, goto /members');
       if (!mounted) return;
       context.go('/members');
     } catch (e) {
+      debugPrint('[_confirm] FAILED: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('创建失败: $e')));
       setState(() => _creating = false);

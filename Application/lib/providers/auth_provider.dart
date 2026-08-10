@@ -34,12 +34,15 @@ class AuthProvider extends ChangeNotifier {
     _loading = true;
     _error = null;
     notifyListeners();
+    debugPrint('[AuthProvider] signIn: 开始登录');
     try {
       _user = await _authService.signIn();
       final box = await Hive.openBox(_boxName);
       await box.put(_userKey, _user!.toJson());
+      debugPrint('[AuthProvider] signIn: 登录成功，用户=${_user!.displayName}');
     } catch (e) {
       _error = e.toString();
+      debugPrint('[AuthProvider] signIn: 登录失败 -> $_error');
     } finally {
       _loading = false;
       notifyListeners();

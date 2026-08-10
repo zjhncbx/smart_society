@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:\\Users\\hnzy1\\.ohos\\config\\default_ohos_3F5bzFyjJg1weqRAPfsJsCmRi_OIEyDYH2HOj-kA8a4=.cer",
+          "certpath": "C:\\Users\\hnzy1\\.ohos\\config\\default_Application_8d9OHZ2ZYS0usu63C-IJmMOZhyE1SBBh7X3nrFMvT2U=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BF5ED3B5476A870AF4C6E889F8CF03A60C77C12F968949323E193EC14CB27CAFD1C0CCF9CC866C4",
-          "profile": "C:\\Users\\hnzy1\\.ohos\\config\\default_ohos_3F5bzFyjJg1weqRAPfsJsCmRi_OIEyDYH2HOj-kA8a4=.p7b",
+          "keyPassword": "0000001BF06FF58B7D9E0C717296AF6C893A3D88E3B004C3CA6C72DF310D37A1B031B01CEB4C8F4CB4B9CA",
+          "profile": "C:\\Users\\hnzy1\\.ohos\\config\\default_Application_8d9OHZ2ZYS0usu63C-IJmMOZhyE1SBBh7X3nrFMvT2U=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\hnzy1\\.ohos\\config\\default_ohos_3F5bzFyjJg1weqRAPfsJsCmRi_OIEyDYH2HOj-kA8a4=.p12",
-          "storePassword": "0000001B4574E14EF9D241B4A10214D481A60F6B841025F5088C86390407970D02B9106FCB41FCC36EFA3A"
+          "storeFile": "C:\\Users\\hnzy1\\.ohos\\config\\default_Application_8d9OHZ2ZYS0usu63C-IJmMOZhyE1SBBh7X3nrFMvT2U=.p12",
+          "storePassword": "0000001BD8F19830A2ADDDE3243A021B18F34D99F98128B7257F492A2B9543844C53CF1A5795A326A7D528"
         }
       }
     ],
@@ -21,7 +21,12 @@
         "signingConfig": "default",
         "compatibleSdkVersion": "5.1.0(18)",
         "runtimeOS": "HarmonyOS",
-        "targetSdkVersion": "6.1.1(24)"
+        "targetSdkVersion": "6.1.1(24)",
+        "buildOption": {
+          "strictMode": {
+            "useNormalizedOHMUrl": true
+          }
+        }
       }
     ],
     "buildModeSet": [
@@ -33,6 +38,17 @@
       },
       {
         "name": "release"
+      }
+    ],
+    "capabilities": [
+      {
+        "bundleName": "com.hnmrxz.smart_society",
+        "config": [
+          {
+            "name": "Push Kit",
+            "capability": "com.huawei.service.push.base_service"
+          }
+        ]
       }
     ]
   },

@@ -1,13 +1,31 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Notice } from './Notice';
 
+// 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
+function parseParams(event: any): any {
+  let body: any = event && event.body !== undefined ? event.body : event;
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { return {}; }
+  }
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { return {}; }
+  }
+  if (body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 && 'data' in body) {
+    body = body.data;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { return {}; }
+    }
+  }
+  return body ?? {};
+}
+
 const ZONE_NAME = 'default';
 
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('upsert-notice called');
 
   try {
-    const record = event.body ? JSON.parse(event.body) : event;
+    const record = parseParams(event);
     if (!record || !record.id) {
       callback({ ret: { code: -1, message: '缺少 id 字段' } });
       return;

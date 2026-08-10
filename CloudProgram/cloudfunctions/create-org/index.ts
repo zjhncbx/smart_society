@@ -2,13 +2,32 @@ import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Organization } from './Organization';
 import { UserOrganization } from './UserOrganization';
 
+// 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
+function parseParams(event: any): any {
+  let body: any = event && event.body !== undefined ? event.body : event;
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { return {}; }
+  }
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { return {}; }
+  }
+  if (body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 && 'data' in body) {
+    body = body.data;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { return {}; }
+    }
+  }
+  return body ?? {};
+}
+
 const ZONE_NAME = 'default';
 
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('create-org called');
 
   try {
-    const params = event.body ? JSON.parse(event.body) : event;
+    const params = parseParams(event);
+    logger.info('create-org params: ' + JSON.stringify(params));
     const name = params?.name as string;
     const orgType = params?.orgType as string || 'schoolClub';
     const creditCode = params?.creditCode as string || '';

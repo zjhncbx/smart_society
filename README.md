@@ -1,8 +1,13 @@
-# 智联社团（SmartSociety）
+# 社易管（SmartSociety）
+
+<p align="center">
+  <img src="Application/AppScope/resources/base/media/app_icon.png" width="96" height="96" alt="社易管 Logo" />
+</p>
 
 基于 **Flutter + HarmonyOS 混合开发** 的多组织社团管理平台，支持华为账号登录、多组织管理、自动双向同步、组织层级与数据共享。
 
-- 文档版本：V3.0
+- 应用显示名：社易管（英文 SmartSociety），包名 `com.hnmrxz.smart_society`
+- 文档版本：V3.1
 - 适用平台：Windows / macOS（开发），HarmonyOS NEXT（真机）
 - 真机验证：华为 Mate 70 Pro+（HarmonyOS NEXT）
 

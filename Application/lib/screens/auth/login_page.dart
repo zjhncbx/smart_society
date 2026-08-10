@@ -12,6 +12,20 @@ class LoginPage extends StatelessWidget {
     if (error.contains('MissingPluginException')) {
       return '登录组件未注册，请重新安装应用';
     }
+    // AGC 认证服务错误码
+    if (error.contains('204126') || error.contains('204220') || error.contains('204218')) {
+      return '登录异常，请检查AGC认证服务配置后重试';
+    }
+    if (error.contains('204221') || error.contains('204222')) {
+      return '华为账号登录权限未开通或应用未通过审核';
+    }
+    if (error.contains('204231') || error.contains('204232')) {
+      return '当前网络无法连接华为认证服务，请检查网络';
+    }
+    if (error.contains('204240')) {
+      return '您已取消登录';
+    }
+    // 华为账号服务（Account Kit）错误码
     if (error.contains('1001500001')) {
       return '应用签名指纹校验失败，请检查AGC配置';
     }

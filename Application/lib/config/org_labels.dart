@@ -281,7 +281,7 @@ class OrgLabels {
   });
 
   static const _schoolClub = OrgLabels(
-    appTitle: '智联社团',
+    appTitle: '社易管',
     tabMembers: '成员',
     tabActivities: '活动',
     tabNotices: '通知',
@@ -330,9 +330,9 @@ class OrgLabels {
     deleteActivityTitle: '删除活动',
     deleteNoticeTitle: '删除公告',
     saveButton: '保存',
-    aboutTitle: '关于智联社团',
+    aboutTitle: '关于社易管',
     aboutSubtitle: 'v1.0.0 · Flutter + HarmonyOS',
-    aboutContent: '基于 Flutter-OH 的社团管理应用\n开发周期：第1-12周',
+    aboutContent: '基于 Flutter-OH 的多组织管理应用\n开发周期：第1-12周',
     profileTitle: '管理',
     importantLabel: '重要',
     todayLabel: '今天',
@@ -355,7 +355,7 @@ class OrgLabels {
     signUpProgress: '参与情况',
     orgTypeLabel: '组织类型',
     themeLabel: '主题风格',
-    aboutDialogTitle: '关于智联社团',
+    aboutDialogTitle: '关于社易管',
     labelName: '姓名',
     labelPhone: '电话',
     labelEmail: '邮箱',
