@@ -97,7 +97,14 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
         └── upsert-notice/  delete-notice/
 ```
 
-> **注意**：`Application/ohos/` 是 NTFS Junction（目录联结），指向 `Application/` 自身，供 Flutter 工具链在 `Application/` 目录下找到鸿蒙工程。DevEco Studio 不受影响。
+> **注意**：
+> - `Application/ohos/` 是 NTFS Junction（目录联结），指向 `Application/` 自身，供 Flutter 工具链在 `Application/` 目录下找到鸿蒙工程。
+> - 仓库根目录下同样需要 `ohos/` Junction 指向 `Application/`，供 `flutter-hvigor-plugin` 读取 `local.properties` 等文件。DevEco Studio 不受影响。
+> 
+> ```bash
+> # 在仓库根目录创建 Junction（Windows 管理员权限）
+> mklink /J ohos Application
+> ```
 
 ## 环境要求
 
