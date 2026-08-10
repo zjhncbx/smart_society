@@ -1,6 +1,110 @@
 {
-	"schemaVersion":7,
+	"schemaVersion":11,
 	"objectTypes":[
+		{
+			"objectTypeName":"Organization",
+			"fields":[
+				{
+					"fieldName":"orgId",
+					"fieldType":"String",
+					"belongPrimaryKey":true,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false
+				},
+				{
+					"fieldName":"name",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"orgType",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":"schoolClub"
+				},
+				{
+					"fieldName":"creditCode",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"description",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"parentOrgId",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"creatorUserId",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"createdAt",
+					"fieldType":"Date",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false
+				},
+				{
+					"fieldName":"status",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":"active"
+				}
+			],
+			"indexes":[
+				{
+					"indexName":"org_id",
+					"indexList":[
+						{
+							"fieldName":"orgId",
+							"sortType":"ASC"
+						}
+					]
+				},
+				{
+					"indexName":"org_name",
+					"indexList":[
+						{
+							"fieldName":"name",
+							"sortType":"ASC"
+						}
+					]
+				}
+			]
+		},
 		{
 			"objectTypeName":"Notice",
 			"fields":[
@@ -64,6 +168,23 @@
 					"isNeedEncrypt":false,
 					"isSensitive":false,
 					"defaultValue":"false"
+				},
+				{
+					"fieldName":"orgId",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"updatedAt",
+					"fieldType":"Date",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false
 				}
 			],
 			"indexes":[
@@ -72,6 +193,74 @@
 					"indexList":[
 						{
 							"fieldName":"id",
+							"sortType":"ASC"
+						}
+					]
+				}
+			]
+		},
+		{
+			"objectTypeName":"UserOrganization",
+			"fields":[
+				{
+					"fieldName":"id",
+					"fieldType":"String",
+					"belongPrimaryKey":true,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false
+				},
+				{
+					"fieldName":"userId",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"orgId",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"role",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":"admin"
+				},
+				{
+					"fieldName":"joinedAt",
+					"fieldType":"Date",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false
+				}
+			],
+			"indexes":[
+				{
+					"indexName":"user_org_id",
+					"indexList":[
+						{
+							"fieldName":"id",
+							"sortType":"ASC"
+						}
+					]
+				},
+				{
+					"indexName":"user_org_userid",
+					"indexList":[
+						{
+							"fieldName":"userId",
 							"sortType":"ASC"
 						}
 					]
@@ -174,6 +363,23 @@
 					"notNull":false,
 					"isNeedEncrypt":false,
 					"isSensitive":false
+				},
+				{
+					"fieldName":"orgId",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"updatedAt",
+					"fieldType":"Date",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false
 				}
 			],
 			"indexes":[
@@ -182,6 +388,84 @@
 					"indexList":[
 						{
 							"fieldName":"id",
+							"sortType":"ASC"
+						}
+					]
+				}
+			]
+		},
+		{
+			"objectTypeName":"OrganizationRelationship",
+			"fields":[
+				{
+					"fieldName":"relId",
+					"fieldType":"String",
+					"belongPrimaryKey":true,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false
+				},
+				{
+					"fieldName":"orgId",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"relatedOrgId",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"relType",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":"partner"
+				},
+				{
+					"fieldName":"shareMembers",
+					"fieldType":"Boolean",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":"false"
+				},
+				{
+					"fieldName":"shareActivities",
+					"fieldType":"Boolean",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":"false"
+				},
+				{
+					"fieldName":"shareNotices",
+					"fieldType":"Boolean",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":"false"
+				}
+			],
+			"indexes":[
+				{
+					"indexName":"rel_id",
+					"indexList":[
+						{
+							"fieldName":"relId",
 							"sortType":"ASC"
 						}
 					]
@@ -295,6 +579,23 @@
 					"notNull":false,
 					"isNeedEncrypt":false,
 					"isSensitive":false
+				},
+				{
+					"fieldName":"orgId",
+					"fieldType":"String",
+					"belongPrimaryKey":false,
+					"notNull":true,
+					"isNeedEncrypt":false,
+					"isSensitive":false,
+					"defaultValue":""
+				},
+				{
+					"fieldName":"updatedAt",
+					"fieldType":"Date",
+					"belongPrimaryKey":false,
+					"notNull":false,
+					"isNeedEncrypt":false,
+					"isSensitive":false
 				}
 			],
 			"indexes":[
@@ -311,6 +612,105 @@
 		}
 	],
 	"permissions":[
+		{
+			"objectTypeName":"Organization",
+			"permissions":[
+				{
+					"role":"World",
+					"rights":[
+						"Read"
+					]
+				},
+				{
+					"role":"Authenticated",
+					"rights":[
+						"Read"
+					]
+				},
+				{
+					"role":"Creator",
+					"rights":[
+						"Read",
+						"Upsert",
+						"Delete"
+					]
+				},
+				{
+					"role":"Administrator",
+					"rights":[
+						"Read",
+						"Upsert",
+						"Delete"
+					]
+				}
+			]
+		},
+		{
+			"objectTypeName":"Activity",
+			"permissions":[
+				{
+					"role":"World",
+					"rights":[
+						"Read"
+					]
+				},
+				{
+					"role":"Authenticated",
+					"rights":[
+						"Read"
+					]
+				},
+				{
+					"role":"Creator",
+					"rights":[
+						"Read",
+						"Upsert",
+						"Delete"
+					]
+				},
+				{
+					"role":"Administrator",
+					"rights":[
+						"Read",
+						"Upsert",
+						"Delete"
+					]
+				}
+			]
+		},
+		{
+			"objectTypeName":"OrganizationRelationship",
+			"permissions":[
+				{
+					"role":"World",
+					"rights":[
+						"Read"
+					]
+				},
+				{
+					"role":"Authenticated",
+					"rights":[
+						"Read"
+					]
+				},
+				{
+					"role":"Creator",
+					"rights":[
+						"Read",
+						"Upsert",
+						"Delete"
+					]
+				},
+				{
+					"role":"Administrator",
+					"rights":[
+						"Read",
+						"Upsert",
+						"Delete"
+					]
+				}
+			]
+		},
 		{
 			"objectTypeName":"Notice",
 			"permissions":[
@@ -345,7 +745,7 @@
 			]
 		},
 		{
-			"objectTypeName":"Activity",
+			"objectTypeName":"UserOrganization",
 			"permissions":[
 				{
 					"role":"World",

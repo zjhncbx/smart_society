@@ -157,19 +157,15 @@ export default class EntryAbility extends FlutterAbility {
       const provider = new authentication.HuaweiIDProvider()
       const request = provider.createLoginWithHuaweiIDRequest()
       this.authController = new authentication.AuthenticationController(this.context)
-      this.authController.executeRequest(request).then((res) => {
-        const credential = res?.data
+      this.authController.executeRequest(request).then((res: authentication.AuthenticationResponse) => {
+        const loginResponse = res as authentication.LoginWithHuaweiIDResponse
+        const credential = loginResponse?.data
         if (!credential) {
           result.error('AUTH_FAILED', 'login returned no credential', null)
           return
         }
-        const userInfo: Record<string, string> = {}
-        if (credential.openID) userInfo['openId'] = credential.openID
-        if (credential.unionID) userInfo['unionId'] = credential.unionID
-        if (credential.displayName) userInfo['displayName'] = credential.displayName
-        if (credential.avatarUri) userInfo['avatarUri'] = credential.avatarUri
         hilog.info(0x0000, AUTH_TAG, 'signIn success: openId=%{public}s', credential.openID ?? '')
-        result.success(JSON.stringify(userInfo))
+        this.fetchUserProfile(credential.openID ?? '', result)
       }).catch((err: BusinessError) => {
         hilog.error(0x0000, AUTH_TAG, 'signIn failed: code=%{public}d msg=%{public}s', err.code, err.message)
         result.error(String(err.code), err.message, null)
@@ -177,6 +173,34 @@ export default class EntryAbility extends FlutterAbility {
     } catch (e) {
       hilog.error(0x0000, AUTH_TAG, 'signIn exception: %{public}s', JSON.stringify(e))
       result.error('AUTH_ERROR', JSON.stringify(e), null)
+    }
+  }
+
+  // 授权获取用户昵称/头像（scopes=profile）；失败时降级为仅返回 openId
+  private fetchUserProfile(openId: string, result: MethodResult) {
+    if (!this.authController) {
+      result.success(JSON.stringify({ 'openId': openId }))
+      return
+    }
+    try {
+      const provider = new authentication.HuaweiIDProvider()
+      const authRequest = provider.createAuthorizationWithHuaweiIDRequest()
+      authRequest.scopes = ['profile']
+      this.authController.executeRequest(authRequest).then((res: authentication.AuthenticationResponse) => {
+        const authResponse = res as authentication.AuthorizationWithHuaweiIDResponse
+        const credential = authResponse?.data
+        const userInfo: Record<string, string> = { 'openId': openId }
+        if (credential?.unionID) userInfo['unionId'] = credential.unionID
+        if (credential?.nickName) userInfo['displayName'] = credential.nickName
+        if (credential?.avatarUri) userInfo['avatarUri'] = credential.avatarUri
+        result.success(JSON.stringify(userInfo))
+      }).catch((err: BusinessError) => {
+        hilog.warn(0x0000, AUTH_TAG, 'fetchUserProfile failed: code=%{public}d msg=%{public}s', err.code, err.message)
+        result.success(JSON.stringify({ 'openId': openId }))
+      })
+    } catch (e) {
+      hilog.warn(0x0000, AUTH_TAG, 'fetchUserProfile exception: %{public}s', JSON.stringify(e))
+      result.success(JSON.stringify({ 'openId': openId }))
     }
   }
 

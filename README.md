@@ -121,7 +121,7 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
         └── get-org-hierarchy/      # (new) 获取组织层级树
 ```
 
-> **注意**：`Application/ohos/` 是 NTFS Junction（目录联结），指向 `Application/` 自身。仓库根目录同样需要 `ohos/` Junction。
+> **注意**：`Application/ohos/` 是 NTFS Junction（目录联结），指向 `Application/` 自身，供 Flutter 工具链（`flutter build/run`）与 `flutter-hvigor-plugin` 解析 `ohos/local.properties`。**根目录无需创建 `ohos/` Junction**，否则 DevEco Studio 无法识别端云一体化工程（根目录必须仅含 `Application/` 与 `CloudProgram/` 两个目录）。
 
 ## 环境要求
 

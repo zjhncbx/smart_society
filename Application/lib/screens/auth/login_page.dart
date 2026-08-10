@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
-import '../../widgets/app_card.dart';
 
 /// 华为账号登录页。
 class LoginPage extends StatelessWidget {

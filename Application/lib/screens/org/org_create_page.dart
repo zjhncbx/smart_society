@@ -31,7 +31,6 @@ class _OrgCreatePageState extends State<OrgCreatePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final labels = OrgLabels.forType(_selectedType);
     final isSocialOrg = _selectedType == OrgType.socialOrg;
 
     return Scaffold(

@@ -11,7 +11,6 @@ import '../../providers/notice_provider.dart';
 import '../../providers/role_config_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
-import '../../services/cloud_function_service.dart';
 import '../../utils/date_format.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/common.dart';
@@ -350,10 +349,6 @@ class _SettingsPageState extends State<SettingsPage> {
         });
       }
     }
-  }
-
-  void _updateStatus(String status) {
-    if (mounted) setState(() => _syncStatus = status);
   }
 
   void _checkCancelled() {

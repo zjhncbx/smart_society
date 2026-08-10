@@ -77,8 +77,10 @@ class SyncProvider extends ChangeNotifier {
     flush();
   }
 
+  @override
   void dispose() {
     _timer?.cancel();
+    super.dispose();
   }
 
   /// 将操作加入同步队列

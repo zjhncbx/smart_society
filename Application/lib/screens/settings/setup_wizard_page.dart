@@ -112,24 +112,24 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
     setState(() => _creating = true);
     try {
       final settings = context.read<SettingsProvider>();
+      final orgProvider = context.read<OrganizationProvider>();
       await settings.setOrgType(_selectedType);
       await settings.setTheme(_selectedTheme);
 
       // 创建首个组织
       final labels = OrgLabels.forType(_selectedType);
-      final orgProvider = context.read<OrganizationProvider>();
       await orgProvider.createOrg(
         name: '我的${labels.appTitle}',
         orgType: _selectedType.name,
       );
 
       await settings.completeSetup();
-      if (mounted) context.go('/members');
+      if (!mounted) return;
+      context.go('/members');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('创建失败: $e')));
-        setState(() => _creating = false);
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('创建失败: $e')));
+      setState(() => _creating = false);
     }
   }
 }
