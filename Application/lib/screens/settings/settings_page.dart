@@ -290,15 +290,16 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _saveRoles(OrgType type) {
+  Future<void> _saveRoles(OrgType type) async {
     final provider = context.read<RoleConfigProvider>();
     final labels = context.labels;
     for (final role in labels.roles) {
       final controller = _roleControllers[role.id];
       if (controller != null && controller.text.trim().isNotEmpty) {
-        provider.setLabel(type, role.id, controller.text.trim());
+        await provider.setLabel(type, role.id, controller.text.trim());
       }
     }
+    if (!mounted) return;
     showToast(context, labels.saveSuccess);
   }
 

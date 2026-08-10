@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
+import '../config/org_type.dart';
 import '../models/organization.dart';
 import '../services/cloud_function_service.dart';
 import '../services/storage_service.dart';
@@ -37,6 +38,19 @@ class OrganizationProvider extends ChangeNotifier {
   /// 当前用户在当前组织的角色（云端 get-my-orgs 下发；null=尚未刷新）
   String? get currentOrgRole => currentOrg?.userRole;
 
+  /// 将 SettingsProvider.orgType 与当前组织类型对齐（当前组织变化时调用）
+  Future<void> _syncOrgType() async {
+    final type = switch (currentOrg?.orgType) {
+      'schoolClub' => OrgType.schoolClub,
+      'volunteerTeam' => OrgType.volunteerTeam,
+      'socialOrg' => OrgType.socialOrg,
+      _ => null,
+    };
+    if (type != null && type != _settings.orgType) {
+      await _settings.setOrgType(type);
+    }
+  }
+
   Future<void> init({required String userId}) async {
     _userId = userId;
     final box = await Hive.openBox(_boxName);
@@ -50,6 +64,8 @@ class OrganizationProvider extends ChangeNotifier {
     }
     _currentOrgId = box.get(_currentKey) as String?;
     notifyListeners();
+    // 本地缓存先对齐一次组织类型，云端刷新失败也能保持正确
+    await _syncOrgType();
     // 从云端刷新
     try {
       await loadMyOrgs();
@@ -79,6 +95,7 @@ class OrganizationProvider extends ChangeNotifier {
         _currentOrgId = _orgs.isNotEmpty ? _orgs.first.orgId : null;
         await box.put(_currentKey, _currentOrgId);
       }
+      await _syncOrgType();
       notifyListeners();
     }
   }
@@ -101,6 +118,10 @@ class OrganizationProvider extends ChangeNotifier {
       },
     );
     final orgId = (res as Map<String, dynamic>)['orgId'] as String;
+    // 创建成功后自动切换到新组织
+    _currentOrgId = orgId;
+    final box = await Hive.openBox(_boxName);
+    await box.put(_currentKey, orgId);
     await loadMyOrgs();
     return orgId;
   }
@@ -111,6 +132,7 @@ class OrganizationProvider extends ChangeNotifier {
     final box = await Hive.openBox(_boxName);
     await box.put(_currentKey, orgId);
     notifyListeners();
+    await _syncOrgType();
     // 切换组织后自动拉取该组织最新数据
     SyncProvider.instance.pullAndRefresh(orgId);
   }
@@ -185,6 +207,7 @@ class OrganizationProvider extends ChangeNotifier {
     await _settings.clearOrgData(orgId);
     final sync = SyncProvider.instance;
     await sync.removeQueueForOrg(orgId);
+    await _syncOrgType();
     notifyListeners();
     if (nextOrgId != null) {
       await sync.pullAndRefresh(nextOrgId);

@@ -7,6 +7,7 @@ import '../../config/org_config_provider.dart';
 import '../../config/org_labels.dart';
 import '../../models/member.dart';
 import '../../providers/member_provider.dart';
+import '../../providers/role_config_provider.dart';
 import '../../widgets/common.dart';
 
 /// 成员添加/编辑表单
@@ -36,9 +37,14 @@ class _MemberFormPageState extends State<MemberFormPage> {
   @override
   void initState() {
     super.initState();
+    final roleConfig = context.read<RoleConfigProvider>();
     final defaultLabels = OrgLabels.forType(context.orgTypeRead);
     _roleId = defaultLabels.roles.first.id;
-    _roleLabel = defaultLabels.roles.first.label;
+    _roleLabel = roleConfig.getLabel(
+      context.orgTypeRead,
+      _roleId,
+      defaultLabels.roles.first.label,
+    );
     if (_isEdit) {
       _existing = context.read<MemberProvider>().findById(widget.id!);
     }
@@ -90,6 +96,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
   @override
   Widget build(BuildContext context) {
     final labels = context.labels;
+    final roleConfig = context.read<RoleConfigProvider>();
+    final orgType = context.orgTypeRead;
 
     return Scaffold(
       appBar: AppBar(
@@ -137,7 +145,12 @@ class _MemberFormPageState extends State<MemberFormPage> {
               decoration: InputDecoration(labelText: labels.labelRole),
               items: [
                 for (final role in labels.roles)
-                  DropdownMenuItem(value: role.id, child: Text(role.label)),
+                  DropdownMenuItem(
+                    value: role.id,
+                    child: Text(
+                      roleConfig.getLabel(orgType, role.id, role.label),
+                    ),
+                  ),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -145,7 +158,11 @@ class _MemberFormPageState extends State<MemberFormPage> {
                       labels.roles.firstWhere((r) => r.id == value);
                   setState(() {
                     _roleId = value;
-                    _roleLabel = selected.label;
+                    _roleLabel = roleConfig.getLabel(
+                      orgType,
+                      value,
+                      selected.label,
+                    );
                   });
                 }
               },
