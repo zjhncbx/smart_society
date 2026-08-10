@@ -5,13 +5,8 @@ import '../../config/org_config_provider.dart';
 import '../../config/org_labels.dart';
 import '../../config/org_type.dart';
 import '../../config/theme_config.dart';
-import '../../providers/activity_provider.dart';
-import '../../providers/member_provider.dart';
-import '../../providers/notice_provider.dart';
 import '../../providers/role_config_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../providers/sync_provider.dart';
-import '../../utils/date_format.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/common.dart';
 
@@ -27,9 +22,6 @@ class _SettingsPageState extends State<SettingsPage> {
   final _corpIdController = TextEditingController();
   final _appKeyController = TextEditingController();
   final _appSecretController = TextEditingController();
-  bool _syncing = false;
-  String _syncStatus = '';
-  String _lastCloudSync = '--';
 
   @override
   void dispose() {
@@ -78,7 +70,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   leading: Radio<OrgType>(value: type),
                   title: Text(typeLabels.appTitle),
                   subtitle: Text(
-                      '${typeLabels.tabMembers} · ${typeLabels.tabActivities} · ${typeLabels.tabNotices}'),
+                      '${typeLabels.tabMembers} · ${typeLabels.tabProjects} · ${typeLabels.tabNotices}'),
                   onTap: () => _switchOrgType(context, type),
                 );
               }).toList(),
@@ -136,51 +128,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   onPressed: () => _resetRoles(orgType),
                   child: Text(labels.labelResetRoles),
                 ),
-              ],
-            ),
-          ),
-          const Divider(),
-          // ── 云端数据同步 ──
-          _SectionHeader(title: labels.labelCloudSync),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    FilledButton.icon(
-                      onPressed: _syncing ? null : _syncCloud,
-                      icon: _syncing
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.cloud_sync, size: 18),
-                      label: Text(labels.labelSyncNow),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        _syncing && _syncStatus.isNotEmpty
-                            ? _syncStatus
-                            : '${labels.labelLastSync}: $_lastCloudSync',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: theme.colorScheme.outline),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                if (_syncing)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: TextButton(
-                      onPressed: _cancelSync,
-                      child: Text(labels.labelSyncCancel),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -309,63 +256,10 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  bool _cancelRequested = false;
-
-  Future<void> _syncCloud() async {
-    if (_syncing) return;
-    _cancelRequested = false;
-    setState(() {
-      _syncing = true;
-      _syncStatus = '正在同步...';
-    });
-    final labels = context.labels;
-    try {
-      _checkCancelled();
-      final orgId = context.read<SettingsProvider>().currentOrgId ?? '';
-      await SyncProvider.instance.flush(orgId: orgId);
-      _checkCancelled();
-      if (mounted) {
-        context.read<MemberProvider>().load();
-        context.read<ActivityProvider>().load();
-        context.read<NoticeProvider>().load();
-        setState(() => _lastCloudSync = formatDateTime(DateTime.now()).substring(5));
-      }
-      if (mounted) {
-        showToast(context, labels.labelCloudSyncDone);
-      }
-    } on SyncCancelled catch (_) {
-      if (mounted) showToast(context, '同步已取消');
-    } catch (e) {
-      debugPrint('SYNC_ERROR: $e');
-      if (mounted) {
-        setState(() => _lastCloudSync = '${labels.labelCloudSyncFail}: $e');
-        showToast(context, '${labels.labelCloudSyncFail}: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _syncing = false;
-          _syncStatus = '';
-        });
-      }
-    }
-  }
-
-  void _checkCancelled() {
-    if (_cancelRequested) throw SyncCancelled();
-  }
-
-  void _cancelSync() {
-    _cancelRequested = true;
-    if (mounted) setState(() => _syncStatus = '正在取消...');
-  }
-
   void _openWebAdmin() {
     // Placeholder for opening web admin
   }
 }
-
-class SyncCancelled implements Exception {}
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title});

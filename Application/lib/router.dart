@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'screens/activity/activity_detail_page.dart';
-import 'screens/activity/activity_form_page.dart';
-import 'screens/activity/activity_list_page.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/home_shell.dart';
 import 'screens/member/member_detail_page.dart';
@@ -13,6 +10,9 @@ import 'screens/notice/notice_detail_page.dart';
 import 'screens/notice/notice_form_page.dart';
 import 'screens/notice/notice_list_page.dart';
 import 'screens/org/org_create_page.dart';
+import 'screens/project/project_detail_page.dart';
+import 'screens/project/project_form_page.dart';
+import 'screens/project/project_list_page.dart';
 import 'screens/org/org_selector_page.dart';
 import 'screens/profile/profile_page.dart';
 import 'screens/settings/settings_page.dart';
@@ -35,7 +35,7 @@ final GoRouter appRouter = GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/activities', builder: (c, s) => const ActivityListPage()),
+            GoRoute(path: '/projects', builder: (c, s) => const ProjectListPage()),
           ],
         ),
         StatefulShellBranch(
@@ -81,14 +81,19 @@ final GoRouter appRouter = GoRouter(
       builder: (c, s) => MemberFormPage(id: s.pathParameters['id']),
     ),
     GoRoute(
-      path: '/activities/new',
+      path: '/projects/new',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (c, s) => const ActivityFormPage(),
+      builder: (c, s) => const ProjectFormPage(),
     ),
     GoRoute(
-      path: '/activities/:id',
+      path: '/projects/:id',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (c, s) => ActivityDetailPage(id: s.pathParameters['id']!),
+      builder: (c, s) => ProjectDetailPage(id: s.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/projects/:id/edit',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => ProjectFormPage(id: s.pathParameters['id']),
     ),
     GoRoute(
       path: '/notices/new',

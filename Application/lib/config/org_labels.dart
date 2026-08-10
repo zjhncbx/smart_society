@@ -24,7 +24,7 @@ class RoleConfig {
 class OrgLabels {
   final String appTitle;
   final String tabMembers;
-  final String tabActivities;
+  final String tabProjects;
   final String tabNotices;
   final String tabProfile;
   final List<RoleConfig> roles;
@@ -33,29 +33,23 @@ class OrgLabels {
   final String labelStudentNo;
   final String labelRole;
   final String labelJoinDate;
-  final String labelOrganizer;
-  final String labelCapacity;
-  final String labelSignUp;
-  final String labelSignedUp;
-  final String labelFull;
+  final String labelManager;
   final String memberMgmtTitle;
   final String memberDetailTitle;
   final String addMemberTitle;
   final String editMemberTitle;
-  final String activityMgmtTitle;
-  final String createActivityTitle;
-  final String activityDetailTitle;
+  final String projectMgmtTitle;
+  final String createProjectTitle;
+  final String projectDetailTitle;
   final String noticeMgmtTitle;
   final String noticeDetailTitle;
   final String publishNoticeTitle;
   final String labelTotalMembers;
-  final String labelMySignUps;
-  final String labelOngoingActs;
+  final String labelOngoingProjects;
   final String labelUnreadNotices;
   final String emptyMembers;
-  final String emptyActivities;
+  final String emptyProjects;
   final String emptyNotices;
-  final String emptyParticipants;
   final String searchHint;
   final String addButton;
   final String createButton;
@@ -65,7 +59,7 @@ class OrgLabels {
   final String confirmDelete;
   final String confirmDeleteMsg;
   final String deleteMemberTitle;
-  final String deleteActivityTitle;
+  final String deleteProjectTitle;
   final String deleteNoticeTitle;
   final String saveButton;
   final String aboutTitle;
@@ -76,21 +70,15 @@ class OrgLabels {
   final String todayLabel;
   final String yesterdayLabel;
   final String daysAgo;
-  final String unknownMember;
-  final String meLabel;
   final String notFilled;
-  final String statusNotStarted;
+  final String statusPreparing;
   final String statusInProgress;
-  final String statusEnded;
+  final String statusPaused;
+  final String statusCompleted;
   final String statusAll;
-  final String signUpSuccess;
-  final String signUpFail;
-  final String cancelSignUp;
   final String saveSuccess;
   final String addSuccess;
   final String publishSuccess;
-  final String volunteerHoursLabel;
-  final String signUpProgress;
   final String orgTypeLabel;
   final String themeLabel;
   final String aboutDialogTitle;
@@ -100,13 +88,14 @@ class OrgLabels {
   final String labelTitleRequired;
   final String labelStudentNoRequired;
   final String labelDeptRequired;
-  final String labelActivityTitle;
-  final String labelActivityDesc;
-  final String labelActivityLocation;
-  final String labelActivityTitleRequired;
-  final String labelActivityLocationRequired;
-  final String labelCapacityRequired;
-  final String labelOrganizerRequired;
+  final String labelProjectName;
+  final String labelProjectDesc;
+  final String labelProjectNameRequired;
+  final String labelManagerRequired;
+  final String labelStartDate;
+  final String labelEndDate;
+  final String labelStartDateRequired;
+  final String labelEndDateRequired;
   final String labelNoticeTitle;
   final String labelNoticeContent;
   final String labelPublisher;
@@ -116,9 +105,9 @@ class OrgLabels {
   final String labelImportantNotice;
   final String labelImportantNoticeHint;
   final String labelEmailInvalid;
-  final String labelActivityCreated;
+  final String labelProjectCreated;
   final String labelMemberNotExist;
-  final String labelActivityNotExist;
+  final String labelProjectNotExist;
   final String labelNoticeNotExist;
   final String labelSettingsTitle;
   final String labelSetupWelcome;
@@ -129,31 +118,45 @@ class OrgLabels {
   final String labelOrgTypeSwitchMsg;
   final String labelSwitchCancel;
   final String labelDelete;
-  final String labelActivityIntro;
   final String labelDashboard;
-  final String labelManageParticipants;
-  final String labelAddParticipant;
-  final String labelRemoveParticipant;
   final String labelEditRoles;
   final String labelResetRoles;
   final String labelRoleNameHint;
-  final String labelDingTalkSync;
   final String labelDingTalkSettings;
   final String labelSyncNow;
   final String labelLastSync;
-  final String labelCloudSync;
-  final String labelCloudSyncDone;
-  final String labelCloudSyncFail;
-  final String labelSyncCancel;
   final String labelWebAdmin;
   final String labelWebAdminHint;
-  final String labelStartTime;
-  final String labelEndTime;
+  final String labelTasks;
+  final String labelMilestones;
+  final String labelProgress;
+  final String labelAssignee;
+  final String labelPriority;
+  final String labelDueDate;
+  final String labelAddTask;
+  final String labelEditTask;
+  final String labelAddMilestone;
+  final String labelManageTasks;
+  final String labelManageMilestones;
+  final String labelTaskTodo;
+  final String labelTaskDoing;
+  final String labelTaskDone;
+  final String labelMilestoneUndone;
+  final String labelMilestoneDone;
+  final String labelPriorityLow;
+  final String labelPriorityMedium;
+  final String labelPriorityHigh;
+  final String labelStatusTransition;
+  final String labelConfirmTransition;
+  final String emptyTasks;
+  final String emptyMilestones;
+  final String deleteTaskTitle;
+  final String deleteMilestoneTitle;
 
   const OrgLabels({
     required this.appTitle,
     required this.tabMembers,
-    required this.tabActivities,
+    required this.tabProjects,
     required this.tabNotices,
     required this.tabProfile,
     required this.roles,
@@ -162,29 +165,23 @@ class OrgLabels {
     required this.labelStudentNo,
     required this.labelRole,
     required this.labelJoinDate,
-    required this.labelOrganizer,
-    required this.labelCapacity,
-    required this.labelSignUp,
-    required this.labelSignedUp,
-    required this.labelFull,
+    required this.labelManager,
     required this.memberMgmtTitle,
     required this.memberDetailTitle,
     required this.addMemberTitle,
     required this.editMemberTitle,
-    required this.activityMgmtTitle,
-    required this.createActivityTitle,
-    required this.activityDetailTitle,
+    required this.projectMgmtTitle,
+    required this.createProjectTitle,
+    required this.projectDetailTitle,
     required this.noticeMgmtTitle,
     required this.noticeDetailTitle,
     required this.publishNoticeTitle,
     required this.labelTotalMembers,
-    required this.labelMySignUps,
-    required this.labelOngoingActs,
+    required this.labelOngoingProjects,
     required this.labelUnreadNotices,
     required this.emptyMembers,
-    required this.emptyActivities,
+    required this.emptyProjects,
     required this.emptyNotices,
-    required this.emptyParticipants,
     required this.searchHint,
     required this.addButton,
     required this.createButton,
@@ -194,7 +191,7 @@ class OrgLabels {
     required this.confirmDelete,
     required this.confirmDeleteMsg,
     required this.deleteMemberTitle,
-    required this.deleteActivityTitle,
+    required this.deleteProjectTitle,
     required this.deleteNoticeTitle,
     required this.saveButton,
     required this.aboutTitle,
@@ -205,21 +202,15 @@ class OrgLabels {
     required this.todayLabel,
     required this.yesterdayLabel,
     required this.daysAgo,
-    required this.unknownMember,
-    required this.meLabel,
     required this.notFilled,
-    required this.statusNotStarted,
+    required this.statusPreparing,
     required this.statusInProgress,
-    required this.statusEnded,
+    required this.statusPaused,
+    required this.statusCompleted,
     required this.statusAll,
-    required this.signUpSuccess,
-    required this.signUpFail,
-    required this.cancelSignUp,
     required this.saveSuccess,
     required this.addSuccess,
     required this.publishSuccess,
-    required this.volunteerHoursLabel,
-    required this.signUpProgress,
     required this.orgTypeLabel,
     required this.themeLabel,
     required this.aboutDialogTitle,
@@ -229,13 +220,14 @@ class OrgLabels {
     required this.labelTitleRequired,
     required this.labelStudentNoRequired,
     required this.labelDeptRequired,
-    required this.labelActivityTitle,
-    required this.labelActivityDesc,
-    required this.labelActivityLocation,
-    required this.labelActivityTitleRequired,
-    required this.labelActivityLocationRequired,
-    required this.labelCapacityRequired,
-    required this.labelOrganizerRequired,
+    required this.labelProjectName,
+    required this.labelProjectDesc,
+    required this.labelProjectNameRequired,
+    required this.labelManagerRequired,
+    required this.labelStartDate,
+    required this.labelEndDate,
+    required this.labelStartDateRequired,
+    required this.labelEndDateRequired,
     required this.labelNoticeTitle,
     required this.labelNoticeContent,
     required this.labelPublisher,
@@ -245,9 +237,9 @@ class OrgLabels {
     required this.labelImportantNotice,
     required this.labelImportantNoticeHint,
     required this.labelEmailInvalid,
-    required this.labelActivityCreated,
+    required this.labelProjectCreated,
     required this.labelMemberNotExist,
-    required this.labelActivityNotExist,
+    required this.labelProjectNotExist,
     required this.labelNoticeNotExist,
     required this.labelSettingsTitle,
     required this.labelSetupWelcome,
@@ -258,32 +250,46 @@ class OrgLabels {
     required this.labelOrgTypeSwitchMsg,
     required this.labelSwitchCancel,
     required this.labelDelete,
-    required this.labelActivityIntro,
     required this.labelDashboard,
-    required this.labelManageParticipants,
-    required this.labelAddParticipant,
-    required this.labelRemoveParticipant,
     required this.labelEditRoles,
     required this.labelResetRoles,
     required this.labelRoleNameHint,
-    required this.labelDingTalkSync,
     required this.labelDingTalkSettings,
     required this.labelSyncNow,
     required this.labelLastSync,
-    required this.labelCloudSync,
-    required this.labelCloudSyncDone,
-    required this.labelCloudSyncFail,
-    required this.labelSyncCancel,
     required this.labelWebAdmin,
     required this.labelWebAdminHint,
-    required this.labelStartTime,
-    required this.labelEndTime,
+    required this.labelTasks,
+    required this.labelMilestones,
+    required this.labelProgress,
+    required this.labelAssignee,
+    required this.labelPriority,
+    required this.labelDueDate,
+    required this.labelAddTask,
+    required this.labelEditTask,
+    required this.labelAddMilestone,
+    required this.labelManageTasks,
+    required this.labelManageMilestones,
+    required this.labelTaskTodo,
+    required this.labelTaskDoing,
+    required this.labelTaskDone,
+    required this.labelMilestoneUndone,
+    required this.labelMilestoneDone,
+    required this.labelPriorityLow,
+    required this.labelPriorityMedium,
+    required this.labelPriorityHigh,
+    required this.labelStatusTransition,
+    required this.labelConfirmTransition,
+    required this.emptyTasks,
+    required this.emptyMilestones,
+    required this.deleteTaskTitle,
+    required this.deleteMilestoneTitle,
   });
 
   static const _schoolClub = OrgLabels(
     appTitle: '社易管',
     tabMembers: '成员',
-    tabActivities: '活动',
+    tabProjects: '项目',
     tabNotices: '通知',
     tabProfile: '我的',
     roles: [
@@ -295,39 +301,33 @@ class OrgLabels {
     labelStudentNo: '学号',
     labelRole: '角色',
     labelJoinDate: '加入时间',
-    labelOrganizer: '组织者',
-    labelCapacity: '名额',
-    labelSignUp: '管理参与人',
-    labelSignedUp: '已参与',
-    labelFull: '名额已满',
+    labelManager: '负责人',
     memberMgmtTitle: '成员管理',
     memberDetailTitle: '成员详情',
     addMemberTitle: '添加成员',
     editMemberTitle: '编辑成员',
-    activityMgmtTitle: '活动管理',
-    createActivityTitle: '创建活动',
-    activityDetailTitle: '活动详情',
+    projectMgmtTitle: '项目管理',
+    createProjectTitle: '创建项目',
+    projectDetailTitle: '项目详情',
     noticeMgmtTitle: '通知公告',
     noticeDetailTitle: '公告详情',
     publishNoticeTitle: '发布公告',
     labelTotalMembers: '社团成员总数',
-    labelMySignUps: '管理活动',
-    labelOngoingActs: '进行中活动',
+    labelOngoingProjects: '进行中项目',
     labelUnreadNotices: '未读公告',
     emptyMembers: '没有符合条件的成员',
-    emptyActivities: '暂无活动',
+    emptyProjects: '暂无项目',
     emptyNotices: '暂无公告',
-    emptyParticipants: '暂无参与人',
     searchHint: '搜索姓名 / 学号 / 部门',
     addButton: '添加成员',
-    createButton: '创建活动',
+    createButton: '创建项目',
     publishButton: '发布公告',
     editTooltip: '编辑',
     deleteTooltip: '删除',
     confirmDelete: '确定删除',
     confirmDeleteMsg: '确定删除{type}「{name}」吗？',
     deleteMemberTitle: '删除成员',
-    deleteActivityTitle: '删除活动',
+    deleteProjectTitle: '删除项目',
     deleteNoticeTitle: '删除公告',
     saveButton: '保存',
     aboutTitle: '关于社易管',
@@ -338,21 +338,15 @@ class OrgLabels {
     todayLabel: '今天',
     yesterdayLabel: '昨天',
     daysAgo: '天前',
-    unknownMember: '未知成员',
-    meLabel: '我',
     notFilled: '未填写',
-    statusNotStarted: '未开始',
+    statusPreparing: '筹备中',
     statusInProgress: '进行中',
-    statusEnded: '已结束',
+    statusPaused: '已暂停',
+    statusCompleted: '已完成',
     statusAll: '全部',
-    signUpSuccess: '报名成功',
-    signUpFail: '报名失败',
-    cancelSignUp: '已取消',
     saveSuccess: '已保存',
     addSuccess: '成员已添加',
     publishSuccess: '公告已发布',
-    volunteerHoursLabel: '志愿时长',
-    signUpProgress: '参与情况',
     orgTypeLabel: '组织类型',
     themeLabel: '主题风格',
     aboutDialogTitle: '关于社易管',
@@ -362,13 +356,14 @@ class OrgLabels {
     labelTitleRequired: '请输入姓名',
     labelStudentNoRequired: '请输入学号',
     labelDeptRequired: '请输入部门',
-    labelActivityTitle: '活动标题',
-    labelActivityDesc: '活动介绍',
-    labelActivityLocation: '活动地点',
-    labelActivityTitleRequired: '请输入活动标题',
-    labelActivityLocationRequired: '请输入活动地点',
-    labelCapacityRequired: '请输入有效名额',
-    labelOrganizerRequired: '请输入组织者',
+    labelProjectName: '项目名称',
+    labelProjectDesc: '项目介绍',
+    labelProjectNameRequired: '请输入项目名称',
+    labelManagerRequired: '请选择项目负责人',
+    labelStartDate: '开始日期',
+    labelEndDate: '结束日期',
+    labelStartDateRequired: '请选择开始日期',
+    labelEndDateRequired: '请选择结束日期',
     labelNoticeTitle: '公告标题',
     labelNoticeContent: '公告内容',
     labelPublisher: '发布人',
@@ -378,9 +373,9 @@ class OrgLabels {
     labelImportantNotice: '标记为重要公告',
     labelImportantNoticeHint: '重要公告将在列表中突出显示',
     labelEmailInvalid: '邮箱格式不正确',
-    labelActivityCreated: '活动创建成功',
+    labelProjectCreated: '项目创建成功',
     labelMemberNotExist: '成员不存在',
-    labelActivityNotExist: '活动不存在',
+    labelProjectNotExist: '项目不存在',
     labelNoticeNotExist: '公告不存在',
     labelSettingsTitle: '设置',
     labelSetupWelcome: '欢迎使用',
@@ -391,32 +386,46 @@ class OrgLabels {
     labelOrgTypeSwitchMsg: '切换组织类型将重置角色和部门标签，确定继续？',
     labelSwitchCancel: '取消',
     labelDelete: '删除',
-    labelActivityIntro: '活动介绍',
     labelDashboard: '管理概览',
-    labelManageParticipants: '管理参与人',
-    labelAddParticipant: '添加参与人',
-    labelRemoveParticipant: '移除参与人',
     labelEditRoles: '编辑角色名称',
     labelResetRoles: '恢复默认',
     labelRoleNameHint: '请输入角色名称',
-    labelDingTalkSync: '钉钉同步',
     labelDingTalkSettings: '钉钉同步设置',
     labelSyncNow: '立即同步',
     labelLastSync: '上次同步',
-    labelCloudSync: '云端数据同步',
-    labelCloudSyncDone: '云端同步完成',
-    labelCloudSyncFail: '云端同步失败',
-    labelSyncCancel: '取消同步',
     labelWebAdmin: 'Web管理后台',
     labelWebAdminHint: '访问Web管理后台进行高级管理',
-    labelStartTime: '开始时间',
-    labelEndTime: '结束时间',
+    labelTasks: '任务',
+    labelMilestones: '里程碑',
+    labelProgress: '项目进度',
+    labelAssignee: '任务负责人',
+    labelPriority: '优先级',
+    labelDueDate: '截止日期',
+    labelAddTask: '添加任务',
+    labelEditTask: '编辑任务',
+    labelAddMilestone: '添加里程碑',
+    labelManageTasks: '管理任务',
+    labelManageMilestones: '管理里程碑',
+    labelTaskTodo: '待办',
+    labelTaskDoing: '进行中',
+    labelTaskDone: '已完成',
+    labelMilestoneUndone: '未完成',
+    labelMilestoneDone: '已完成',
+    labelPriorityLow: '低',
+    labelPriorityMedium: '中',
+    labelPriorityHigh: '高',
+    labelStatusTransition: '状态流转',
+    labelConfirmTransition: '确定将项目状态流转为「{status}」？',
+    emptyTasks: '暂无任务',
+    emptyMilestones: '暂无里程碑',
+    deleteTaskTitle: '删除任务',
+    deleteMilestoneTitle: '删除里程碑',
   );
 
   static const _volunteerTeam = OrgLabels(
     appTitle: '志愿之家',
     tabMembers: '志愿者',
-    tabActivities: '志愿项目',
+    tabProjects: '志愿项目',
     tabNotices: '公告',
     tabProfile: '我的',
     roles: [
@@ -428,29 +437,23 @@ class OrgLabels {
     labelStudentNo: '编号',
     labelRole: '身份',
     labelJoinDate: '注册时间',
-    labelOrganizer: '负责人',
-    labelCapacity: '人数上限',
-    labelSignUp: '管理参与人',
-    labelSignedUp: '已参与',
-    labelFull: '已满员',
+    labelManager: '项目负责人',
     memberMgmtTitle: '志愿者管理',
     memberDetailTitle: '志愿者详情',
     addMemberTitle: '添加志愿者',
     editMemberTitle: '编辑志愿者',
-    activityMgmtTitle: '志愿项目管理',
-    createActivityTitle: '发起项目',
-    activityDetailTitle: '项目详情',
+    projectMgmtTitle: '志愿项目管理',
+    createProjectTitle: '发起项目',
+    projectDetailTitle: '项目详情',
     noticeMgmtTitle: '公告通知',
     noticeDetailTitle: '公告详情',
     publishNoticeTitle: '发布公告',
     labelTotalMembers: '志愿者总数',
-    labelMySignUps: '管理项目',
-    labelOngoingActs: '进行中项目',
+    labelOngoingProjects: '进行中项目',
     labelUnreadNotices: '未读公告',
     emptyMembers: '没有符合条件的志愿者',
-    emptyActivities: '暂无项目',
+    emptyProjects: '暂无项目',
     emptyNotices: '暂无公告',
-    emptyParticipants: '暂无参与人',
     searchHint: '搜索姓名 / 编号 / 服务组',
     addButton: '添加志愿者',
     createButton: '发起项目',
@@ -460,7 +463,7 @@ class OrgLabels {
     confirmDelete: '确定删除',
     confirmDeleteMsg: '确定删除{type}「{name}」吗？',
     deleteMemberTitle: '删除志愿者',
-    deleteActivityTitle: '删除项目',
+    deleteProjectTitle: '删除项目',
     deleteNoticeTitle: '删除公告',
     saveButton: '保存',
     aboutTitle: '关于志愿之家',
@@ -471,21 +474,15 @@ class OrgLabels {
     todayLabel: '今天',
     yesterdayLabel: '昨天',
     daysAgo: '天前',
-    unknownMember: '未知志愿者',
-    meLabel: '我',
     notFilled: '未填写',
-    statusNotStarted: '未开始',
+    statusPreparing: '筹备中',
     statusInProgress: '进行中',
-    statusEnded: '已结束',
+    statusPaused: '已暂停',
+    statusCompleted: '已完成',
     statusAll: '全部',
-    signUpSuccess: '加入成功',
-    signUpFail: '加入失败',
-    cancelSignUp: '已退出',
     saveSuccess: '已保存',
     addSuccess: '志愿者已添加',
     publishSuccess: '公告已发布',
-    volunteerHoursLabel: '志愿时长',
-    signUpProgress: '参与情况',
     orgTypeLabel: '组织类型',
     themeLabel: '主题风格',
     aboutDialogTitle: '关于志愿之家',
@@ -495,13 +492,14 @@ class OrgLabels {
     labelTitleRequired: '请输入姓名',
     labelStudentNoRequired: '请输入编号',
     labelDeptRequired: '请输入服务组',
-    labelActivityTitle: '项目名称',
-    labelActivityDesc: '项目介绍',
-    labelActivityLocation: '项目地点',
-    labelActivityTitleRequired: '请输入项目名称',
-    labelActivityLocationRequired: '请输入项目地点',
-    labelCapacityRequired: '请输入有效人数',
-    labelOrganizerRequired: '请输入负责人',
+    labelProjectName: '项目名称',
+    labelProjectDesc: '项目介绍',
+    labelProjectNameRequired: '请输入项目名称',
+    labelManagerRequired: '请选择项目负责人',
+    labelStartDate: '开始日期',
+    labelEndDate: '结束日期',
+    labelStartDateRequired: '请选择开始日期',
+    labelEndDateRequired: '请选择结束日期',
     labelNoticeTitle: '公告标题',
     labelNoticeContent: '公告内容',
     labelPublisher: '发布人',
@@ -511,9 +509,9 @@ class OrgLabels {
     labelImportantNotice: '标记为重要公告',
     labelImportantNoticeHint: '重要公告将在列表中突出显示',
     labelEmailInvalid: '邮箱格式不正确',
-    labelActivityCreated: '项目创建成功',
+    labelProjectCreated: '项目创建成功',
     labelMemberNotExist: '志愿者不存在',
-    labelActivityNotExist: '项目不存在',
+    labelProjectNotExist: '项目不存在',
     labelNoticeNotExist: '公告不存在',
     labelSettingsTitle: '设置',
     labelSetupWelcome: '欢迎使用',
@@ -524,32 +522,46 @@ class OrgLabels {
     labelOrgTypeSwitchMsg: '切换组织类型将重置角色和部门标签，确定继续？',
     labelSwitchCancel: '取消',
     labelDelete: '删除',
-    labelActivityIntro: '项目介绍',
     labelDashboard: '管理概览',
-    labelManageParticipants: '管理参与人',
-    labelAddParticipant: '添加参与人',
-    labelRemoveParticipant: '移除参与人',
     labelEditRoles: '编辑角色名称',
     labelResetRoles: '恢复默认',
     labelRoleNameHint: '请输入角色名称',
-    labelDingTalkSync: '钉钉同步',
     labelDingTalkSettings: '钉钉同步设置',
     labelSyncNow: '立即同步',
     labelLastSync: '上次同步',
-    labelCloudSync: '云端数据同步',
-    labelCloudSyncDone: '云端同步完成',
-    labelCloudSyncFail: '云端同步失败',
-    labelSyncCancel: '取消同步',
     labelWebAdmin: 'Web管理后台',
     labelWebAdminHint: '访问Web管理后台进行高级管理',
-    labelStartTime: '开始时间',
-    labelEndTime: '结束时间',
+    labelTasks: '任务',
+    labelMilestones: '里程碑',
+    labelProgress: '项目进度',
+    labelAssignee: '任务负责人',
+    labelPriority: '优先级',
+    labelDueDate: '截止日期',
+    labelAddTask: '添加任务',
+    labelEditTask: '编辑任务',
+    labelAddMilestone: '添加里程碑',
+    labelManageTasks: '管理任务',
+    labelManageMilestones: '管理里程碑',
+    labelTaskTodo: '待办',
+    labelTaskDoing: '进行中',
+    labelTaskDone: '已完成',
+    labelMilestoneUndone: '未完成',
+    labelMilestoneDone: '已完成',
+    labelPriorityLow: '低',
+    labelPriorityMedium: '中',
+    labelPriorityHigh: '高',
+    labelStatusTransition: '状态流转',
+    labelConfirmTransition: '确定将项目状态流转为「{status}」？',
+    emptyTasks: '暂无任务',
+    emptyMilestones: '暂无里程碑',
+    deleteTaskTitle: '删除任务',
+    deleteMilestoneTitle: '删除里程碑',
   );
 
   static const _socialOrg = OrgLabels(
     appTitle: '组织通',
     tabMembers: '会员',
-    tabActivities: '活动',
+    tabProjects: '项目',
     tabNotices: '公告',
     tabProfile: '我的',
     roles: [
@@ -565,39 +577,33 @@ class OrgLabels {
     labelStudentNo: '会员编号',
     labelRole: '职务',
     labelJoinDate: '入会时间',
-    labelOrganizer: '主办方',
-    labelCapacity: '名额',
-    labelSignUp: '管理参与人',
-    labelSignedUp: '已参与',
-    labelFull: '名额已满',
+    labelManager: '负责人',
     memberMgmtTitle: '会员管理',
     memberDetailTitle: '会员详情',
     addMemberTitle: '添加会员',
     editMemberTitle: '编辑会员',
-    activityMgmtTitle: '活动管理',
-    createActivityTitle: '创建活动',
-    activityDetailTitle: '活动详情',
+    projectMgmtTitle: '项目管理',
+    createProjectTitle: '创建项目',
+    projectDetailTitle: '项目详情',
     noticeMgmtTitle: '公告通知',
     noticeDetailTitle: '公告详情',
     publishNoticeTitle: '发布公告',
     labelTotalMembers: '会员总数',
-    labelMySignUps: '管理活动',
-    labelOngoingActs: '进行中活动',
+    labelOngoingProjects: '进行中项目',
     labelUnreadNotices: '未读公告',
     emptyMembers: '没有符合条件的会员',
-    emptyActivities: '暂无活动',
+    emptyProjects: '暂无项目',
     emptyNotices: '暂无公告',
-    emptyParticipants: '暂无参与人',
     searchHint: '搜索姓名 / 会员编号 / 部门',
     addButton: '添加会员',
-    createButton: '创建活动',
+    createButton: '创建项目',
     publishButton: '发布公告',
     editTooltip: '编辑',
     deleteTooltip: '删除',
     confirmDelete: '确定删除',
     confirmDeleteMsg: '确定删除{type}「{name}」吗？',
     deleteMemberTitle: '删除会员',
-    deleteActivityTitle: '删除活动',
+    deleteProjectTitle: '删除项目',
     deleteNoticeTitle: '删除公告',
     saveButton: '保存',
     aboutTitle: '关于组织通',
@@ -608,21 +614,15 @@ class OrgLabels {
     todayLabel: '今天',
     yesterdayLabel: '昨天',
     daysAgo: '天前',
-    unknownMember: '未知会员',
-    meLabel: '我',
     notFilled: '未填写',
-    statusNotStarted: '未开始',
+    statusPreparing: '筹备中',
     statusInProgress: '进行中',
-    statusEnded: '已结束',
+    statusPaused: '已暂停',
+    statusCompleted: '已完成',
     statusAll: '全部',
-    signUpSuccess: '报名成功',
-    signUpFail: '报名失败',
-    cancelSignUp: '已取消',
     saveSuccess: '已保存',
     addSuccess: '会员已添加',
     publishSuccess: '公告已发布',
-    volunteerHoursLabel: '志愿时长',
-    signUpProgress: '参与情况',
     orgTypeLabel: '组织类型',
     themeLabel: '主题风格',
     aboutDialogTitle: '关于组织通',
@@ -632,13 +632,14 @@ class OrgLabels {
     labelTitleRequired: '请输入姓名',
     labelStudentNoRequired: '请输入会员编号',
     labelDeptRequired: '请输入部门',
-    labelActivityTitle: '活动标题',
-    labelActivityDesc: '活动介绍',
-    labelActivityLocation: '活动地点',
-    labelActivityTitleRequired: '请输入活动标题',
-    labelActivityLocationRequired: '请输入活动地点',
-    labelCapacityRequired: '请输入有效名额',
-    labelOrganizerRequired: '请输入主办方',
+    labelProjectName: '项目名称',
+    labelProjectDesc: '项目介绍',
+    labelProjectNameRequired: '请输入项目名称',
+    labelManagerRequired: '请选择项目负责人',
+    labelStartDate: '开始日期',
+    labelEndDate: '结束日期',
+    labelStartDateRequired: '请选择开始日期',
+    labelEndDateRequired: '请选择结束日期',
     labelNoticeTitle: '公告标题',
     labelNoticeContent: '公告内容',
     labelPublisher: '发布人',
@@ -648,9 +649,9 @@ class OrgLabels {
     labelImportantNotice: '标记为重要公告',
     labelImportantNoticeHint: '重要公告将在列表中突出显示',
     labelEmailInvalid: '邮箱格式不正确',
-    labelActivityCreated: '活动创建成功',
+    labelProjectCreated: '项目创建成功',
     labelMemberNotExist: '会员不存在',
-    labelActivityNotExist: '活动不存在',
+    labelProjectNotExist: '项目不存在',
     labelNoticeNotExist: '公告不存在',
     labelSettingsTitle: '设置',
     labelSetupWelcome: '欢迎使用',
@@ -661,26 +662,40 @@ class OrgLabels {
     labelOrgTypeSwitchMsg: '切换组织类型将重置角色和部门标签，确定继续？',
     labelSwitchCancel: '取消',
     labelDelete: '删除',
-    labelActivityIntro: '活动介绍',
     labelDashboard: '管理概览',
-    labelManageParticipants: '管理参与人',
-    labelAddParticipant: '添加参与人',
-    labelRemoveParticipant: '移除参与人',
     labelEditRoles: '编辑角色名称',
     labelResetRoles: '恢复默认',
     labelRoleNameHint: '请输入角色名称',
-    labelDingTalkSync: '钉钉同步',
     labelDingTalkSettings: '钉钉同步设置',
     labelSyncNow: '立即同步',
     labelLastSync: '上次同步',
-    labelCloudSync: '云端数据同步',
-    labelCloudSyncDone: '云端同步完成',
-    labelCloudSyncFail: '云端同步失败',
-    labelSyncCancel: '取消同步',
     labelWebAdmin: 'Web管理后台',
     labelWebAdminHint: '访问Web管理后台进行高级管理',
-    labelStartTime: '开始时间',
-    labelEndTime: '结束时间',
+    labelTasks: '任务',
+    labelMilestones: '里程碑',
+    labelProgress: '项目进度',
+    labelAssignee: '任务负责人',
+    labelPriority: '优先级',
+    labelDueDate: '截止日期',
+    labelAddTask: '添加任务',
+    labelEditTask: '编辑任务',
+    labelAddMilestone: '添加里程碑',
+    labelManageTasks: '管理任务',
+    labelManageMilestones: '管理里程碑',
+    labelTaskTodo: '待办',
+    labelTaskDoing: '进行中',
+    labelTaskDone: '已完成',
+    labelMilestoneUndone: '未完成',
+    labelMilestoneDone: '已完成',
+    labelPriorityLow: '低',
+    labelPriorityMedium: '中',
+    labelPriorityHigh: '高',
+    labelStatusTransition: '状态流转',
+    labelConfirmTransition: '确定将项目状态流转为「{status}」？',
+    emptyTasks: '暂无任务',
+    emptyMilestones: '暂无里程碑',
+    deleteTaskTitle: '删除任务',
+    deleteMilestoneTitle: '删除里程碑',
   );
 
   static OrgLabels forType(OrgType type) {

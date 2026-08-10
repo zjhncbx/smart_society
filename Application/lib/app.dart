@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 
 import 'config/org_labels.dart';
 import 'config/theme_config.dart';
-import 'providers/activity_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/member_provider.dart';
 import 'providers/notice_provider.dart';
 import 'providers/organization_provider.dart';
+import 'providers/project_provider.dart';
 import 'providers/role_config_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/sync_provider.dart';
@@ -93,6 +93,9 @@ class SmartSocietyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 运行时求值，避免在 Provider 创建时捕获尚未初始化的 currentOrgId
+    String Function() orgIdGetter() =>
+        () => settingsProvider.currentOrgId ?? '';
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: authProvider),
@@ -100,9 +103,30 @@ class SmartSocietyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: roleConfigProvider),
         ChangeNotifierProvider.value(value: syncProvider),
         ChangeNotifierProvider(create: (_) => OrganizationProvider()..init(userId: authProvider.user?.openId ?? '')),
-        ChangeNotifierProvider(create: (_) => MemberProvider()..load()),
-        ChangeNotifierProvider(create: (_) => ActivityProvider()..load()),
-        ChangeNotifierProvider(create: (_) => NoticeProvider()..load()),
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = MemberProvider(orgIdGetter: orgIdGetter());
+            SyncProvider.instance.registerRefreshListener(() => p.load());
+            p.load();
+            return p;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = ProjectProvider(orgIdGetter: orgIdGetter());
+            SyncProvider.instance.registerRefreshListener(() => p.load());
+            p.load();
+            return p;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = NoticeProvider(orgIdGetter: orgIdGetter());
+            SyncProvider.instance.registerRefreshListener(() => p.load());
+            p.load();
+            return p;
+          },
+        ),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {

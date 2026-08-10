@@ -3,11 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/org_config_provider.dart';
-import '../../providers/activity_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
 import '../../providers/organization_provider.dart';
+import '../../providers/project_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/member_avatar.dart';
@@ -22,7 +22,7 @@ class ProfilePage extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final memberProvider = context.watch<MemberProvider>();
-    final activityProvider = context.watch<ActivityProvider>();
+    final projectProvider = context.watch<ProjectProvider>();
     final noticeProvider = context.watch<NoticeProvider>();
     final auth = context.watch<AuthProvider>();
     final orgProvider = context.watch<OrganizationProvider>();
@@ -30,8 +30,7 @@ class ProfilePage extends StatelessWidget {
 
     final user = auth.user;
     final org = orgProvider.currentOrg;
-    final ongoingCount =
-        activityProvider.activities.where((a) => a.status == 1).length;
+    final ongoingCount = projectProvider.projects.where((p) => p.status == 1).length;
 
     return Scaffold(
       appBar: AppBar(title: Text(labels.profileTitle)),
@@ -136,10 +135,10 @@ class ProfilePage extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _StatTile(
-                  icon: Icons.event_available_outlined,
+                  icon: Icons.task_alt_outlined,
                   iconColor: cs.tertiary,
                   value: '$ongoingCount',
-                  label: labels.labelOngoingActs,
+                  label: labels.labelOngoingProjects,
                 ),
               ),
             ],
@@ -191,12 +190,12 @@ class ProfilePage extends StatelessWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: AppCard(
-                  onTap: () => context.push('/activities/new'),
+                  onTap: () => context.push('/projects/new'),
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.event_outlined, color: cs.tertiary),
+                      Icon(Icons.task_alt_outlined, color: cs.tertiary),
                       const SizedBox(height: 6),
                       Text(
                         labels.createButton,

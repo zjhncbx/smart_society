@@ -1,5 +1,5 @@
 {
-  "objectTypeName": "Activity",
+  "objectTypeName": "Project",
   "fields": [
     {
       "fieldName": "id",
@@ -10,7 +10,7 @@
       "belongPrimaryKey": true
     },
     {
-      "fieldName": "title",
+      "fieldName": "name",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": true,
@@ -28,16 +28,16 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "location",
+      "fieldName": "managerId",
       "fieldType": "String",
       "isNeedEncrypt": false,
-      "notNull": false,
+      "notNull": true,
       "isSensitive": false,
       "defaultValue": "",
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "startTime",
+      "fieldName": "startDate",
       "fieldType": "Date",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -45,7 +45,7 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "endTime",
+      "fieldName": "endDate",
       "fieldType": "Date",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -53,7 +53,7 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "capacity",
+      "fieldName": "status",
       "fieldType": "Integer",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -62,16 +62,16 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "organizer",
-      "fieldType": "String",
+      "fieldName": "progress",
+      "fieldType": "Integer",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
-      "defaultValue": "",
+      "defaultValue": "0",
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "participants",
+      "fieldName": "tasks",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -80,11 +80,12 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "volunteerHours",
-      "fieldType": "Integer",
+      "fieldName": "milestones",
+      "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
+      "defaultValue": "[]",
       "belongPrimaryKey": false
     },
     {
@@ -115,7 +116,7 @@
   ],
   "indexes": [
     {
-      "indexName": "activity_id",
+      "indexName": "project_id",
       "indexList": [{ "fieldName": "id", "sortType": "ASC" }]
     }
   ],

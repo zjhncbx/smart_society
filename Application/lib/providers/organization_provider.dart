@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 
 import '../models/organization.dart';
 import '../services/cloud_function_service.dart';
+import 'sync_provider.dart';
 
 /// 组织管理状态：创建、加载、切换组织。
 class OrganizationProvider extends ChangeNotifier {
@@ -36,6 +37,11 @@ class OrganizationProvider extends ChangeNotifier {
     try {
       await loadMyOrgs();
     } catch (_) {}
+    // 自动拉取当前组织的最新数据（成员/项目/公告）
+    final orgId = _currentOrgId;
+    if (orgId != null && orgId.isNotEmpty) {
+      SyncProvider.instance.pullAndRefresh(orgId);
+    }
   }
 
   Future<void> loadMyOrgs() async {
@@ -79,6 +85,8 @@ class OrganizationProvider extends ChangeNotifier {
     final box = await Hive.openBox(_boxName);
     await box.put(_currentKey, orgId);
     notifyListeners();
+    // 切换组织后自动拉取该组织最新数据
+    SyncProvider.instance.pullAndRefresh(orgId);
   }
 
   Future<void> joinOrg(String orgId) async {

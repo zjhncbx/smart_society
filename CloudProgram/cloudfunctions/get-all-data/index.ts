@@ -1,6 +1,6 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Member } from './Member';
-import { Activity } from './Activity';
+import { Project } from './Project';
 import { Notice } from './Notice';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
@@ -37,16 +37,16 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const db = cloud.database({ zoneName: ZONE_NAME });
 
     const memberCol: CloudDBCollection<Member> = db.collection(Member);
-    const activityCol: CloudDBCollection<Activity> = db.collection(Activity);
+    const projectCol: CloudDBCollection<Project> = db.collection(Project);
     const noticeCol: CloudDBCollection<Notice> = db.collection(Notice);
 
-    const [memberRes, activityRes, noticeRes] = await Promise.all([
+    const [memberRes, projectRes, noticeRes] = await Promise.all([
       memberCol.query().equalTo('orgId', orgId).get(),
-      activityCol.query().equalTo('orgId', orgId).get(),
+      projectCol.query().equalTo('orgId', orgId).get(),
       noticeCol.query().equalTo('orgId', orgId).get(),
     ]);
 
-    logger.info(`get-all-data done: members=${memberRes.length}, activities=${activityRes.length}, notices=${noticeRes.length}`);
+    logger.info(`get-all-data done: members=${memberRes.length}, projects=${projectRes.length}, notices=${noticeRes.length}`);
 
     callback({
       ret: {
@@ -54,7 +54,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         message: 'ok',
         data: {
           Member: memberRes,
-          Activity: activityRes,
+          Project: projectRes,
           Notice: noticeRes,
         },
       },

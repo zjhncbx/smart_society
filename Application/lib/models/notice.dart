@@ -19,7 +19,7 @@ class Notice {
   final DateTime publishTime;
   bool isRead;
   final bool isImportant;
-  final String orgId;
+  String orgId;
   final DateTime? updatedAt;
 
   Map<String, dynamic> toJson() => {
@@ -39,14 +39,23 @@ class Notice {
         title: json['title'] as String,
         content: (json['content'] as String?) ?? '',
         publisher: (json['publisher'] as String?) ?? '社长办公室',
-        publishTime: DateTime.fromMillisecondsSinceEpoch(
-          (json['publishTime'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
-        ),
+        publishTime: _toDate(json['publishTime']) ?? DateTime.now(),
         isRead: (json['isRead'] as bool?) ?? false,
         isImportant: (json['isImportant'] as bool?) ?? false,
         orgId: (json['orgId'] as String?) ?? '',
-        updatedAt: (json['updatedAt'] as int?) != null
-            ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt'] as int)
-            : null,
+        updatedAt: _toDate(json['updatedAt']),
       );
+}
+
+/// 兼容 int（epoch 毫秒）/ String（ISO 或数字）两种云端日期形态。
+DateTime? _toDate(dynamic v) {
+  if (v == null) return null;
+  if (v is DateTime) return v;
+  if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+  if (v is String) {
+    final n = int.tryParse(v);
+    if (n != null) return DateTime.fromMillisecondsSinceEpoch(n);
+    return DateTime.tryParse(v);
+  }
+  return null;
 }

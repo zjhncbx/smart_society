@@ -16,11 +16,11 @@ class StorageService {
       MethodChannel('com.smartsociety/storage');
 
   static const String membersBoxName = 'members';
-  static const String activitiesBoxName = 'activities';
+  static const String projectsBoxName = 'projects';
   static const String noticesBoxName = 'notices';
 
   late final Box<dynamic> membersBox;
-  late final Box<dynamic> activitiesBox;
+  late final Box<dynamic> projectsBox;
   late final Box<dynamic> noticesBox;
 
   bool _initialized = false;
@@ -29,8 +29,12 @@ class StorageService {
     if (_initialized) return;
     final path = await _resolveStoragePath();
     Hive.init(path);
+    // 旧版活动数据已被项目管理取代，直接弃用旧 box
+    if (await Hive.boxExists('activities')) {
+      await Hive.deleteBoxFromDisk('activities');
+    }
     membersBox = await Hive.openBox(membersBoxName);
-    activitiesBox = await Hive.openBox(activitiesBoxName);
+    projectsBox = await Hive.openBox(projectsBoxName);
     noticesBox = await Hive.openBox(noticesBoxName);
     _initialized = true;
   }

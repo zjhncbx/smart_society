@@ -89,7 +89,7 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
                         title: Text(l.appTitle,
                             style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(
-                            '${l.tabMembers} · ${l.tabActivities} · ${l.tabNotices}'),
+                            '${l.tabMembers} · ${l.tabProjects} · ${l.tabNotices}'),
                         onTap: () => _selectType(type),
                       ),
                     );

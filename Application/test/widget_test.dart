@@ -40,7 +40,7 @@ void main() {
                 body: Column(
                   children: [
                     Text(labels.tabMembers),
-                    Text(labels.tabActivities),
+                    Text(labels.tabProjects),
                     Text(labels.tabNotices),
                     Text(labels.tabProfile),
                   ],

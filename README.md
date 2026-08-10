@@ -14,7 +14,7 @@
 ## 产品定位
 
 - **多组织 SaaS 平台**：支持学校社团、志愿服务队、社会团体三类组织独立注册与管理，同一华为账号可加入多个组织。
-- **移动管理端**：面向社长/队长/会长等管理人员，提供成员、活动、公告的全量管理能力。
+- **移动管理端**：面向社长/队长/会长等管理人员，提供成员、项目、公告的全量管理能力。
 - **华为账号认证**：集成华为 Account Kit，用户使用华为账号一键登录，端云全链路身份透传。
 - **自动双向同步**：离线操作入队，联网后自动推送；云端数据变更可拉取合并，无需手动触发。
 
@@ -27,7 +27,7 @@
 | 账号认证 | 华为 Account Kit（HuaweiIDProvider + AuthenticationController） |
 | 状态管理 | Provider 6 |
 | 路由 | go_router 14（StatefulShellRoute 四 Tab + 认证守卫） |
-| 本地缓存 | Hive（settings / auth / organizations / syncQueue / members / activities / notices） |
+| 本地缓存 | Hive（settings / auth / organizations / syncQueue / members / projects / notices） |
 | 网络请求 | Dio |
 | 云开发 | 华为 AGC Serverless（云函数 + 云数据库） |
 | 混合通信 | MethodChannel（存储路径 / 云函数 / 认证桥接） |
@@ -46,11 +46,11 @@
   - 志愿服务队：队长(1)、部长(不限)
   - 社会团体：会长(1)、副会长(不限)、秘书长(1)、理事(不限)、监事长(1)、监事(不限)
 - **成员管理**：列表（搜索/角色筛选）、详情、新增/编辑、删除，按 orgId 隔离
-- **活动管理**：列表（状态色条）、创建/编辑、参与人管理，按 orgId 隔离
+- **项目管理**：项目/任务/里程碑三级管理、状态流转（筹备中→进行中→已暂停→已完成）、进度自动计算、任务指派负责人，按 orgId 隔离
 - **通知公告**：发布、重要标记、已读状态，按 orgId 隔离
-- **管理仪表盘**：成员总数 / 进行中活动 / 未读通知 / 同步状态统计
-- **自动双向同步**：离线操作本地持久化 + 云端队列推送，30s 周期自动同步，失败操作保留在队列中等待重试
-- **组织层级**：父-子组织和合作伙伴关系，支持成员/活动/公告选择性共享
+- **管理仪表盘**：成员总数 / 进行中项目 / 未读通知 / 同步状态统计
+- **自动双向同步**：离线操作本地持久化 + 云端队列推送，30s 周期自动同步，失败操作保留在队列中等待重试；启动与切换组织时自动拉取云端数据落库
+- **组织层级**：父-子组织和合作伙伴关系，支持成员/项目/公告选择性共享
 - **多语言文案体系**：全部 UI 文案经 `OrgLabels` 按组织类型分发
 
 ### 规划中
@@ -71,14 +71,14 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
 │   │   ├── main.dart / app.dart   # 入口，MultiProvider 初始化链路
 │   │   ├── router.dart            # go_router 配置（含认证守卫 + 组织路由）
 │   │   ├── config/                # 组织类型、主题、OrgLabels
-│   │   ├── models/                # Member / SocietyActivity / Notice / CustomRoleConfig
+│   │   ├── models/                # Member / Project / Notice / CustomRoleConfig
 │   │   │                          # AuthUser / Organization / UserOrgMembership (new)
 │   │   ├── providers/             # Settings / Auth / Organization / Sync
-│   │   │                          # Member / Activity / Notice / RoleConfig / OrgTree
+│   │   │                          # Member / Project / Notice / RoleConfig / OrgTree
 │   │   ├── screens/
 │   │   │   ├── auth/              # 登录页（华为账号一键登录）
 │   │   │   ├── org/               # 组织创建 / 组织选择器
-│   │   │   ├── member/ activity/ notice/   # 三模块：列表 + 详情 + 表单
+│   │   │   ├── member/ project/ notice/   # 三模块：列表 + 详情 + 表单
 │   │   │   ├── profile/                    # 管理仪表盘（用户信息 + 组织切换）
 │   │   │   └── settings/                   # 设置、角色编辑器、引导页
 │   │   ├── services/
@@ -104,7 +104,7 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
     │   ├── db-config.json
     │   ├── objecttype/             # 6 个对象类型定义
     │   │   ├── Member.json         # +orgId +updatedAt
-    │   │   ├── Activity.json       # +orgId +updatedAt
+    │   │   ├── Project.json        # +orgId +updatedAt，tasks/milestones 为 JSON 字符串
     │   │   ├── Notice.json         # +orgId +updatedAt
     │   │   ├── Organization.json   # (new)
     │   │   ├── OrganizationRelationship.json  # (new)
@@ -117,7 +117,7 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
         │   └── UserOrganization.ts
         ├── get-all-data/           # 全量拉取（按 orgId 过滤）
         ├── upsert-member/  delete-member/
-        ├── upsert-activity/  delete-activity/
+        ├── upsert-project/  delete-project/
         ├── upsert-notice/  delete-notice/
         ├── create-org/             # (new) 创建组织
         ├── get-my-orgs/            # (new) 获取用户所属组织列表
@@ -177,7 +177,7 @@ flutter run --debug -d <deviceId>
 | 对象类型 | 主键 | 说明 |
 |----------|------|------|
 | Member | id | 成员（+orgId 隔离） |
-| Activity | id | 活动（+orgId 隔离） |
+| Project | id | 项目（+orgId 隔离，tasks/milestones 内嵌为 JSON 字符串） |
 | Notice | id | 公告（+orgId 隔离） |
 | Organization | orgId | 组织信息 |
 | OrganizationRelationship | relId | 组织间关系 |
@@ -193,9 +193,9 @@ flutter run --debug -d <deviceId>
 
 | 函数 | 说明 |
 |------|------|
-| `get-all-data` | 全量拉取 Member / Activity / Notice（按 orgId 过滤） |
+| `get-all-data` | 全量拉取 Member / Project / Notice（按 orgId 过滤） |
 | `upsert-member` / `delete-member` | 成员 upsert / 删除 |
-| `upsert-activity` / `delete-activity` | 活动 upsert（含 participants）/ 删除 |
+| `upsert-project` / `delete-project` | 项目 upsert（含 tasks/milestones）/ 删除 |
 | `upsert-notice` / `delete-notice` | 公告 upsert / 删除 |
 
 **组织管理（5 个，新增）**：
@@ -221,14 +221,14 @@ flutter run --debug -d <deviceId>
 - **本地优先**：所有写入操作先持久化到 Hive，界面即时响应。
 - **操作入队**：每个 save/delete 操作自动入队到 SyncProvider 的持久化队列。
 - **周期推送**：30s 定时器自动处理队列，网络不可用时操作保留在队列中等待。
-- **云端拉取**：`flush()` 在推送完成后自动拉取云端最新数据合并到本地。
+- **云端拉取**：`flush()` 在推送完成后自动拉取云端最新数据合并到本地；启动与切换组织时同样自动拉取。
 - **重试策略**：单次云函数调用失败时自动重试 3 次（指数退避 500ms / 1000ms / 2000ms）。
-- **强制同步**：设置页「强制同步」按钮调用 `SyncProvider.instance.flush()` 立即推送 + 拉取。
+- **全自动同步**：所有增删改操作自动入队推送，无手动同步入口。
 
 ## 数据隔离模型
 
 ```
-用户 A ──┬── 组织 X（admin）── MemberX, ActivityX, NoticeX
+用户 A ──┬── 组织 X（admin）── MemberX, ProjectX, NoticeX
          │       └── 子组织 X1（shareMembers=true）→ 可查看 X1 成员
          └── 组织 Y（member）── 仅可见 Y 的数据
 
@@ -243,7 +243,7 @@ flutter run --debug -d <deviceId>
 | 阶段 | 状态 | 交付物 |
 |------|------|--------|
 | 环境搭建 / 项目初始化 | ✅ | Flutter-OH + DevEco 工程，真机运行 |
-| 核心 UI（三模块 + 仪表盘） | ✅ | 成员/活动/公告/设置页 |
+| 核心 UI（三模块 + 仪表盘） | ✅ | 成员/项目/公告/设置页 |
 | 角色体系与文案重构 | ✅ | 分级角色、自定义角色名、OrgLabels |
 | 本地持久化 | ✅ | Hive 多盒存储 |
 | 端云一体化工程结构 | ✅ | Application/ + CloudProgram/ |
@@ -265,7 +265,7 @@ flutter run --debug -d <deviceId>
 | 云函数报 `2047: the input class is invalid` | 模型类未实现 CloudDB SDK 要求的 5 个方法 |
 | 云函数报权限错误 | 确认认证类型为 `apigw-client`、证书指纹已登记 |
 | 华为账号登录失败 | 确认 AGC 已开通 Account Kit、OAuth 回调已配置 |
-| 同步队列堆积 | 检查网络连接，使用「强制同步」按钮手动触发 |
+| 同步队列堆积 | 检查网络连接，恢复后 30s 周期内自动推送 |
 | MethodChannel 通信失败 | 核对 Dart 与 ArkTS 两端 Channel 名称、参数 key 完全一致 |
 
 ## 关键资源

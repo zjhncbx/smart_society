@@ -5,7 +5,10 @@ import '../services/storage_service.dart';
 import 'sync_provider.dart';
 
 class MemberProvider extends ChangeNotifier {
+  MemberProvider({String Function()? orgIdGetter}) : _orgIdGetter = orgIdGetter;
+
   final StorageService _storage = StorageService.instance;
+  final String Function()? _orgIdGetter;
 
   List<Member> _members = [];
   String? _roleFilterId;
@@ -35,8 +38,10 @@ class MemberProvider extends ChangeNotifier {
 
   Future<void> load() async {
     final box = _storage.membersBox;
+    final currentOrgId = _orgIdGetter?.call() ?? '';
     _members = box.values
         .map((e) => Member.fromJson(Map<String, dynamic>.from(e as Map)))
+        .where((m) => currentOrgId.isEmpty || m.orgId == currentOrgId)
         .toList();
     notifyListeners();
   }
@@ -59,6 +64,9 @@ class MemberProvider extends ChangeNotifier {
   }
 
   Future<void> saveMember(Member member) async {
+    if (member.orgId.isEmpty) {
+      member.orgId = _orgIdGetter?.call() ?? '';
+    }
     final index = _members.indexWhere((m) => m.id == member.id);
     if (index >= 0) {
       _members[index] = member;

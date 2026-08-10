@@ -6,7 +6,10 @@ import 'sync_provider.dart';
 
 /// 通知公告状态：列表、发布、已读标记。
 class NoticeProvider extends ChangeNotifier {
+  NoticeProvider({String Function()? orgIdGetter}) : _orgIdGetter = orgIdGetter;
+
   final StorageService _storage = StorageService.instance;
+  final String Function()? _orgIdGetter;
 
   List<Notice> _notices = [];
 
@@ -30,13 +33,18 @@ class NoticeProvider extends ChangeNotifier {
 
   Future<void> load() async {
     final box = _storage.noticesBox;
+    final currentOrgId = _orgIdGetter?.call() ?? '';
     _notices = box.values
         .map((e) => Notice.fromJson(Map<String, dynamic>.from(e as Map)))
+        .where((n) => currentOrgId.isEmpty || n.orgId == currentOrgId)
         .toList();
     notifyListeners();
   }
 
   Future<void> publish(Notice notice) async {
+    if (notice.orgId.isEmpty) {
+      notice.orgId = _orgIdGetter?.call() ?? '';
+    }
     _notices.add(notice);
     await _storage.noticesBox.put(notice.id, notice.toJson());
     notifyListeners();
@@ -57,6 +65,8 @@ class NoticeProvider extends ChangeNotifier {
       publishTime: notice.publishTime,
       isRead: true,
       isImportant: notice.isImportant,
+      orgId: notice.orgId,
+      updatedAt: notice.updatedAt,
     );
     _notices[index] = updated;
     await _storage.noticesBox.put(updated.id, updated.toJson());

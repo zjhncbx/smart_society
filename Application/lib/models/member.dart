@@ -29,7 +29,7 @@ class Member {
   final String dingTalkUserId;
   final String syncStatus;
   final DateTime? lastSyncedAt;
-  final String orgId;
+  String orgId;
   final DateTime? updatedAt;
 
   int get avatarColorIndex => name.hashCode.abs() % 8;
@@ -60,18 +60,24 @@ class Member {
         roleLabel: (json['roleLabel'] as String?) ?? '成员',
         phone: (json['phone'] as String?) ?? '',
         email: (json['email'] as String?) ?? '',
-        joinedAt: DateTime.fromMillisecondsSinceEpoch(
-          (json['joinedAt'] as int?) ??
-              DateTime.now().millisecondsSinceEpoch,
-        ),
+        joinedAt: _toDate(json['joinedAt']) ?? DateTime.now(),
         dingTalkUserId: (json['dingTalkUserId'] as String?) ?? '',
         syncStatus: (json['syncStatus'] as String?) ?? 'manual',
-        lastSyncedAt: (json['lastSyncedAt'] as int?) != null
-            ? DateTime.fromMillisecondsSinceEpoch(json['lastSyncedAt'] as int)
-            : null,
+        lastSyncedAt: _toDate(json['lastSyncedAt']),
         orgId: (json['orgId'] as String?) ?? '',
-        updatedAt: (json['updatedAt'] as int?) != null
-            ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt'] as int)
-            : null,
+        updatedAt: _toDate(json['updatedAt']),
       );
+}
+
+/// 兼容 int（epoch 毫秒）/ String（ISO 或数字）两种云端日期形态。
+DateTime? _toDate(dynamic v) {
+  if (v == null) return null;
+  if (v is DateTime) return v;
+  if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+  if (v is String) {
+    final n = int.tryParse(v);
+    if (n != null) return DateTime.fromMillisecondsSinceEpoch(n);
+    return DateTime.tryParse(v);
+  }
+  return null;
 }

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../services/cloud_function_service.dart';
+import '../services/storage_service.dart';
 
 /// 同步操作类型
 enum SyncOp { upsert, delete }
@@ -11,7 +12,7 @@ enum SyncOp { upsert, delete }
 /// 待同步的操作记录
 class SyncEntry {
   final String id;
-  final String type; // 'member' / 'activity' / 'notice'
+  final String type; // 'member' / 'project' / 'notice'
   final SyncOp op;
   final Map<String, dynamic> data; // 完整数据（用于 upsert）
   final DateTime createdAt;
@@ -41,10 +42,13 @@ class SyncEntry {
       );
 }
 
-/// 自动同步管理：本地操作立即更新 Hive，后台队列推送到云端。
+/// 自动同步管理：本地操作立即更新 Hive，后台队列自动推送到云端，
+/// 启动/切换组织时自动拉取云端最新数据并落库刷新。
 class SyncProvider extends ChangeNotifier {
   static const _boxName = 'sync_queue';
-  static const _lastPullKey = 'lastPull';
+
+  /// 合法队列类型白名单（云函数 upsert-{type}/delete-{type} 必须存在）
+  static const _allowedTypes = {'member', 'project', 'notice'};
 
   SyncProvider._();
   static final SyncProvider instance = SyncProvider._();
@@ -56,6 +60,8 @@ class SyncProvider extends ChangeNotifier {
   bool _syncing = false;
   bool _initialized = false;
 
+  final List<VoidCallback> _refreshListeners = [];
+
   List<SyncEntry> get queue => _queue;
   int get pendingCount => _queue.length;
   bool get isSyncing => _syncing;
@@ -65,9 +71,15 @@ class SyncProvider extends ChangeNotifier {
     final box = await Hive.openBox(_boxName);
     final raw = box.get('queue');
     if (raw != null) {
-      _queue = (raw as List)
+      final rawList = raw as List;
+      _queue = rawList
           .map((e) => SyncEntry.fromJson(Map<String, dynamic>.from(e as Map)))
+          // 清理遗留/未知类型（如已下线云函数的 activity），避免死循环重试
+          .where((e) => _allowedTypes.contains(e.type))
           .toList();
+      if (_queue.length != rawList.length) {
+        await box.put('queue', _queue.map((e) => e.toJson()).toList());
+      }
     }
     _initialized = true;
     notifyListeners();
@@ -81,6 +93,13 @@ class SyncProvider extends ChangeNotifier {
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  /// 数据拉取落库后，刷新本地数据（各业务 Provider 通过 load() 重读 Hive）。
+  void registerRefreshListener(VoidCallback listener) {
+    if (!_refreshListeners.contains(listener)) {
+      _refreshListeners.add(listener);
+    }
   }
 
   /// 将操作加入同步队列
@@ -99,16 +118,31 @@ class SyncProvider extends ChangeNotifier {
     flush();
   }
 
-  /// 强制推送所有待同步项 + 拉取最新数据
+  /// 推送待同步项；orgId 非空时同步拉取云端最新数据
   Future<void> flush({String? orgId}) async {
     if (_syncing) return;
     _syncing = true;
     notifyListeners();
     try {
-      // 先推送队列
       await _processQueue();
-      // 再拉取云端最新
-      if (orgId != null && orgId.isNotEmpty) {
+      // 队列清空后才拉取，避免云端旧数据覆盖本地未推送的新操作
+      if (_queue.isEmpty && orgId != null && orgId.isNotEmpty) {
+        await _pullLatest(orgId);
+      }
+    } finally {
+      _syncing = false;
+      notifyListeners();
+    }
+  }
+
+  /// 推送全部待同步项并拉取指定组织数据落库（启动/切换组织时调用）
+  Future<void> pullAndRefresh(String orgId) async {
+    if (_syncing) return;
+    _syncing = true;
+    notifyListeners();
+    try {
+      await _processQueue();
+      if (_queue.isEmpty) {
         await _pullLatest(orgId);
       }
     } finally {
@@ -133,15 +167,51 @@ class SyncProvider extends ChangeNotifier {
     await _persist();
   }
 
-  Future<Map<String, dynamic>?> _pullLatest(String orgId) async {
+  /// 拉取云端数据并覆盖本地对应组织的缓存，随后通知各 Provider 刷新。
+  Future<void> _pullLatest(String orgId) async {
     try {
-      final data = await _cloud.callWithRetry('get-all-data', params: {'orgId': orgId});
-      final box = await Hive.openBox(_boxName);
-      await box.put(_lastPullKey, DateTime.now().millisecondsSinceEpoch);
-      return data as Map<String, dynamic>?;
+      final data = await _cloud
+          .callWithRetry('get-all-data', params: {'orgId': orgId});
+      if (data is! Map<String, dynamic>) return;
+
+      final storage = StorageService.instance;
+      final boxes = [storage.membersBox, storage.projectsBox, storage.noticesBox];
+
+      // 先移除本地该组织的旧记录，再写入云端最新数据（多组织混存按 orgId 隔离）
+      for (final box in boxes) {
+        for (final key in box.keys.toList()) {
+          final v = box.get(key);
+          if (v is Map && v['orgId'] == orgId) {
+            await box.delete(key);
+          }
+        }
+      }
+      final members = data['Member'];
+      final projects = data['Project'];
+      final notices = data['Notice'];
+      if (members is List) {
+        for (final m in members) {
+          final map = Map<String, dynamic>.from(m as Map);
+          await storage.membersBox.put(map['id'] as String, map);
+        }
+      }
+      if (projects is List) {
+        for (final p in projects) {
+          final map = Map<String, dynamic>.from(p as Map);
+          await storage.projectsBox.put(map['id'] as String, map);
+        }
+      }
+      if (notices is List) {
+        for (final n in notices) {
+          final map = Map<String, dynamic>.from(n as Map);
+          await storage.noticesBox.put(map['id'] as String, map);
+        }
+      }
+      for (final cb in _refreshListeners) {
+        cb();
+      }
     } catch (e) {
       debugPrint('PULL_FAIL: $e');
-      return null;
     }
   }
 

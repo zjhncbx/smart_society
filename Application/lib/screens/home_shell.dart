@@ -30,9 +30,9 @@ class HomeShell extends StatelessWidget {
             label: labels.tabMembers,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.event_outlined),
-            selectedIcon: const Icon(Icons.event),
-            label: labels.tabActivities,
+            icon: const Icon(Icons.task_alt_outlined),
+            selectedIcon: const Icon(Icons.task_alt),
+            label: labels.tabProjects,
           ),
           NavigationDestination(
             icon: _NoticeTabIcon(selected: false),
