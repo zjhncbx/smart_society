@@ -63,6 +63,8 @@ class OrganizationProvider extends ChangeNotifier {
           .toList();
     }
     _currentOrgId = box.get(_currentKey) as String?;
+    // 与 SettingsProvider 的 currentOrgId 对齐（设置页/钉钉配置按它取组织）
+    await _settings.setCurrentOrgId(_currentOrgId);
     notifyListeners();
     // 本地缓存先对齐一次组织类型，云端刷新失败也能保持正确
     await _syncOrgType();
@@ -95,6 +97,7 @@ class OrganizationProvider extends ChangeNotifier {
         _currentOrgId = _orgs.isNotEmpty ? _orgs.first.orgId : null;
         await box.put(_currentKey, _currentOrgId);
       }
+      await _settings.setCurrentOrgId(_currentOrgId);
       await _syncOrgType();
       notifyListeners();
     }
@@ -122,6 +125,7 @@ class OrganizationProvider extends ChangeNotifier {
     _currentOrgId = orgId;
     final box = await Hive.openBox(_boxName);
     await box.put(_currentKey, orgId);
+    await _settings.setCurrentOrgId(orgId);
     await loadMyOrgs();
     return orgId;
   }
@@ -131,6 +135,7 @@ class OrganizationProvider extends ChangeNotifier {
     _currentOrgId = orgId;
     final box = await Hive.openBox(_boxName);
     await box.put(_currentKey, orgId);
+    await _settings.setCurrentOrgId(orgId);
     notifyListeners();
     await _syncOrgType();
     // 切换组织后自动拉取该组织最新数据

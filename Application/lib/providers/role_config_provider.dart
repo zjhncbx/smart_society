@@ -23,11 +23,13 @@ class RoleConfigProvider extends ChangeNotifier {
       _configs[type.index]?.getLabel(roleId, defaultLabel) ?? defaultLabel;
 
   Future<void> setLabel(OrgType type, String roleId, String newLabel) async {
-    _configs.putIfAbsent(
-      type.index,
-      () => const CustomRoleConfig(customLabels: {}),
-    );
-    _configs[type.index]!.customLabels[roleId] = newLabel;
+    // const CustomRoleConfig(customLabels: {}) 的 {} 是不可变 map，
+    // 直接赋值会抛 UnsupportedError，这里用 copy-on-write
+    final config =
+        _configs[type.index] ?? const CustomRoleConfig(customLabels: {});
+    final labels = Map<String, String>.from(config.customLabels);
+    labels[roleId] = newLabel;
+    _configs[type.index] = CustomRoleConfig(customLabels: labels);
     final box = await Hive.openBox('roleConfig');
     await box.put(type.index, _configs[type.index]!.toJson());
     notifyListeners();

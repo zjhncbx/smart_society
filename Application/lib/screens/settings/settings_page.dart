@@ -29,7 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     final settings = context.read<SettingsProvider>();
-    final orgId = settings.currentOrgId ?? '';
+    final orgId = _orgId;
     _clientIdController.text = settings.dingTalkClientId(orgId) ?? '';
     _clientSecretController.text = settings.dingTalkClientSecret(orgId) ?? '';
   }
@@ -318,7 +318,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _openWebAdmin() {}
 
-  String get _orgId => context.read<SettingsProvider>().currentOrgId ?? '';
+  /// 当前组织 ID：优先取 OrganizationProvider（唯一事实源），兜底 SettingsProvider
+  String get _orgId =>
+      context.read<OrganizationProvider>().currentOrgId ??
+      context.read<SettingsProvider>().currentOrgId ??
+      '';
 
   bool get _dingTalkConfigured =>
       context.read<SettingsProvider>().isDingTalkConfigured(_orgId);
