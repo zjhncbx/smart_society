@@ -96,6 +96,9 @@ class SmartSocietyApp extends StatelessWidget {
     // 运行时求值，避免在 Provider 创建时捕获尚未初始化的 currentOrgId
     String Function() orgIdGetter() =>
         () => settingsProvider.currentOrgId ?? '';
+    // 钉钉管理组织（已配置钉钉）成员只读
+    bool Function() isDingTalkManaged() =>
+        () => settingsProvider.isDingTalkConfigured(settingsProvider.currentOrgId ?? '');
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: authProvider),
@@ -105,7 +108,7 @@ class SmartSocietyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OrganizationProvider()..init(userId: authProvider.user?.openId ?? '')),
         ChangeNotifierProvider(
           create: (_) {
-            final p = MemberProvider(orgIdGetter: orgIdGetter());
+            final p = MemberProvider(orgIdGetter: orgIdGetter(), isDingTalkManaged: isDingTalkManaged());
             SyncProvider.instance.registerRefreshListener(() => p.load());
             p.load();
             return p;

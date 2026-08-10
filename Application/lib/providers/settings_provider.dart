@@ -10,6 +10,8 @@ class SettingsProvider extends ChangeNotifier {
   static const _initializedKey = 'initialized';
   static const _currentOrgIdKey = 'currentOrgId';
 
+  static String _credsKey(String orgId, String suffix) => 'dingtalk_${suffix}_$orgId';
+
   OrgType _orgType = OrgType.schoolClub;
   ThemeConfig _theme = ThemeConfig.campus;
   bool _isInitialized = false;
@@ -63,5 +65,54 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     final box = await Hive.openBox(_boxName);
     await box.put(_initializedKey, true);
+  }
+
+  // ── 钉钉配置（按组织）──
+
+  String? dingTalkClientId(String orgId) {
+    if (orgId.isEmpty) return null;
+    return Hive.box(_boxName).get(_credsKey(orgId, 'clientId')) as String?;
+  }
+
+  String? dingTalkClientSecret(String orgId) {
+    if (orgId.isEmpty) return null;
+    return Hive.box(_boxName).get(_credsKey(orgId, 'clientSecret')) as String?;
+  }
+
+  /// 该组织是否已配置钉钉（决定成员是否只读）
+  bool isDingTalkConfigured(String orgId) {
+    if (orgId.isEmpty) return false;
+    final id = dingTalkClientId(orgId);
+    final secret = dingTalkClientSecret(orgId);
+    return id != null && id.isNotEmpty && secret != null && secret.isNotEmpty;
+  }
+
+  Future<void> setDingTalkConfig(
+      String orgId, String clientId, String clientSecret) async {
+    if (orgId.isEmpty) return;
+    final box = await Hive.openBox(_boxName);
+    await box.put(_credsKey(orgId, 'clientId'), clientId);
+    await box.put(_credsKey(orgId, 'clientSecret'), clientSecret);
+    notifyListeners();
+  }
+
+  DateTime? dingTalkLastSyncAt(String orgId) {
+    if (orgId.isEmpty) return null;
+    final v = Hive.box(_boxName).get(_credsKey(orgId, 'lastSyncAt'));
+    return v is int ? DateTime.fromMillisecondsSinceEpoch(v) : null;
+  }
+
+  String? dingTalkLastResult(String orgId) {
+    if (orgId.isEmpty) return null;
+    return Hive.box(_boxName).get(_credsKey(orgId, 'lastResult')) as String?;
+  }
+
+  Future<void> setDingTalkLastSync(
+      String orgId, DateTime at, String result) async {
+    if (orgId.isEmpty) return;
+    final box = await Hive.openBox(_boxName);
+    await box.put(_credsKey(orgId, 'lastSyncAt'), at.millisecondsSinceEpoch);
+    await box.put(_credsKey(orgId, 'lastResult'), result);
+    notifyListeners();
   }
 }

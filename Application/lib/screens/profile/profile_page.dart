@@ -169,25 +169,27 @@ class ProfilePage extends StatelessWidget {
           // Quick actions row
           Row(
             children: [
-              Expanded(
-                child: AppCard(
-                  onTap: () => context.push('/members/new'),
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.person_add_outlined, color: cs.primary),
-                      const SizedBox(height: 6),
-                      Text(
-                        labels.addButton,
-                        style: theme.textTheme.labelMedium
-                            ?.copyWith(fontWeight: FontWeight.w500),
-                      ),
-                    ],
+              if (!memberProvider.isDingTalkManaged) ...[
+                Expanded(
+                  child: AppCard(
+                    onTap: () => context.push('/members/new'),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.person_add_outlined, color: cs.primary),
+                        const SizedBox(height: 6),
+                        Text(
+                          labels.addButton,
+                          style: theme.textTheme.labelMedium
+                              ?.copyWith(fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 4),
+                const SizedBox(width: 4),
+              ],
               Expanded(
                 child: AppCard(
                   onTap: () => context.push('/projects/new'),

@@ -125,6 +125,10 @@ class OrgLabels {
   final String labelDingTalkSettings;
   final String labelSyncNow;
   final String labelLastSync;
+  final String labelDingTalkSyncing;
+  final String labelDingTalkNeverSynced;
+  final String labelDingTalkLastSync;
+  final String labelDingTalkManagedHint;
   final String labelWebAdmin;
   final String labelWebAdminHint;
   final String labelTasks;
@@ -257,6 +261,10 @@ class OrgLabels {
     required this.labelDingTalkSettings,
     required this.labelSyncNow,
     required this.labelLastSync,
+    required this.labelDingTalkSyncing,
+    required this.labelDingTalkNeverSynced,
+    required this.labelDingTalkLastSync,
+    required this.labelDingTalkManagedHint,
     required this.labelWebAdmin,
     required this.labelWebAdminHint,
     required this.labelTasks,
@@ -393,6 +401,10 @@ class OrgLabels {
     labelDingTalkSettings: '钉钉同步设置',
     labelSyncNow: '立即同步',
     labelLastSync: '上次同步',
+    labelDingTalkSyncing: '正在同步通讯录…',
+    labelDingTalkNeverSynced: '从未同步',
+    labelDingTalkLastSync: '上次同步',
+    labelDingTalkManagedHint: '该组织已启用钉钉同步，成员由钉钉通讯录管理，不可手动增删改',
     labelWebAdmin: 'Web管理后台',
     labelWebAdminHint: '访问Web管理后台进行高级管理',
     labelTasks: '任务',
@@ -529,6 +541,10 @@ class OrgLabels {
     labelDingTalkSettings: '钉钉同步设置',
     labelSyncNow: '立即同步',
     labelLastSync: '上次同步',
+    labelDingTalkSyncing: '正在同步通讯录…',
+    labelDingTalkNeverSynced: '从未同步',
+    labelDingTalkLastSync: '上次同步',
+    labelDingTalkManagedHint: '该组织已启用钉钉同步，成员由钉钉通讯录管理，不可手动增删改',
     labelWebAdmin: 'Web管理后台',
     labelWebAdminHint: '访问Web管理后台进行高级管理',
     labelTasks: '任务',
@@ -669,6 +685,10 @@ class OrgLabels {
     labelDingTalkSettings: '钉钉同步设置',
     labelSyncNow: '立即同步',
     labelLastSync: '上次同步',
+    labelDingTalkSyncing: '正在同步通讯录…',
+    labelDingTalkNeverSynced: '从未同步',
+    labelDingTalkLastSync: '上次同步',
+    labelDingTalkManagedHint: '该组织已启用钉钉同步，成员由钉钉通讯录管理，不可手动增删改',
     labelWebAdmin: 'Web管理后台',
     labelWebAdminHint: '访问Web管理后台进行高级管理',
     labelTasks: '任务',

@@ -92,13 +92,13 @@ export default class EntryAbility extends FlutterAbility {
             functionParams.data = payload
             hilog.info(0x0000, CLOUD_TAG, 'callFunction %{public}s data=%{public}s', name, JSON.stringify(payload))
           }
-          // 看门狗：云函数调用超过 20s 未返回时强制回错误，避免端侧无限转圈
+          // 看门狗：云函数调用超过 60s 未返回时强制回错误，避免端侧无限转圈（钉钉同步等长任务需要更长时间）
           const watchdog = setTimeout(() => {
             replyOnce(() => {
               hilog.error(0x0000, CLOUD_TAG, 'watchdog timeout for %{public}s', name)
               result.error('CLOUD_TIMEOUT', 'cloud function call timed out', null)
             })
-          }, 20 * 1000)
+          }, 60 * 1000)
           hilog.info(0x0000, CLOUD_TAG, 'calling function %{public}s', name)
           cloudFunction.call(functionParams)
             .then((res) => {

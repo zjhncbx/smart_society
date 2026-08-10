@@ -19,21 +19,24 @@ class CloudFunctionService {
   }
 
   /// 调用云函数，返回解码后的 JSON（函数应返回 { code, data, message } 结构）。
-  Future<dynamic> call(String name, {Map<String, dynamic>? params}) async {
+  Future<dynamic> call(String name,
+      {Map<String, dynamic>? params, Duration timeout = const Duration(seconds: 30)}) async {
     final raw = await _channel
         .invokeMethod<String>('callFunction', {
           'name': name,
           if (params != null && params.isNotEmpty) 'data': params,
+          'timeout': timeout.inMilliseconds,
         })
-        .timeout(const Duration(seconds: 30));
+        .timeout(timeout);
     if (raw == null || raw.isEmpty) return null;
     return jsonDecode(raw);
   }
 
   /// 统一返回格式：{ code: 0, data: ... }；支持 { ret: { code, data } } 嵌套格式。
   /// 非 0 抛出异常。
-  Future<dynamic> callChecked(String name, {Map<String, dynamic>? params}) async {
-    final res = await call(name, params: params);
+  Future<dynamic> callChecked(String name,
+      {Map<String, dynamic>? params, Duration timeout = const Duration(seconds: 30)}) async {
+    final res = await call(name, params: params, timeout: timeout);
     if (res is! Map) {
       throw Exception('云函数 $name 返回格式异常: $res');
     }
@@ -47,11 +50,14 @@ class CloudFunctionService {
   }
 
   /// 带重试的 callChecked，最多尝试 3 次，指数退避。
-  Future<dynamic> callWithRetry(String name, {Map<String, dynamic>? params, int maxRetries = 3}) async {
+  Future<dynamic> callWithRetry(String name,
+      {Map<String, dynamic>? params,
+      Duration timeout = const Duration(seconds: 30),
+      int maxRetries = 3}) async {
     Exception? lastError;
     for (int i = 0; i < maxRetries; i++) {
       try {
-        return await callChecked(name, params: params);
+        return await callChecked(name, params: params, timeout: timeout);
       } catch (e) {
         lastError = e is Exception ? e : Exception('$e');
         if (i < maxRetries - 1) {

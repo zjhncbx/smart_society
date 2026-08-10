@@ -35,6 +35,26 @@ class _MemberListPageState extends State<MemberListPage> {
       appBar: AppBar(title: Text(labels.memberMgmtTitle)),
       body: Column(
         children: [
+          if (provider.isDingTalkManaged)
+            Container(
+              width: double.infinity,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(Icons.lock_outline,
+                      size: 16, color: Theme.of(context).colorScheme.outline),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      labels.labelDingTalkManagedHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: TextField(
@@ -75,11 +95,13 @@ class _MemberListPageState extends State<MemberListPage> {
                 ? AppEmptyState(
                     icon: Icons.people_outline,
                     title: labels.emptyMembers,
-                    action: FilledButton.icon(
-                      onPressed: () => context.push('/members/new'),
-                      icon: const Icon(Icons.add),
-                      label: Text(labels.addButton),
-                    ),
+                    action: provider.isDingTalkManaged
+                        ? null
+                        : FilledButton.icon(
+                            onPressed: () => context.push('/members/new'),
+                            icon: const Icon(Icons.add),
+                            label: Text(labels.addButton),
+                          ),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.only(bottom: 88),
@@ -110,11 +132,13 @@ class _MemberListPageState extends State<MemberListPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/members/new'),
-        icon: const Icon(Icons.add),
-        label: Text(labels.addButton),
-      ),
+      floatingActionButton: provider.isDingTalkManaged
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => context.push('/members/new'),
+              icon: const Icon(Icons.add),
+              label: Text(labels.addButton),
+            ),
     );
   }
 

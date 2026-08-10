@@ -1,48 +1,29 @@
-import '../models/member.dart';
+import '../providers/sync_provider.dart';
 import 'dingtalk_api.dart';
-import 'storage_service.dart';
 
+/// 钉钉同步编排：调用云函数同步通讯录 → 拉取云端最新成员落库。
 class DingTalkSyncService {
   static final DingTalkSyncService instance = DingTalkSyncService._();
   DingTalkSyncService._();
 
-  final _storage = StorageService.instance;
   final _api = DingTalkApi.instance;
 
-  Future<DingTalkSyncResult> performSync(String orgType) async {
-    final result = await _api.syncContacts(orgType: orgType);
+  Future<DingTalkSyncResult> performSync({
+    required String orgId,
+    required String clientId,
+    required String clientSecret,
+    required String roleId,
+    required String roleLabel,
+  }) async {
+    final result = await _api.syncContacts(
+      orgId: orgId,
+      clientId: clientId,
+      clientSecret: clientSecret,
+      roleId: roleId,
+      roleLabel: roleLabel,
+    );
+    // 同步成员已写入云端，拉取最新数据落库刷新界面
+    await SyncProvider.instance.pullAndRefresh(orgId);
     return result;
-  }
-
-  Future<void> markMemberSynced(String memberId, String dingTalkUserId) async {
-    final member = _storage.membersBox.get(memberId);
-    if (member != null) {
-      final m = Member.fromJson(Map<String, dynamic>.from(member as Map));
-      final updated = Member(
-        id: m.id,
-        name: m.name,
-        studentNo: m.studentNo,
-        department: m.department,
-        roleId: m.roleId,
-        roleLabel: m.roleLabel,
-        phone: m.phone,
-        email: m.email,
-        joinedAt: m.joinedAt,
-        dingTalkUserId: dingTalkUserId,
-        syncStatus: 'synced',
-        lastSyncedAt: DateTime.now(),
-      );
-      await _storage.membersBox.put(memberId, updated.toJson());
-    }
-  }
-
-  Future<int> getSyncedMemberCount() async {
-    return _storage.membersBox.values
-        .where((v) {
-          final m =
-              Member.fromJson(Map<String, dynamic>.from(v as Map));
-          return m.syncStatus == 'synced';
-        })
-        .length;
   }
 }

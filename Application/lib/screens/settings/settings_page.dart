@@ -7,6 +7,8 @@ import '../../config/org_type.dart';
 import '../../config/theme_config.dart';
 import '../../providers/role_config_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/dingtalk_sync_service.dart';
+import '../../utils/date_format.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/common.dart';
 
@@ -19,18 +21,26 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final Map<String, TextEditingController> _roleControllers = {};
-  final _corpIdController = TextEditingController();
-  final _appKeyController = TextEditingController();
-  final _appSecretController = TextEditingController();
+  final _clientIdController = TextEditingController();
+  final _clientSecretController = TextEditingController();
+  bool _syncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final settings = context.read<SettingsProvider>();
+    final orgId = settings.currentOrgId ?? '';
+    _clientIdController.text = settings.dingTalkClientId(orgId) ?? '';
+    _clientSecretController.text = settings.dingTalkClientSecret(orgId) ?? '';
+  }
 
   @override
   void dispose() {
     for (final c in _roleControllers.values) {
       c.dispose();
     }
-    _corpIdController.dispose();
-    _appKeyController.dispose();
-    _appSecretController.dispose();
+    _clientIdController.dispose();
+    _clientSecretController.dispose();
     super.dispose();
   }
 
@@ -132,14 +142,14 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const Divider(),
-          // ── 钉钉同步设置 ──
+          // ── 钉钉同步设置（凭证按组织配置）──
           _SectionHeader(title: labels.labelDingTalkSettings),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: TextField(
-              controller: _corpIdController,
+              controller: _clientIdController,
               decoration: const InputDecoration(
-                labelText: 'Corp ID',
+                labelText: 'Client ID (AppKey)',
                 isDense: true,
               ),
             ),
@@ -147,20 +157,10 @@ class _SettingsPageState extends State<SettingsPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: TextField(
-              controller: _appKeyController,
-              decoration: const InputDecoration(
-                labelText: 'App Key',
-                isDense: true,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: TextField(
-              controller: _appSecretController,
+              controller: _clientSecretController,
               obscureText: true,
               decoration: const InputDecoration(
-                labelText: 'App Secret',
+                labelText: 'Client Secret (AppSecret)',
                 isDense: true,
               ),
             ),
@@ -169,18 +169,34 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                FilledButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.sync, size: 18),
-                  label: Text(labels.labelSyncNow),
+                FilledButton(
+                  onPressed: _saveDingTalkConfig,
+                  child: Text(labels.saveButton),
                 ),
-                const SizedBox(width: 16),
-                Text(
-                  '${labels.labelLastSync}: --（待接入）',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.outline),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: _syncing || !_dingTalkConfigured
+                      ? null
+                      : _syncDingTalk,
+                  icon: _syncing
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.sync, size: 18),
+                  label: Text(
+                      _syncing ? labels.labelDingTalkSyncing : labels.labelSyncNow),
                 ),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              _lastSyncText,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.outline),
             ),
           ),
           const Divider(),
@@ -258,6 +274,81 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _openWebAdmin() {
     // Placeholder for opening web admin
+  }
+
+  String get _orgId => context.read<SettingsProvider>().currentOrgId ?? '';
+
+  bool get _dingTalkConfigured =>
+      context.read<SettingsProvider>().isDingTalkConfigured(_orgId);
+
+  String get _lastSyncText {
+    final settings = context.read<SettingsProvider>();
+    return settings.dingTalkLastResult(_orgId) ?? labelsText.labelDingTalkNeverSynced;
+  }
+
+  OrgLabels get labelsText => context.labels;
+
+  void _saveDingTalkConfig() {
+    final labels = context.labels;
+    final orgId = _orgId;
+    if (orgId.isEmpty) {
+      showToast(context, '请先加入组织');
+      return;
+    }
+    final clientId = _clientIdController.text.trim();
+    final clientSecret = _clientSecretController.text.trim();
+    if (clientId.isEmpty || clientSecret.isEmpty) {
+      showToast(context, '请填写 Client ID 与 Client Secret');
+      return;
+    }
+    context.read<SettingsProvider>().setDingTalkConfig(orgId, clientId, clientSecret);
+    showToast(context, labels.saveSuccess);
+  }
+
+  Future<void> _syncDingTalk() async {
+    final labels = context.labels;
+    final settings = context.read<SettingsProvider>();
+    final orgId = _orgId;
+    if (orgId.isEmpty) {
+      showToast(context, '请先加入组织');
+      return;
+    }
+    final clientId = settings.dingTalkClientId(orgId) ?? '';
+    final clientSecret = settings.dingTalkClientSecret(orgId) ?? '';
+    if (clientId.isEmpty || clientSecret.isEmpty) {
+      showToast(context, '请先保存 Client ID 与 Client Secret');
+      return;
+    }
+    // 默认角色：第一个不限人数的角色（社长/队长/会长之外的执行角色）
+    final roleConfig = context.read<RoleConfigProvider>();
+    final defaultRole = labels.roles.firstWhere(
+      (r) => r.maxCount != 1,
+      orElse: () => labels.roles.last,
+    );
+    final roleLabel = roleConfig.getLabel(
+      context.orgTypeRead,
+      defaultRole.id,
+      defaultRole.label,
+    );
+    setState(() => _syncing = true);
+    try {
+      final result = await DingTalkSyncService.instance.performSync(
+        orgId: orgId,
+        clientId: clientId,
+        clientSecret: clientSecret,
+        roleId: defaultRole.id,
+        roleLabel: roleLabel,
+      );
+      if (!mounted) return;
+      final resultText =
+          '${labels.labelDingTalkLastSync}: ${formatDateTime(result.syncedAt)} · 新增 ${result.contactsAdded} · 更新 ${result.contactsUpdated}';
+      await settings.setDingTalkLastSync(orgId, result.syncedAt, resultText);
+    } catch (e) {
+      if (!mounted) return;
+      showToast(context, '$e');
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
   }
 }
 

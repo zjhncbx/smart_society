@@ -5,10 +5,16 @@ import '../services/storage_service.dart';
 import 'sync_provider.dart';
 
 class MemberProvider extends ChangeNotifier {
-  MemberProvider({String Function()? orgIdGetter}) : _orgIdGetter = orgIdGetter;
+  MemberProvider({String Function()? orgIdGetter, bool Function()? isDingTalkManaged})
+      : _orgIdGetter = orgIdGetter,
+        _isDingTalkManaged = isDingTalkManaged;
 
   final StorageService _storage = StorageService.instance;
   final String Function()? _orgIdGetter;
+  final bool Function()? _isDingTalkManaged;
+
+  /// 钉钉管理组织（已配置钉钉）禁止手动增删改成员
+  bool get isDingTalkManaged => _isDingTalkManaged?.call() ?? false;
 
   List<Member> _members = [];
   String? _roleFilterId;
@@ -64,6 +70,7 @@ class MemberProvider extends ChangeNotifier {
   }
 
   Future<void> saveMember(Member member) async {
+    if (isDingTalkManaged) return;
     if (member.orgId.isEmpty) {
       member.orgId = _orgIdGetter?.call() ?? '';
     }
@@ -79,6 +86,7 @@ class MemberProvider extends ChangeNotifier {
   }
 
   Future<void> deleteMember(String id) async {
+    if (isDingTalkManaged) return;
     _members.removeWhere((m) => m.id == id);
     await _storage.membersBox.delete(id);
     notifyListeners();

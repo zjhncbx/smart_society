@@ -1,17 +1,38 @@
+import 'cloud_function_service.dart';
+
+/// 钉钉服务端接口封装（凭证由客户端传入，云函数代调钉钉 API）。
 class DingTalkApi {
   static final DingTalkApi instance = DingTalkApi._();
   DingTalkApi._();
 
-  String corpId = '';
-  String appKey = '';
-  String appSecret = '';
-  bool isConfigured = false;
-
+  /// 单向同步钉钉通讯录到本应用成员（云函数批量 upsert 到 CloudDB）。
   Future<DingTalkSyncResult> syncContacts({
-    required String orgType,
-    DateTime? since,
+    required String orgId,
+    required String clientId,
+    required String clientSecret,
+    required String roleId,
+    required String roleLabel,
   }) async {
-    throw UnimplementedError('DingTalk sync not yet implemented');
+    final data = await CloudFunctionService.instance.callWithRetry(
+      'dingtalk-sync-contacts',
+      params: {
+        'orgId': orgId,
+        'clientId': clientId,
+        'clientSecret': clientSecret,
+        'roleId': roleId,
+        'roleLabel': roleLabel,
+      },
+      timeout: const Duration(seconds: 55),
+      maxRetries: 1,
+    );
+    final map = (data as Map?) ?? const {};
+    return DingTalkSyncResult(
+      contactsAdded: (map['added'] as int?) ?? 0,
+      contactsUpdated: (map['updated'] as int?) ?? 0,
+      contactsRemoved: (map['removed'] as int?) ?? 0,
+      syncedAt: DateTime.tryParse((map['syncedAt'] as String?) ?? '') ??
+          DateTime.now(),
+    );
   }
 
   Future<String> createGroup({
@@ -35,14 +56,6 @@ class DingTalkApi {
   }) async {
     throw UnimplementedError('DingTalk approval not yet implemented');
   }
-
-  Future<DingTalkSyncStatus> getSyncStatus() async {
-    return DingTalkSyncStatus(
-      isConfigured: isConfigured,
-      lastSyncAt: null,
-      syncedMemberCount: 0,
-    );
-  }
 }
 
 class DingTalkSyncResult {
@@ -56,17 +69,5 @@ class DingTalkSyncResult {
     required this.contactsUpdated,
     required this.contactsRemoved,
     required this.syncedAt,
-  });
-}
-
-class DingTalkSyncStatus {
-  final bool isConfigured;
-  final DateTime? lastSyncAt;
-  final int syncedMemberCount;
-
-  const DingTalkSyncStatus({
-    required this.isConfigured,
-    required this.lastSyncAt,
-    required this.syncedMemberCount,
   });
 }

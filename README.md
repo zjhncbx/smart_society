@@ -52,10 +52,11 @@
 - **自动双向同步**：离线操作本地持久化 + 云端队列推送，30s 周期自动同步，失败操作保留在队列中等待重试；启动与切换组织时自动拉取云端数据落库
 - **组织层级**：父-子组织和合作伙伴关系，支持成员/项目/公告选择性共享
 - **多语言文案体系**：全部 UI 文案经 `OrgLabels` 按组织类型分发
+- **钉钉通讯录单向同步**：按组织配置钉钉 Client ID/Secret，一键同步通讯录成员到本应用（`d+userid` 幂等 upsert、只增改不删）；启用钉钉的组织成员列表只读
 
 ### 规划中
 
-- 钉钉通讯录同步、群消息、审批流（接口已预留）
+- 钉钉群消息、审批流（接口已预留）
 - 华为推送 Kit（公告推送）、扫码签到（PlatformView）
 
 ## 仓库结构
@@ -86,8 +87,8 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
 │   │   │   ├── cloud_function_service.dart # 云函数调用（含 callWithRetry）
 │   │   │   ├── storage_service.dart        # Hive 初始化
 │   │   │   ├── api_client.dart             # Dio 封装
-│   │   │   ├── dingtalk_api.dart           # 钉钉 API 占位
-│   │   │   └── dingtalk_sync_service.dart  # 钉钉同步编排
+│   │   │   ├── dingtalk_api.dart           # 钉钉通讯录同步（云函数调用）
+│   │   │   └── dingtalk_sync_service.dart  # 钉钉同步编排（同步+拉取落库）
 │   │   ├── widgets/                # AppCard / StatusBadge / AppEmptyState / AppTheme
 │   │   └── utils/
 │   ├── entry/                      # 鸿蒙 entry 模块
@@ -110,12 +111,13 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
     │   │   ├── OrganizationRelationship.json  # (new)
     │   │   └── UserOrganization.json          # (new)
     │   └── dataentry/              # 种子数据
-    └── cloudfunctions/             # 12 个云函数
+    └── cloudfunctions/             # 13 个云函数
         ├── common/                 # 共享 TS 模型 (new)
         │   ├── Organization.ts
         │   ├── OrganizationRelationship.ts
         │   └── UserOrganization.ts
         ├── get-all-data/           # 全量拉取（按 orgId 过滤）
+        ├── dingtalk-sync-contacts/ # (new) 钉钉通讯录单向同步
         ├── upsert-member/  delete-member/
         ├── upsert-project/  delete-project/
         ├── upsert-notice/  delete-notice/
@@ -187,13 +189,14 @@ flutter run --debug -d <deviceId>
 
 ### 4. 云函数
 
-12 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
+13 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
 
-**数据 CRUD（7 个，按 orgId 隔离）**：
+**数据 CRUD（8 个，按 orgId 隔离）**：
 
 | 函数 | 说明 |
 |------|------|
 | `get-all-data` | 全量拉取 Member / Project / Notice（按 orgId 过滤） |
+| `dingtalk-sync-contacts` | 钉钉通讯录单向同步（凭证入参，`d+userid` 幂等批量 upsert） |
 | `upsert-member` / `delete-member` | 成员 upsert / 删除 |
 | `upsert-project` / `delete-project` | 项目 upsert（含 tasks/milestones）/ 删除 |
 | `upsert-notice` / `delete-notice` | 公告 upsert / 删除 |
@@ -249,8 +252,8 @@ flutter run --debug -d <deviceId>
 | 端云一体化工程结构 | ✅ | Application/ + CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
-| 云函数部署 + 真机联调 | ⏳ | 12 个云函数 + 6 张表部署至 AGC |
-| 钉钉集成 | ⏳ | 接口预留，待企业资质 |
+| 云函数部署 + 真机联调 | ⏳ | 13 个云函数 + 6 张表部署至 AGC |
+| 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
 | 测试优化 | ⏳ | 功能回归、性能、兼容性 |
 | 打包上架 | ⏳ | 签名证书、隐私政策、上架审核 |
 

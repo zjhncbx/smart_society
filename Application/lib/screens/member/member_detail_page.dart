@@ -33,30 +33,32 @@ class MemberDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(labels.memberDetailTitle),
-        actions: [
-          IconButton(
-            tooltip: labels.editTooltip,
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => context.push('/members/$id/edit'),
-          ),
-          IconButton(
-            tooltip: labels.deleteTooltip,
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () async {
-              final ok = await showConfirmDialog(
-                context,
-                title: labels.deleteMemberTitle,
-                message: labels.confirmDeleteMsg
-                    .replaceAll('{type}', labels.deleteMemberTitle)
-                    .replaceAll('{name}', member.name),
-                confirmText: labels.labelDelete,
-              );
-              if (!ok || !context.mounted) return;
-              await provider.deleteMember(member.id);
-              if (context.mounted) context.pop();
-            },
-          ),
-        ],
+        actions: provider.isDingTalkManaged
+            ? null
+            : [
+                IconButton(
+                  tooltip: labels.editTooltip,
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => context.push('/members/$id/edit'),
+                ),
+                IconButton(
+                  tooltip: labels.deleteTooltip,
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () async {
+                    final ok = await showConfirmDialog(
+                      context,
+                      title: labels.deleteMemberTitle,
+                      message: labels.confirmDeleteMsg
+                          .replaceAll('{type}', labels.deleteMemberTitle)
+                          .replaceAll('{name}', member.name),
+                      confirmText: labels.labelDelete,
+                    );
+                    if (!ok || !context.mounted) return;
+                    await provider.deleteMember(member.id);
+                    if (context.mounted) context.pop();
+                  },
+                ),
+              ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
