@@ -114,10 +114,12 @@ class _OrgCreatePageState extends State<OrgCreatePage> {
         creditCode: _creditCodeController.text.trim(),
         description: _descController.text.trim(),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('组织注册成功')));
-        context.go('/members');
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('组织注册成功')));
+      // 等本帧 provider 重建完成后跳转，避免路由移除与子树重建竞态
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/members');
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('注册失败: $e')));

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/org_labels.dart';
@@ -208,9 +207,8 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
       );
       // 主题为组织级设置：组织创建后再保存一次，写入新组织
       await settings.setTheme(_selectedTheme);
+      // 创建成功后由 app 层根据 hasOrg/isInitialized 自动切换到主界面，无需手动跳转
       await settings.completeSetup();
-      if (!mounted) return;
-      context.go('/members');
     } catch (e) {
       if (!mounted) return;
       showToast(context, '创建失败: $e');
@@ -241,9 +239,9 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
               try {
                 await context.read<OrganizationProvider>().joinOrg(id);
                 if (ctx.mounted) Navigator.pop(ctx);
+                // 加入成功后由 app 层自动切换到主界面
                 if (mounted) {
                   context.read<SettingsProvider>().completeSetup();
-                  context.go('/members');
                 }
               } catch (e) {
                 if (ctx.mounted) {
