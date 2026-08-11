@@ -53,7 +53,8 @@
 - **自动双向同步**：离线操作本地持久化 + 云端队列推送，30s 周期自动同步，失败操作保留在队列中等待重试；启动与切换组织时自动拉取云端数据落库
 - **组织层级**：父-子组织和合作伙伴关系，支持成员/项目/公告选择性共享
 - **多语言文案体系**：全部 UI 文案经 `OrgLabels` 按组织类型分发
-- **钉钉通讯录单向同步**：按组织配置钉钉 Client ID/Secret，一键同步通讯录成员到本应用（`d+userid` 幂等 upsert、只增改不删）；启用钉钉的组织成员列表只读
+- **钉钉通讯录单向同步**：按组织配置钉钉 Client ID/Secret，同步前可选择要同步的钉钉组织（部门），一键同步通讯录成员到本应用（`d+userid` 幂等 upsert、只增改不删）；启用钉钉的组织成员列表只读，但支持变更成员角色，同步默认分配普通成员（社员/队员/会员）并保留人工调整的角色
+- **财务管理**：社会团体按《民间非营利组织会计制度》提供会计科目、记账凭证（借贷分录、平衡校验）、期初余额（支持从上期期末结转）、科目余额表、总账/明细账、资产负债表、业务活动表（限定/非限定）、现金流量表与期末结账（自动生成结转凭证）；学校社团/志愿组织提供简化版收支登记；财务单据可关联项目（项目预算/支出联动），并接入自定义审批流程（审批/办理/抄送三类节点），抄送与完成结果自动生成通知公告
 - **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
 
 ### 规划中
@@ -105,7 +106,7 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
     ├── cloud-config.json
     ├── clouddb/
     │   ├── db-config.json
-    │   ├── objecttype/             # 8 个对象类型定义
+    │   ├── objecttype/             # 12 个对象类型定义
     │   │   ├── Member.json         # +orgId +updatedAt
     │   │   ├── Project.json        # +orgId +updatedAt，tasks/milestones 为 JSON 字符串
     │   │   ├── Notice.json         # +orgId +updatedAt
@@ -115,13 +116,26 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
     │   │   ├── OrgSettings.json               # (new) 组织级设置：角色名/钉钉配置
     │   │   └── UserSettings.json              # (new) 用户级设置：主题/昵称
     │   └── dataentry/              # 种子数据
-    └── cloudfunctions/             # 21 个云函数
+    └── cloudfunctions/             # 34 个云函数
         ├── common/                 # 共享 TS 模型
         │   ├── Organization.ts
         │   ├── OrganizationRelationship.ts
         │   └── UserOrganization.ts
         ├── get-all-data/           # 全量拉取（按 orgId 过滤）
         ├── dingtalk-sync-contacts/ # 钉钉通讯录单向同步
+        ├── dingtalk-list-departments/ # 钉钉组织架构（部门树）获取，同步前选择
+        ├── save-approval-flow/     # 审批流程定义保存
+        ├── get-approval-flows/     # 审批流程列表
+        ├── submit-finance-record/  # 财务单据提交（发起审批）
+        ├── act-finance-node/       # 审批/办理/驳回，流程推进 + 通知
+        ├── get-finance-records/    # 财务单据列表/详情
+        ├── get-approval-tasks/     # 我的待办
+        ├── get-finance-stats/      # 收支/收入费用统计
+        ├── save-opening-balances/  # 期初余额保存/上年期末结转
+        ├── get-opening-balances/   # 期初余额查询
+        ├── get-accounting-reports/ # 科目余额表/资产负债表/业务活动表/现金流量表
+        ├── get-ledger/             # 总账/明细账
+        └── close-period/           # 期末结账（生成结转凭证 + 通知）
         ├── upsert-member/  delete-member/
         ├── upsert-project/  delete-project/
         ├── upsert-notice/  delete-notice/
@@ -184,7 +198,7 @@ flutter run --debug -d <deviceId>
 
 ### 3. 云数据库
 
-8 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
+12 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
 
 | 对象类型 | 主键 | 说明 |
 |----------|------|------|
@@ -196,12 +210,16 @@ flutter run --debug -d <deviceId>
 | UserOrganization | id | 用户-组织关联 |
 | OrgSettings | orgId | 组织级设置（roleLabels 为 JSON 字符串、钉钉凭证与同步记录） |
 | UserSettings | userId | 用户级设置（主题序号、昵称） |
+| FinanceRecord | id | 财务单据（收支单/记账凭证，含借贷分录、审批状态） |
+| ApprovalFlow | id | 审批流程定义（节点含审批/办理/抄送） |
+| ApprovalInstance | id | 审批实例（当前节点、处理记录，抄送/完成生成通知） |
+| FinanceOpeningBalance | id | 会计科目期初余额（按年度） |
 
 权限配置：World/Authenticated 仅可读，Creator/Administrator 可读写删。端侧不直连云数据库，由云函数服务端 SDK 访问；`OrgSettings` 中的钉钉凭证由 `get-org-settings` 按角色裁剪，普通成员不可见。
 
 ### 4. 云函数
 
-21 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
+34 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
 
 **数据 CRUD（7 个，按 orgId 隔离）**：
 
@@ -236,6 +254,25 @@ flutter run --debug -d <deviceId>
 | 函数 | 说明 |
 |------|------|
 | `dingtalk-sync-contacts` | 钉钉通讯录单向同步（凭证入参，`d+userid` 幂等批量 upsert） |
+| `dingtalk-list-departments` | 获取钉钉组织架构（部门树），同步前选择要同步的组织 |
+
+**财务与审批（7 个）**：
+| 函数 | 说明 |
+|------|------|
+| `submit-finance-record` | 提交财务单据（收支/记账凭证），自动发起审批流程并生成抄送通知 |
+| `act-finance-node` | 审批通过/驳回、办理完成；推进流程节点，完成时更新单据状态并通知 |
+| `get-finance-records` | 财务单据列表/详情（含我可操作标记） |
+| `get-finance-stats` | 收入/费用/结余汇总、按科目与按项目统计（收入费用表） |
+| `get-approval-tasks` | 我的待办（当前节点处理人） |
+| `save-approval-flow` / `get-approval-flows` | 审批流程定义保存（仅管理员）与列表 |
+
+**财务结账与报表（5 个）**：
+| 函数 | 说明 |
+|------|------|
+| `save-opening-balances` / `get-opening-balances` | 期初余额录入（仅管理员），支持从上期期末一键结转 |
+| `get-accounting-reports` | 科目余额表、资产负债表、业务活动表（限定/非限定）、现金流量表 |
+| `get-ledger` | 总账/明细账（按科目，含期初与逐笔余额） |
+| `close-period` | 期末结账：收入/费用结转至净资产，生成结转凭证并通知（仅管理员） |
 
 **设置（4 个，新增）**：
 
@@ -287,7 +324,7 @@ flutter run --debug -d <deviceId>
 | 端云一体化工程结构 | ✅ | Application/ + CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
-| 云函数部署 + 真机联调 | ✅ | 21 个云函数 + 8 张表部署至 AGC |
+| 云函数部署 + 真机联调 | ✅ | 34 个云函数 + 12 张表部署至 AGC |
 | 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
 | **设置数据上云（V3.2）** | ✅ | 角色名/钉钉配置/主题/昵称云端存储，按组织隔离，凭证仅管理员可见 |
 | 测试优化 | ⏳ | 功能回归、性能、兼容性 |

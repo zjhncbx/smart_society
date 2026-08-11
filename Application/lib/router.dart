@@ -10,6 +10,13 @@ import 'screens/notice/notice_detail_page.dart';
 import 'screens/notice/notice_form_page.dart';
 import 'screens/notice/notice_list_page.dart';
 import 'screens/org/org_create_page.dart';
+import 'screens/finance/approval_flow_designer_page.dart';
+import 'screens/finance/approval_inbox_page.dart';
+import 'screens/finance/accounting_reports_page.dart';
+import 'screens/finance/finance_list_page.dart';
+import 'screens/finance/finance_record_detail_page.dart';
+import 'screens/finance/finance_record_form_page.dart';
+import 'screens/finance/opening_balance_page.dart';
 import 'screens/project/project_detail_page.dart';
 import 'screens/project/project_form_page.dart';
 import 'screens/project/project_list_page.dart';
@@ -49,6 +56,11 @@ final GoRouter appRouter = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/notices', builder: (c, s) => const NoticeListPage()),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(path: '/finance', builder: (c, s) => const FinanceListPage()),
           ],
         ),
         StatefulShellBranch(
@@ -112,6 +124,45 @@ final GoRouter appRouter = GoRouter(
       path: '/notices/:id',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => NoticeDetailPage(id: s.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/finance/new',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => FinanceRecordFormPage(
+        projectId: s.uri.queryParameters['projectId'],
+      ),
+    ),
+    GoRoute(
+      path: '/finance/tasks',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const ApprovalInboxPage(),
+    ),
+    GoRoute(
+      path: '/finance/flows',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const ApprovalFlowDesignerPage(),
+    ),
+    GoRoute(
+      path: '/finance/flows/edit',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => ApprovalFlowDesignerPage(
+        flowId: s.uri.queryParameters['flowId'],
+      ),
+    ),
+    GoRoute(
+      path: '/finance/reports',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const AccountingReportsPage(),
+    ),
+    GoRoute(
+      path: '/finance/opening',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const OpeningBalancePage(),
+    ),
+    GoRoute(
+      path: '/finance/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => FinanceRecordDetailPage(id: s.pathParameters['id']!),
     ),
     GoRoute(
       path: '/settings',
