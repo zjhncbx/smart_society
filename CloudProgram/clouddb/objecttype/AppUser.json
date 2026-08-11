@@ -32,7 +32,7 @@
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
-      "isSensitive": true,
+      "isSensitive": false,
       "defaultValue": "",
       "belongPrimaryKey": false
     },
@@ -41,7 +41,7 @@
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
-      "isSensitive": true,
+      "isSensitive": false,
       "defaultValue": "",
       "belongPrimaryKey": false
     },
@@ -86,8 +86,8 @@
     }
   ],
   "permissions": [
-    { "role": "World", "rights": ["Read"] },
-    { "role": "Authenticated", "rights": ["Read"] },
+    { "role": "World", "rights": [] },
+    { "role": "Authenticated", "rights": [] },
     { "role": "Creator", "rights": ["Read", "Upsert", "Delete"] },
     { "role": "Administrator", "rights": ["Read", "Upsert", "Delete"] }
   ]

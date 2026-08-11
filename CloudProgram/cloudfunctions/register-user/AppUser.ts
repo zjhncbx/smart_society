@@ -34,7 +34,7 @@ export class AppUser {
   }
 
   getEncryptedFieldList(): string[] {
-    return ['passwordHash', 'passwordSalt'];
+    return [];
   }
 
   static parseFrom(data: any): AppUser {
