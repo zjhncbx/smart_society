@@ -217,7 +217,10 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       const obj = new Member();
       obj.id = id;
       obj.name = u.name || '';
-      obj.studentNo = '';
+      // 自动取钉钉数据中的合适编号作为会员编号：工号 > 手机号 > 固定电话 > unionid > userid
+      obj.studentNo = String(
+        u.job_number || u.mobile || u.telephone || u.unionid || u.userid || '',
+      );
       const deptId = Array.isArray(u.dept_id_list) && u.dept_id_list.length > 0 ? u.dept_id_list[0] : null;
       const deptName = deptId != null && deptNames.has(deptId)
         ? deptNames.get(deptId)!
