@@ -194,9 +194,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const fetchDeptIds: number[] = [];
     if (!isSubsetSync) {
       fetchDeptIds.push(1);
-      for (const id of childrenOf.keys()) {
+      childrenOf.forEach((_, id) => {
         fetchDeptIds.push(id);
-      }
+      });
     } else {
       const excluded = new Set(excludedDeptIds);
       const collect = (id: number): void => {
