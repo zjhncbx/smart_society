@@ -23,13 +23,13 @@ function parseParams(event: any): any {
 
 const ZONE_NAME = 'default';
 const DINGTALK_HOST = 'oapi.dingtalk.com';
-const CONCURRENCY = 20;
+const CONCURRENCY = 6;
 const UPSERT_BATCH = 100;
 const HTTP_TIMEOUT = 10000;
 const QUERY_PAGE_SIZE = 1000;
 const QUERY_MAX_PAGES = 50;
 const USER_LIST_MAX_PAGES = 100;
-const USER_GET_RETRIES = 3;
+const USER_GET_RETRIES = 5;
 
 function httpsGet(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -79,6 +79,26 @@ function httpsPost(url: string, body: any): Promise<any> {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** 全局限速器：确保任意时刻请求速率不超过阈值（钉钉通讯录接口默认 20 QPS，这里按 ~16 次/秒留余量） */
+class RateLimiter {
+  private nextAllowed = 0;
+
+  constructor(private readonly minIntervalMs: number) {}
+
+  async acquire(): Promise<void> {
+    const now = Date.now();
+    const wait = Math.max(0, this.nextAllowed - now);
+    this.nextAllowed = Math.max(now, this.nextAllowed) + this.minIntervalMs;
+    if (wait > 0) await sleep(wait);
+  }
+}
+
+const dingTalkRate = new RateLimiter(60);
+
+function isThrottled(res: any): boolean {
+  return res?.errcode === 90018 || String(res?.errmsg || '').includes('90018');
+}
+
 /** 并发限制执行器：fn 并发最多 limit 个 */
 async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = new Array(items.length);
@@ -114,10 +134,11 @@ function parseHiredDate(u: any): Date | null {
   return null;
 }
 
-/** 获取用户详情：失败重试，重试后仍失败则抛错中止（避免静默丢人导致数据不全） */
+/** 获取用户详情：限速 + 失败重试（流控时等待窗口结束），仍失败则抛错中止（避免静默丢人导致数据不全） */
 async function getUserDetail(token: string, userid: string): Promise<any> {
   let lastErr = '';
   for (let attempt = 0; attempt < USER_GET_RETRIES; attempt++) {
+    await dingTalkRate.acquire();
     const res = await httpsPost(
       `https://${DINGTALK_HOST}/topapi/v2/user/get?access_token=${token}`,
       { userid },
@@ -125,7 +146,8 @@ async function getUserDetail(token: string, userid: string): Promise<any> {
     if (res.errcode === 0 && res.result) return res.result;
     lastErr = `${res.errmsg || res.errcode}`;
     if (attempt < USER_GET_RETRIES - 1) {
-      await sleep(300 * (attempt + 1));
+      // 触发 qps 流控时多等一会儿（限流窗口约 1 秒），普通错误短退避
+      await sleep(isThrottled(res) ? 1200 + 400 * attempt : 400 + 300 * attempt);
     }
   }
   throw new Error(`获取钉钉用户详情失败: ${userid}（${lastErr}）`);
@@ -172,6 +194,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const deptNames = new Map<number, string>();
     const childrenOf = new Map<number, number[]>();
     const visitNames = async (parentId: number): Promise<void> => {
+      await dingTalkRate.acquire();
       const res = await httpsPost(
         `https://${DINGTALK_HOST}/topapi/v2/department/listsub?access_token=${token}`,
         { dept_id: parentId },
@@ -217,6 +240,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     for (const deptId of uniqueDeptIds) {
       let cursor = 0;
       for (let page = 0; page < USER_LIST_MAX_PAGES; page++) {
+        await dingTalkRate.acquire();
         const res = await httpsPost(
           `https://${DINGTALK_HOST}/topapi/v2/user/list?access_token=${token}`,
           { dept_id: deptId, cursor, size: 100 },
