@@ -16,7 +16,7 @@ export class OrgSettings {
     map.set('roleLabels', 'String');
     map.set('dingtalkClientId', 'String');
     map.set('dingtalkClientSecret', 'String');
-    map.set('dingtalkLastSyncAt', 'Integer');
+    map.set('dingtalkLastSyncAt', 'Long');
     map.set('dingtalkLastResult', 'String');
     return map;
   }

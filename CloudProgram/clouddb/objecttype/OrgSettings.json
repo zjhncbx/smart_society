@@ -38,7 +38,7 @@
     },
     {
       "fieldName": "dingtalkLastSyncAt",
-      "fieldType": "Integer",
+      "fieldType": "Long",
       "isNeedEncrypt": false,
       "notNull": true,
       "isSensitive": false,

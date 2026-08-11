@@ -22,6 +22,19 @@ function parseParams(event: any): any {
 }
 
 const ZONE_NAME = 'default';
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 50;
+
+// Cloud DB caps a single query result at 1000 records; paginate to fetch all.
+async function queryAllByOrg<T>(col: CloudDBCollection<T>, orgId: string): Promise<T[]> {
+  const all: T[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const rows = await col.query().equalTo('orgId', orgId).limit(PAGE_SIZE, page * PAGE_SIZE).get();
+    all.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+  }
+  return all;
+}
 
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('get-all-data called');
@@ -41,9 +54,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const noticeCol: CloudDBCollection<Notice> = db.collection(Notice);
 
     const [memberRes, projectRes, noticeRes] = await Promise.all([
-      memberCol.query().equalTo('orgId', orgId).get(),
-      projectCol.query().equalTo('orgId', orgId).get(),
-      noticeCol.query().equalTo('orgId', orgId).get(),
+      queryAllByOrg(memberCol, orgId),
+      queryAllByOrg(projectCol, orgId),
+      queryAllByOrg(noticeCol, orgId),
     ]);
 
     logger.info(`get-all-data done: members=${memberRes.length}, projects=${projectRes.length}, notices=${noticeRes.length}`);
