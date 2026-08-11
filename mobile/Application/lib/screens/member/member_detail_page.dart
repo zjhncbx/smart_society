@@ -113,6 +113,11 @@ class MemberDetailPage extends StatelessWidget {
                     label: labels.deptLabel,
                     value: member.department,
                     icon: Icons.apartment_outlined),
+                if (member.departments.length > 1)
+                  _InfoRow(
+                    label: '全部部门',
+                    value: member.departments.join('、'),
+                    icon: Icons.groups_outlined),
                 const Divider(height: 1, indent: 52),
                 _InfoRow(
                     label: labels.labelRole,
@@ -150,32 +155,64 @@ class MemberDetailPage extends StatelessWidget {
     Member member,
   ) async {
     final labels = context.labelsRead;
-    final controller = TextEditingController(text: member.department);
+    final depts = member.departments.isNotEmpty
+        ? member.departments
+        : [if (member.department.isNotEmpty) member.department];
+    var primary = member.department;
+    final controller = TextEditingController();
     final saved = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('变更部门'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(labelText: labels.deptLabel),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('设置主部门'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (depts.isNotEmpty) ...[
+                const Text('选择主部门', style: TextStyle(fontSize: 13)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final d in depts)
+                      ChoiceChip(
+                        label: Text(d),
+                        selected: primary == d,
+                        onSelected: (_) => setState(() => primary = d),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: '自定义主部门（可选）',
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(labels.labelSwitchCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(labels.saveButton),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(labels.labelSwitchCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(labels.saveButton),
-          ),
-        ],
       ),
     );
     if (saved != true || !context.mounted) return;
-    final department = controller.text.trim();
+    final custom = controller.text.trim();
+    final department = custom.isNotEmpty ? custom : primary;
     if (department.isEmpty) {
-      showToast(context, '请输入部门');
+      showToast(context, '请选择或输入主部门');
       return;
     }
     await context

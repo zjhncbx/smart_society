@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// 社团成员
 class Member {
   Member({
@@ -5,6 +7,7 @@ class Member {
     required this.name,
     required this.studentNo,
     required this.department,
+    List<String>? departments,
     required this.roleId,
     required this.roleLabel,
     this.phone = '',
@@ -15,12 +18,13 @@ class Member {
     this.lastSyncedAt,
     this.orgId = '',
     this.updatedAt,
-  });
+  }) : departments = departments ?? const [];
 
   final String id;
   final String name;
   final String studentNo;
   final String department;
+  final List<String> departments;
   String roleId;
   String roleLabel;
   String phone;
@@ -39,6 +43,7 @@ class Member {
         'name': name,
         'studentNo': studentNo,
         'department': department,
+        'departments': jsonEncode(departments),
         'roleId': roleId,
         'roleLabel': roleLabel,
         'phone': phone,
@@ -56,6 +61,7 @@ class Member {
         name: json['name'] as String,
         studentNo: json['studentNo'] as String,
         department: json['department'] as String,
+        departments: _parseDepartments(json['departments']),
         roleId: (json['roleId'] as String?) ?? (json['role'] as String?) ?? 'member',
         roleLabel: (json['roleLabel'] as String?) ?? '成员',
         phone: (json['phone'] as String?) ?? '',
@@ -67,6 +73,19 @@ class Member {
         orgId: (json['orgId'] as String?) ?? '',
         updatedAt: _toDate(json['updatedAt']),
       );
+}
+
+List<String> _parseDepartments(dynamic v) {
+  if (v == null) return const [];
+  if (v is List) return v.map((e) => '$e').toList();
+  if (v is String) {
+    if (v.isEmpty || v == '[]') return const [];
+    try {
+      final decoded = jsonDecode(v);
+      if (decoded is List) return decoded.map((e) => '$e').toList();
+    } catch (_) {}
+  }
+  return const [];
 }
 
 /// 兼容 int（epoch 毫秒）/ String（ISO 或数字）两种云端日期形态。

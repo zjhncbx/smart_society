@@ -3,6 +3,7 @@ export class Member {
   name: string = '';
   studentNo: string = '';
   department: string = '';
+  departments: string = '[]';
   roleId: string = '';
   roleLabel: string = '';
   phone: string = '';
@@ -24,6 +25,7 @@ export class Member {
     map.set('name', 'String');
     map.set('studentNo', 'String');
     map.set('department', 'String');
+    map.set('departments', 'String');
     map.set('roleId', 'String');
     map.set('roleLabel', 'String');
     map.set('phone', 'String');
@@ -56,6 +58,7 @@ export class Member {
       obj.name = data.name ?? '';
       obj.studentNo = data.studentNo ?? '';
       obj.department = data.department ?? '';
+      obj.departments = data.departments ?? '[]';
       obj.roleId = data.roleId ?? '';
       obj.roleLabel = data.roleLabel ?? '';
       obj.phone = data.phone ?? '';

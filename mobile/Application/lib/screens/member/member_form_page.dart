@@ -86,6 +86,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
       name: _nameController.text.trim(),
       studentNo: _studentNoController.text.trim(),
       department: _departmentController.text.trim(),
+      departments: [_departmentController.text.trim()],
       roleId: _roleId,
       roleLabel: _roleLabel,
       phone: _phoneController.text.trim(),

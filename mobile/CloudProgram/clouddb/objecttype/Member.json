@@ -37,6 +37,15 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "departments",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "[]",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "roleId",
       "fieldType": "String",
       "isNeedEncrypt": false,

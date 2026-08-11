@@ -290,10 +290,17 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       obj.studentNo = String(
         u.job_number || u.mobile || u.telephone || u.unionid || u.userid || '',
       );
-      const deptId = Array.isArray(u.dept_id_list) && u.dept_id_list.length > 0 ? u.dept_id_list[0] : null;
-      const deptName = deptId != null && deptNames.has(deptId)
-        ? deptNames.get(deptId)!
-        : (Array.isArray(u.department) && u.department.length > 0 ? u.department[0] : '');
+      // 多部门：全部部门名存入 departments（JSON 数组），department 为主部门
+      const deptIdsList = Array.isArray(u.dept_id_list) ? u.dept_id_list : [];
+      const namedDepts = deptIdsList
+        .map((did: any) => deptNames.get(Number(did)))
+        .filter((n: any) => !!n) as string[];
+      const fallbackDepts = Array.isArray(u.department)
+        ? u.department.filter((n: any) => !!n)
+        : [];
+      const allDepts = namedDepts.length > 0 ? namedDepts : fallbackDepts;
+      const primaryDept = allDepts.length > 0 ? allDepts[0] : '';
+      obj.departments = JSON.stringify(allDepts);
       obj.phone = u.mobile || '';
       obj.email = u.email || '';
       const hired = parseHiredDate(u);
@@ -301,13 +308,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       if (prev) {
         obj.joinedAt = hired ?? (prev.joinedAt ? new Date(prev.joinedAt) : now);
         // 部门与角色：保留人工调整过的值，仅空时回退到钉钉数据
-        obj.department = prev.department || deptName || '';
+        obj.department = prev.department || primaryDept;
         obj.roleId = prev.roleId || (roleId || '');
         obj.roleLabel = prev.roleLabel || (roleLabel || '');
         updated++;
       } else {
         obj.joinedAt = hired ?? now;
-        obj.department = deptName || '';
+        obj.department = primaryDept;
         obj.roleId = roleId || '';
         obj.roleLabel = roleLabel || '';
         added++;
