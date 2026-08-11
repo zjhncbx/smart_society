@@ -23,9 +23,13 @@ class OrgSelectorPage extends StatelessWidget {
             final isCurrent = org.orgId == orgProvider.currentOrgId;
             return AppCard(
               margin: const EdgeInsets.symmetric(vertical: 4),
-              onTap: () {
-                orgProvider.switchOrg(org.orgId);
-                context.go('/members');
+              onTap: () async {
+                await orgProvider.switchOrg(org.orgId);
+                if (!context.mounted) return;
+                // 等本帧重建完成后跳转，避免路由移除与子树重建竞态
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) context.go('/members');
+                });
               },
               child: Row(
                 children: [

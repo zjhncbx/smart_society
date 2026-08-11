@@ -223,9 +223,9 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(width: 8),
               Expanded(
                 child: AppCard(
-                  onTap: () {
-                    auth.signOut();
-                    context.go('/login');
+                  onTap: () async {
+                    await auth.signOut();
+                    // 登出后由 app 层自动切换到登录页
                   },
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -525,7 +525,12 @@ class _ProfilePageState extends State<ProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(userDeregistered ? '组织已注销，账号数据已清除' : '组织已注销')),
       );
-      context.go(userDeregistered ? '/login' : '/members');
+      if (!userDeregistered) {
+        // 等本帧重建完成后跳转；注销账号场景由 app 层自动切换到登录页
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) context.go('/members');
+        });
+      }
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
@@ -561,11 +566,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _busy = true);
     try {
       await orgProvider.deleteUser();
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('账号已注销')));
-      context.go('/login');
+      // 注销会触发登出，app 层自动切换到登录页，无需手动跳转
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
