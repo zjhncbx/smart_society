@@ -1,0 +1,94 @@
+{
+  "objectTypeName": "AppUser",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": true
+    },
+    {
+      "fieldName": "phone",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "email",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "passwordHash",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": true,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "passwordSalt",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": true,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "displayName",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    }
+  ],
+  "indexes": [
+    {
+      "indexName": "app_user_id",
+      "indexList": [{ "fieldName": "id", "sortType": "ASC" }]
+    },
+    {
+      "indexName": "app_user_phone",
+      "indexList": [{ "fieldName": "phone", "sortType": "ASC" }]
+    },
+    {
+      "indexName": "app_user_email",
+      "indexList": [{ "fieldName": "email", "sortType": "ASC" }]
+    }
+  ],
+  "permissions": [
+    { "role": "World", "rights": ["Read"] },
+    { "role": "Authenticated", "rights": ["Read"] },
+    { "role": "Creator", "rights": ["Read", "Upsert", "Delete"] },
+    { "role": "Administrator", "rights": ["Read", "Upsert", "Delete"] }
+  ]
+}

@@ -7,6 +7,7 @@ import { Notice } from './Notice';
 import { Project } from './Project';
 import { OrgSettings } from './OrgSettings';
 import { UserSettings } from './UserSettings';
+import { AppUser } from './AppUser';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -101,6 +102,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const us = new UserSettings();
     us.userId = userId;
     await usCol.delete([us]);
+
+    // 手机号/邮箱注册的账号一并注销
+    const appUserCol: CloudDBCollection<AppUser> = db.collection(AppUser);
+    const appUsers = await appUserCol.query().equalTo('id', userId).get();
+    if (appUsers.length > 0) {
+      await appUserCol.delete([appUsers[0]]);
+    }
 
     const memberships = await uoCol.query().equalTo('userId', userId).limit(500).get();
 

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models/auth_user.dart';
+import 'cloud_function_service.dart';
 
 /// 通过 EntryAbility 的 MethodChannel 桥接华为账号认证。
 class AuthService {
@@ -61,5 +62,35 @@ class AuthService {
       _log('signOut: 失败 $e');
       rethrow;
     }
+  }
+
+  /// 手机号/邮箱 + 密码注册或登录（云函数，scrypt 加盐哈希）
+  Future<AuthUser> signInWithAccount({
+    required String account,
+    required String password,
+    required bool register,
+    String? displayName,
+  }) async {
+    _log('signInWithAccount: register=$register account=$account');
+    final data = await CloudFunctionService.instance.callChecked(
+      register ? 'register-user' : 'login-user',
+      params: {
+        'account': account,
+        'password': password,
+        if (displayName != null && displayName.isNotEmpty)
+          'displayName': displayName,
+      },
+      timeout: const Duration(seconds: 30),
+    );
+    final map = data is Map<String, dynamic> ? data : <String, dynamic>{};
+    final userId = map['userId'] as String?;
+    if (userId == null || userId.isEmpty) {
+      throw Exception('登录失败：未获取到用户标识');
+    }
+    _log('signInWithAccount: success userId=$userId');
+    return AuthUser(
+      openId: userId,
+      displayName: (map['displayName'] as String?) ?? '用户',
+    );
   }
 }

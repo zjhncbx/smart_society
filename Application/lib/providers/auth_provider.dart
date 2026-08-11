@@ -54,6 +54,37 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// 手机号/邮箱 + 密码注册或登录（个人账号，与华为账号等价）
+  Future<void> signInWithAccount({
+    required String account,
+    required String password,
+    required bool register,
+    String? displayName,
+  }) async {
+    if (_loading) return;
+    _loading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      _user = await _authService.signInWithAccount(
+        account: account,
+        password: password,
+        register: register,
+        displayName: displayName,
+      );
+      gate.isAuthenticated = true;
+      final box = await Hive.openBox(_boxName);
+      await box.put(_userKey, _user!.toJson());
+      debugPrint('[AuthProvider] account signIn success: ${_user!.displayName}');
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('[AuthProvider] account signIn failed -> $_error');
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> signOut() async {
     try {
       await _authService.signOut();
