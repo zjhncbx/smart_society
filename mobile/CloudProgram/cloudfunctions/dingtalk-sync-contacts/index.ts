@@ -1,5 +1,6 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Member } from './Member';
+import { UserOrganization } from './UserOrganization';
 import * as https from 'https';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
@@ -27,6 +28,8 @@ const UPSERT_BATCH = 100;
 const HTTP_TIMEOUT = 10000;
 const QUERY_PAGE_SIZE = 1000;
 const QUERY_MAX_PAGES = 50;
+const USER_LIST_MAX_PAGES = 100;
+const USER_GET_RETRIES = 3;
 
 function httpsGet(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -37,7 +40,7 @@ function httpsGet(url: string): Promise<any> {
         try {
           resolve(JSON.parse(raw));
         } catch (e: any) {
-          reject(new Error(`钉钉接口返回非 JSON: ${raw.slice(0, 200)}`));
+          reject(new Error(`钉钉接口返回非JSON: ${raw.slice(0, 200)}`));
         }
       });
     });
@@ -63,7 +66,7 @@ function httpsPost(url: string, body: any): Promise<any> {
         try {
           resolve(JSON.parse(raw));
         } catch (e: any) {
-          reject(new Error(`钉钉接口返回非 JSON: ${raw.slice(0, 200)}`));
+          reject(new Error(`钉钉接口返回非JSON: ${raw.slice(0, 200)}`));
         }
       });
     });
@@ -73,6 +76,8 @@ function httpsPost(url: string, body: any): Promise<any> {
     req.end();
   });
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** 并发限制执行器：fn 并发最多 limit 个 */
 async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -89,7 +94,7 @@ async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T)
 }
 
 // Cloud DB caps a single query result at 1000 records; paginate so members
-// beyond the first 1000 are not missed when preserving joinedAt / counting removed.
+// beyond the first 1000 are not missed when preserving joinedAt / deleting removed.
 async function queryAllMembersByOrg(col: CloudDBCollection<Member>, orgId: string): Promise<Member[]> {
   const all: Member[] = [];
   for (let page = 0; page < QUERY_MAX_PAGES; page++) {
@@ -109,6 +114,23 @@ function parseHiredDate(u: any): Date | null {
   return null;
 }
 
+/** 获取用户详情：失败重试，重试后仍失败则抛错中止（避免静默丢人导致数据不全） */
+async function getUserDetail(token: string, userid: string): Promise<any> {
+  let lastErr = '';
+  for (let attempt = 0; attempt < USER_GET_RETRIES; attempt++) {
+    const res = await httpsPost(
+      `https://${DINGTALK_HOST}/topapi/v2/user/get?access_token=${token}`,
+      { userid },
+    );
+    if (res.errcode === 0 && res.result) return res.result;
+    lastErr = `${res.errmsg || res.errcode}`;
+    if (attempt < USER_GET_RETRIES - 1) {
+      await sleep(300 * (attempt + 1));
+    }
+  }
+  throw new Error(`获取钉钉用户详情失败: ${userid}（${lastErr}）`);
+}
+
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('dingtalk-sync-contacts called');
 
@@ -124,8 +146,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
           .map((v: any) => Number(v))
           .filter((v: any) => Number.isInteger(v) && v > 0)
       : [];
-    // 选择了“全部组织”（根部门 1）时按全量同步处理，removed 统计仍然有效
-    const isSubsetSync = selectedDeptIds.length > 0 && !selectedDeptIds.includes(1);
+    const excludedDeptIds = Array.isArray(params?.excludeDeptIds)
+      ? (params.excludeDeptIds as any[])
+          .map((v: any) => Number(v))
+          .filter((v: any) => Number.isInteger(v) && v > 0)
+      : [];
+    // 传了 deptIds 即为“选定部门同步”；未传为全量同步（可删除已不在钉钉的成员）
+    const isSubsetSync = selectedDeptIds.length > 0;
     if (!orgId || !clientId || !clientSecret) {
       callback({ ret: { code: -1, message: '缺少 orgId/clientId/clientSecret 参数' } });
       return;
@@ -141,14 +168,10 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     }
     const token = tokenRes.access_token;
 
-    // 2. 递归遍历部门，建 id -> name 映射
+    // 2. 遍历全部部门，建立 id -> name 与父->子映射（供选择/排除与部门名使用）
     const deptNames = new Map<number, string>();
-    const deptIds: number[] = [];
-    const visitedDepts = new Set<number>();
-    const visit = async (parentId: number): Promise<void> => {
-      if (visitedDepts.has(parentId)) return;
-      visitedDepts.add(parentId);
-      deptIds.push(parentId);
+    const childrenOf = new Map<number, number[]>();
+    const visitNames = async (parentId: number): Promise<void> => {
       const res = await httpsPost(
         `https://${DINGTALK_HOST}/topapi/v2/department/listsub?access_token=${token}`,
         { dept_id: parentId },
@@ -159,22 +182,41 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       const subs: any[] = res.result || [];
       for (const d of subs) {
         deptNames.set(d.dept_id, d.name || '');
-        await visit(d.dept_id);
+        const list = childrenOf.get(parentId) || [];
+        list.push(d.dept_id);
+        childrenOf.set(parentId, list);
+        await visitNames(d.dept_id);
       }
     };
-    if (isSubsetSync) {
-      for (const id of selectedDeptIds) {
-        await visit(id);
+    await visitNames(1);
+
+    // 3. 计算需要拉取用户的部门（全量=全部部门；选定=所选部门子树，排除选中的下级子树）
+    const fetchDeptIds: number[] = [];
+    if (!isSubsetSync) {
+      fetchDeptIds.push(1);
+      for (const id of childrenOf.keys()) {
+        fetchDeptIds.push(id);
       }
     } else {
-      await visit(1);
+      const excluded = new Set(excludedDeptIds);
+      const collect = (id: number): void => {
+        if (excluded.has(id)) return;
+        fetchDeptIds.push(id);
+        for (const c of childrenOf.get(id) || []) {
+          collect(c);
+        }
+      };
+      for (const id of selectedDeptIds) {
+        collect(id);
+      }
     }
+    const uniqueDeptIds = Array.from(new Set(fetchDeptIds));
 
-    // 3. 逐部门取用户 userid（分页），跨部门去重
+    // 4. 逐部门取用户 userid（分页，带进度保护），跨部门去重
     const userIds = new Set<string>();
-    for (const deptId of deptIds) {
+    for (const deptId of uniqueDeptIds) {
       let cursor = 0;
-      for (;;) {
+      for (let page = 0; page < USER_LIST_MAX_PAGES; page++) {
         const res = await httpsPost(
           `https://${DINGTALK_HOST}/topapi/v2/user/list?access_token=${token}`,
           { dept_id: deptId, cursor, size: 100 },
@@ -186,29 +228,23 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         for (const u of list) {
           if (u.userid) userIds.add(u.userid);
         }
-        const hasMore = res.result && (res.result.has_more === true || (res.result.next_cursor != null && res.result.next_cursor > cursor));
+        const hasMore = res.result && res.result.has_more === true;
         if (!hasMore) break;
-        cursor = res.result && res.result.next_cursor != null ? res.result.next_cursor : cursor + 100;
+        const next = res.result && res.result.next_cursor;
+        if (next == null || Number(next) <= cursor) break; // 防死循环
+        cursor = Number(next);
       }
     }
     const allUserIds = Array.from(userIds);
-    logger.info(`dingtalk users: ${allUserIds.length}, depts: ${deptIds.length}`);
+    logger.info(`dingtalk users: ${allUserIds.length}, depts: ${uniqueDeptIds.length}`);
 
-    // 4. 并发拉用户详情
+    // 5. 并发拉用户详情（失败重试，仍失败即中止，不静默丢人）
     const details = await mapWithConcurrency(allUserIds, CONCURRENCY, async (userid) => {
-      const res = await httpsPost(
-        `https://${DINGTALK_HOST}/topapi/v2/user/get?access_token=${token}`,
-        { userid },
-      );
-      if (res.errcode !== 0) {
-        logger.warn(`user/get ${userid} failed: ${res.errmsg || res.errcode}`);
-        return null;
-      }
-      return res.result;
+      return getUserDetail(token, userid);
     });
     const users = details.filter((u: any) => u && u.userid && u.active !== false) as any[];
 
-    // 5. 查询本组织现有成员，保留已有 joinedAt
+    // 6. 查询本组织现有成员
     const db = cloud.database({ zoneName: ZONE_NAME });
     const col: CloudDBCollection<Member> = db.collection(Member);
     const existing = await queryAllMembersByOrg(col, orgId);
@@ -217,7 +253,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       existingById.set(m.id, m);
     }
 
-    // 6. 构建成员记录
+    // 7. 构建成员记录
     const now = new Date();
     let added = 0;
     let updated = 0;
@@ -226,7 +262,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       const obj = new Member();
       obj.id = id;
       obj.name = u.name || '';
-      // 会员编号兜底（仅部分部门同步时使用）：工号 > 手机号 > 固定电话 > unionid > userid
+      // 会员编号兜底（部分部门同步时使用）：工号 > 手机号 > 固定电话 > unionid > userid
       obj.studentNo = String(
         u.job_number || u.mobile || u.telephone || u.unionid || u.userid || '',
       );
@@ -234,19 +270,20 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       const deptName = deptId != null && deptNames.has(deptId)
         ? deptNames.get(deptId)!
         : (Array.isArray(u.department) && u.department.length > 0 ? u.department[0] : '');
-      obj.department = deptName || '';
       obj.phone = u.mobile || '';
       obj.email = u.email || '';
       const hired = parseHiredDate(u);
       const prev = existingById.get(id);
       if (prev) {
         obj.joinedAt = hired ?? (prev.joinedAt ? new Date(prev.joinedAt) : now);
-        // 已有成员保留人工调整过的角色；仅在角色为空时回退到默认角色
+        // 部门与角色：保留人工调整过的值，仅空时回退到钉钉数据
+        obj.department = prev.department || deptName || '';
         obj.roleId = prev.roleId || (roleId || '');
         obj.roleLabel = prev.roleLabel || (roleLabel || '');
         updated++;
       } else {
         obj.joinedAt = hired ?? now;
+        obj.department = deptName || '';
         obj.roleId = roleId || '';
         obj.roleLabel = roleLabel || '';
         added++;
@@ -272,17 +309,33 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       });
     }
 
-    // removed：本组织已同步但钉钉已不存在的成员（仅统计，不删除）
+    // 8. 全量同步：删除钉钉中已不存在的同步成员（先清理账号绑定），部分同步不删
     const syncedIds = new Set(members.map((m) => m.id));
     let removed = 0;
-    // 选择部分部门同步时，未选部门的成员不应计为“已移除”
     if (!isSubsetSync) {
+      const toDelete: Member[] = [];
       for (const m of existing) {
-        if (m.syncStatus === 'synced' && !syncedIds.has(m.id)) removed++;
+        if (m.syncStatus === 'synced' && !syncedIds.has(m.id)) {
+          toDelete.push(m);
+        }
+      }
+      if (toDelete.length > 0) {
+        const uoCol: CloudDBCollection<UserOrganization> = db.collection(UserOrganization);
+        for (const m of toDelete) {
+          const uoRows = await uoCol.query().equalTo('memberId', m.id).limit(1000).get();
+          for (const uo of uoRows) {
+            uo.memberId = '';
+            await uoCol.upsert([uo]);
+          }
+        }
+        for (let i = 0; i < toDelete.length; i += UPSERT_BATCH) {
+          await col.delete(toDelete.slice(i, i + UPSERT_BATCH));
+        }
+        removed = toDelete.length;
       }
     }
 
-    // 7. 分批 upsert
+    // 9. 分批 upsert
     for (let i = 0; i < members.length; i += UPSERT_BATCH) {
       await col.upsert(members.slice(i, i + UPSERT_BATCH));
     }

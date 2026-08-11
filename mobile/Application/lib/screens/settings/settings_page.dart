@@ -402,7 +402,7 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => _syncing = true);
     try {
       // 1. 先选择要同步的钉钉组织（部门），再同步
-      List<int>? picked;
+      DingTalkDeptSelection? picked;
       try {
         final departments = await DingTalkApi.instance.listDepartments(
           orgId: orgId,
@@ -417,6 +417,7 @@ class _SettingsPageState extends State<SettingsPage> {
           initialSelection: lastSelection.isNotEmpty
               ? lastSelection
               : const [1],
+          initialExcluded: settings.dingTalkExcludedDeptIds(orgId),
         );
       } catch (e) {
         if (!mounted) return;
@@ -424,12 +425,15 @@ class _SettingsPageState extends State<SettingsPage> {
         return;
       }
       if (picked == null || !mounted) return; // 用户取消
-      if (picked.isEmpty) {
+      if (picked.selected.isEmpty) {
         if (!mounted) return;
         showToast(context, '请至少选择一个组织');
         return;
       }
-      await settings.setDingTalkSelectedDeptIds(orgId, picked);
+      await settings.setDingTalkSelectedDeptIds(orgId, picked.selected);
+      await settings.setDingTalkExcludedDeptIds(orgId, picked.excluded);
+      // 勾选全部且无排除时走全量同步（可删除已不在钉钉的成员）；否则按所选部门同步
+      final isFull = picked.selected.contains(1) && picked.excluded.isEmpty;
 
       // 2. 执行同步
       final result = await DingTalkSyncService.instance.performSync(
@@ -438,7 +442,8 @@ class _SettingsPageState extends State<SettingsPage> {
         clientSecret: clientSecret,
         roleId: defaultRole.id,
         roleLabel: roleLabel,
-        deptIds: picked,
+        deptIds: isFull ? null : picked.selected,
+        excludeDeptIds: picked.excluded.isEmpty ? null : picked.excluded,
       );
       if (!mounted) return;
       final resultText =

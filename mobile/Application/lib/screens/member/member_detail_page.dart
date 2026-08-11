@@ -39,6 +39,11 @@ class MemberDetailPage extends StatelessWidget {
         actions: provider.isDingTalkManaged
             ? [
                 IconButton(
+                  tooltip: '变更部门',
+                  icon: const Icon(Icons.apartment_outlined),
+                  onPressed: () => _changeDepartment(context, member),
+                ),
+                IconButton(
                   tooltip: labels.labelChangeRole,
                   icon: const Icon(Icons.supervised_user_circle_outlined),
                   onPressed: () => _changeRole(context, member),
@@ -138,6 +143,46 @@ class MemberDetailPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _changeDepartment(
+    BuildContext context,
+    Member member,
+  ) async {
+    final labels = context.labelsRead;
+    final controller = TextEditingController(text: member.department);
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('变更部门'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: labels.deptLabel),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(labels.labelSwitchCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(labels.saveButton),
+          ),
+        ],
+      ),
+    );
+    if (saved != true || !context.mounted) return;
+    final department = controller.text.trim();
+    if (department.isEmpty) {
+      showToast(context, '请输入部门');
+      return;
+    }
+    await context
+        .read<MemberProvider>()
+        .changeDepartment(member.id, department);
+    if (!context.mounted) return;
+    showToast(context, labels.saveSuccess);
   }
 
   Future<void> _changeRole(BuildContext context, Member member) async {

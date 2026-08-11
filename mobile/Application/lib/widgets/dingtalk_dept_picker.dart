@@ -2,18 +2,30 @@ import 'package:flutter/material.dart';
 
 import '../services/dingtalk_api.dart';
 
-/// 选择要同步的钉钉组织（部门）。返回选中的部门 ID 列表；
-/// 取消时返回 null，未选择任何组织时返回空列表。
-Future<List<int>?> showDingTalkDeptPicker(
+/// 部门选择结果：selected 为勾选的部门（按子树），excluded 为显式排除的下级部门（子树）
+class DingTalkDeptSelection {
+  const DingTalkDeptSelection({
+    required this.selected,
+    required this.excluded,
+  });
+
+  final List<int> selected;
+  final List<int> excluded;
+}
+
+/// 选择要同步的钉钉组织（部门）。取消时返回 null。
+Future<DingTalkDeptSelection?> showDingTalkDeptPicker(
   BuildContext context, {
   required List<DingTalkDepartment> departments,
   required List<int> initialSelection,
+  List<int> initialExcluded = const [],
 }) {
-  return showDialog<List<int>>(
+  return showDialog<DingTalkDeptSelection>(
     context: context,
     builder: (_) => DingTalkDeptPicker(
       departments: departments,
       initialSelection: initialSelection,
+      initialExcluded: initialExcluded,
     ),
   );
 }
@@ -23,10 +35,12 @@ class DingTalkDeptPicker extends StatefulWidget {
     super.key,
     required this.departments,
     required this.initialSelection,
+    this.initialExcluded = const [],
   });
 
   final List<DingTalkDepartment> departments;
   final List<int> initialSelection;
+  final List<int> initialExcluded;
 
   @override
   State<DingTalkDeptPicker> createState() => _DingTalkDeptPickerState();
@@ -36,7 +50,9 @@ class _DingTalkDeptPickerState extends State<DingTalkDeptPicker> {
   static const _rootId = 1;
 
   late final Map<int, List<DingTalkDepartment>> _childrenOf;
+  late final Set<int> _knownIds;
   late final Set<int> _selected;
+  late final Set<int> _excluded;
   final Set<int> _expanded = {};
 
   @override
@@ -50,13 +66,12 @@ class _DingTalkDeptPickerState extends State<DingTalkDeptPicker> {
     for (final list in _childrenOf.values) {
       list.sort((a, b) => a.deptId.compareTo(b.deptId));
     }
-    final knownIds = <int>{_rootId};
+    _knownIds = <int>{_rootId};
     for (final list in _childrenOf.values) {
-      knownIds.addAll(list.map((d) => d.deptId));
+      _knownIds.addAll(list.map((d) => d.deptId));
     }
-    _selected = widget.initialSelection
-        .where(knownIds.contains)
-        .toSet();
+    _selected = widget.initialSelection.where(_knownIds.contains).toSet();
+    _excluded = widget.initialExcluded.where(_knownIds.contains).toSet();
   }
 
   List<int> _subtreeIds(int deptId) {
@@ -72,13 +87,21 @@ class _DingTalkDeptPickerState extends State<DingTalkDeptPicker> {
     return result;
   }
 
+  bool _isChecked(int deptId) =>
+      _selected.contains(deptId) && !_excluded.contains(deptId);
+
+  bool _hasSelectedDescendant(int deptId) =>
+      _subtreeIds(deptId).any(_isChecked);
+
   void _toggle(int deptId, bool select) {
+    final ids = _subtreeIds(deptId);
     setState(() {
-      final ids = _subtreeIds(deptId);
       if (select) {
         _selected.addAll(ids);
+        _excluded.removeAll(ids);
       } else {
         _selected.removeAll(ids);
+        _excluded.addAll(ids);
       }
     });
   }
@@ -88,22 +111,24 @@ class _DingTalkDeptPickerState extends State<DingTalkDeptPicker> {
       _selected
         ..clear()
         ..addAll(_subtreeIds(_rootId));
+      _excluded.clear();
     });
   }
 
   void _clearAll() {
-    setState(_selected.clear);
+    setState(() {
+      _selected.clear();
+      _excluded.clear();
+    });
   }
 
-  bool get _hasSelection =>
-      _subtreeIds(_rootId).any((id) => _selected.contains(id));
+  bool get _hasSelection => _subtreeIds(_rootId).any(_isChecked);
 
   Widget _buildNode(int deptId, String name, int depth) {
     final children = _childrenOf[deptId] ?? const <DingTalkDepartment>[];
     final expanded = _expanded.contains(deptId);
-    final selected = _selected.contains(deptId);
-    final hasSelectedDescendant =
-        !selected && _subtreeIds(deptId).any(_selected.contains);
+    final checked = _isChecked(deptId);
+    final indeterminate = !checked && _hasSelectedDescendant(deptId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,13 +162,13 @@ class _DingTalkDeptPickerState extends State<DingTalkDeptPicker> {
                 ),
               ),
               Checkbox(
-                value: hasSelectedDescendant ? null : selected,
+                value: indeterminate ? null : checked,
                 tristate: true,
-                onChanged: (_) => _toggle(deptId, !selected),
+                onChanged: (_) => _toggle(deptId, !checked),
               ),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _toggle(deptId, !selected),
+                  onTap: () => _toggle(deptId, !checked),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Text(
@@ -213,7 +238,10 @@ class _DingTalkDeptPickerState extends State<DingTalkDeptPicker> {
         ),
         FilledButton(
           onPressed: _hasSelection
-              ? () => Navigator.of(context).pop(_selected.toList())
+              ? () => Navigator.of(context).pop(DingTalkDeptSelection(
+                    selected: _selected.toList(),
+                    excluded: _excluded.toList(),
+                  ))
               : null,
           child: const Text('开始同步'),
         ),

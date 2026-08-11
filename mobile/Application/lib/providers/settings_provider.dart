@@ -21,6 +21,8 @@ class SettingsProvider extends ChangeNotifier {
       'dingtalk_${suffix}_$orgId';
   static String _configuredKey(String orgId) => 'dingtalk_configured_$orgId';
   static String _deptsKey(String orgId) => 'dingtalk_selected_depts_$orgId';
+  static String _excludedDeptsKey(String orgId) =>
+      'dingtalk_excluded_depts_$orgId';
   static String _bindKey(String orgId, String suffix) =>
       'memberBind_${suffix}_$orgId';
 
@@ -318,6 +320,22 @@ class SettingsProvider extends ChangeNotifier {
     await box.put(_deptsKey(orgId), deptIds);
   }
 
+  /// 上次同步显式排除的下级部门（在勾选父部门时去掉的子树）
+  List<int> dingTalkExcludedDeptIds(String orgId) {
+    if (orgId.isEmpty) return const [];
+    final v = Hive.box(_boxName).get(_excludedDeptsKey(orgId));
+    return v is List ? v.whereType<int>().toList() : const [];
+  }
+
+  Future<void> setDingTalkExcludedDeptIds(
+    String orgId,
+    List<int> deptIds,
+  ) async {
+    if (orgId.isEmpty) return;
+    final box = await Hive.openBox(_boxName);
+    await box.put(_excludedDeptsKey(orgId), deptIds);
+  }
+
   String? dingTalkLastResult(String orgId) {
     if (orgId.isEmpty) return null;
     return Hive.box(_boxName).get(_credsKey(orgId, 'lastResult')) as String?;
@@ -386,6 +404,7 @@ class SettingsProvider extends ChangeNotifier {
     }
     await box.delete(_configuredKey(orgId));
     await box.delete(_deptsKey(orgId));
+    await box.delete(_excludedDeptsKey(orgId));
     await box.delete(_bindKey(orgId, 'id'));
     await box.delete(_bindKey(orgId, 'name'));
   }

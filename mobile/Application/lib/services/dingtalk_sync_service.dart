@@ -15,6 +15,7 @@ class DingTalkSyncService {
     required String roleId,
     required String roleLabel,
     List<int>? deptIds,
+    List<int>? excludeDeptIds,
   }) async {
     final result = await _api.syncContacts(
       orgId: orgId,
@@ -23,6 +24,7 @@ class DingTalkSyncService {
       roleId: roleId,
       roleLabel: roleLabel,
       deptIds: deptIds,
+      excludeDeptIds: excludeDeptIds,
     );
     // 同步成员已写入云端，拉取最新数据落库刷新界面
     await SyncProvider.instance.pullAndRefresh(orgId);

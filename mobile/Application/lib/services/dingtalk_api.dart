@@ -13,6 +13,7 @@ class DingTalkApi {
     required String roleId,
     required String roleLabel,
     List<int>? deptIds,
+    List<int>? excludeDeptIds,
   }) async {
     final data = await CloudFunctionService.instance.callWithRetry(
       'dingtalk-sync-contacts',
@@ -23,6 +24,8 @@ class DingTalkApi {
         'roleId': roleId,
         'roleLabel': roleLabel,
         if (deptIds != null && deptIds.isNotEmpty) 'deptIds': deptIds,
+        if (excludeDeptIds != null && excludeDeptIds.isNotEmpty)
+          'excludeDeptIds': excludeDeptIds,
       },
       timeout: const Duration(seconds: 55),
       maxRetries: 1,

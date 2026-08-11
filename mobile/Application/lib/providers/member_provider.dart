@@ -117,6 +117,38 @@ class MemberProvider extends ChangeNotifier {
     );
   }
 
+  /// 变更成员归属部门：钉钉同步组织同样允许（仅改部门，不涉及增删成员）
+  Future<void> changeDepartment(String id, String department) async {
+    final index = _members.indexWhere((m) => m.id == id);
+    if (index < 0) return;
+    final old = _members[index];
+    final updated = Member(
+      id: old.id,
+      name: old.name,
+      studentNo: old.studentNo,
+      department: department,
+      roleId: old.roleId,
+      roleLabel: old.roleLabel,
+      phone: old.phone,
+      email: old.email,
+      joinedAt: old.joinedAt,
+      dingTalkUserId: old.dingTalkUserId,
+      syncStatus: old.syncStatus,
+      lastSyncedAt: old.lastSyncedAt,
+      orgId: old.orgId,
+      updatedAt: old.updatedAt,
+    );
+    _members[index] = updated;
+    await _storage.membersBox.put(updated.id, updated.toJson());
+    notifyListeners();
+    SyncProvider.instance.enqueue(
+      'member',
+      updated.id,
+      SyncOp.upsert,
+      updated.toJson(),
+    );
+  }
+
   Future<void> deleteMember(String id) async {
     if (isDingTalkManaged) return;
     _members.removeWhere((m) => m.id == id);
