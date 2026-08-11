@@ -206,6 +206,8 @@ class _SetupWizardPageState extends State<SetupWizardPage> {
         orgType: _selectedType.name,
         creditCode: _creditCodeController.text.trim(),
       );
+      // 主题为组织级设置：组织创建后再保存一次，写入新组织
+      await settings.setTheme(_selectedTheme);
       await settings.completeSetup();
       if (!mounted) return;
       context.go('/members');

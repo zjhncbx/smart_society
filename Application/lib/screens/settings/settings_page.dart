@@ -71,20 +71,22 @@ class _SettingsPageState extends State<SettingsPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text(labels.labelSettingsTitle)),
-      body: isAdmin
-          ? ListView(
-              children: [
-                _SectionHeader(title: labels.themeLabel),
-                SwitchListTile(
-                  title: const Text('深色模式'),
-                  subtitle: const Text('黑色画布，跟随主题色'),
-                  value: context.watch<SettingsProvider>().darkMode,
-                  onChanged: (v) =>
-                      context.read<SettingsProvider>().setDarkMode(v),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Wrap(
+      body: ListView(
+        children: [
+          _SectionHeader(title: '个人偏好'),
+          SwitchListTile(
+            title: const Text('深色模式'),
+            subtitle: const Text('黑色画布，仅影响您的设备'),
+            value: context.watch<SettingsProvider>().darkMode,
+            onChanged: (v) =>
+                context.read<SettingsProvider>().setDarkMode(v),
+          ),
+          const Divider(),
+          if (isAdmin) ...[
+            _SectionHeader(title: labels.themeLabel),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
                     spacing: 8,
                     children: ThemeConfig.all.map((themeConfig) {
                       final selected =
@@ -265,37 +267,19 @@ class _SettingsPageState extends State<SettingsPage> {
                     ],
                   ),
                 ),
-              ],
-            )
-          : Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.lock_outline,
-                      size: 48,
-                      color: theme.colorScheme.outline,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '仅组织管理员可以修改设置',
-                      style: theme.textTheme.titleMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '如需修改请由组织管理员操作，或切换到您担任管理员的组织',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+          ] else
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: AppCard(
+                child: Text(
+                  '仅组织管理员可以修改组织主题与组织设置；深色模式为个人偏好，仅影响您的设备。',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: theme.colorScheme.outline),
                 ),
               ),
             ),
+        ],
+      ),
     );
   }
 

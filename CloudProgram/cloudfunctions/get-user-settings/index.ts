@@ -43,7 +43,6 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         code: 0,
         message: 'ok',
         data: {
-          themeIndex: s ? s.themeIndex : null,
           nickname: s && s.nickname ? s.nickname : null,
           darkMode: s ? s.darkMode : null,
         },

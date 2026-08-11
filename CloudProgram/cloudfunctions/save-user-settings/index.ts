@@ -38,7 +38,6 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const s = rows.length > 0 ? rows[0] : new UserSettings();
     s.userId = userId;
 
-    if (params.themeIndex !== undefined) s.themeIndex = Number(params.themeIndex) || 0;
     if (params.nickname !== undefined) s.nickname = String(params.nickname || '');
     if (params.darkMode !== undefined) s.darkMode = params.darkMode === true;
 

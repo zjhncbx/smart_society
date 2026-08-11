@@ -1,5 +1,6 @@
 export class OrgSettings {
   orgId: string = '';
+  themeIndex: number = 0;
   roleLabels: string = '{}';
   dingtalkClientId: string = '';
   dingtalkClientSecret: string = '';
@@ -13,6 +14,7 @@ export class OrgSettings {
   getFieldTypeMap(): Map<string, string> {
     const map = new Map<string, string>();
     map.set('orgId', 'String');
+    map.set('themeIndex', 'Integer');
     map.set('roleLabels', 'String');
     map.set('dingtalkClientId', 'String');
     map.set('dingtalkClientSecret', 'String');
@@ -37,6 +39,7 @@ export class OrgSettings {
     const obj = new OrgSettings();
     if (data) {
       obj.orgId = data.orgId ?? '';
+      obj.themeIndex = data.themeIndex ?? 0;
       obj.roleLabels = data.roleLabels ?? '{}';
       obj.dingtalkClientId = data.dingtalkClientId ?? '';
       obj.dingtalkClientSecret = data.dingtalkClientSecret ?? '';

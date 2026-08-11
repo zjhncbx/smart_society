@@ -109,7 +109,26 @@ class SettingsProvider extends ChangeNotifier {
     final box = await Hive.openBox(_boxName);
     await box.put(_themeIndexKey, ThemeConfig.all.indexOf(config));
     await box.put(_themeVersionKey, _themeVersion);
-    if (pushCloud) _pushUserSettings();
+    if (pushCloud) _pushOrgTheme();
+  }
+
+  /// 主题色按组织保存（OrgSettings.themeIndex，仅管理员可改，成员共用）
+  void _pushOrgTheme() {
+    final orgId = _currentOrgId;
+    final userId = _userId;
+    if (orgId == null || orgId.isEmpty || userId == null || userId.isEmpty) {
+      return;
+    }
+    _cloud.callChecked(
+      'save-org-settings',
+      params: {
+        'orgId': orgId,
+        'userId': userId,
+        'themeIndex': ThemeConfig.all.indexOf(_theme),
+      },
+    ).catchError((Object e) {
+      debugPrint('save-org-settings theme failed: $e');
+    });
   }
 
   /// 深色模式（黑色画布）：本地立即生效并异步推送云端
@@ -140,12 +159,6 @@ class SettingsProvider extends ChangeNotifier {
         params: {'userId': userId},
       );
       final map = data is Map<String, dynamic> ? data : <String, dynamic>{};
-      final themeIndex = map['themeIndex'];
-      if (themeIndex is int &&
-          themeIndex >= 0 &&
-          themeIndex < ThemeConfig.all.length) {
-        await setTheme(ThemeConfig.all[themeIndex], pushCloud: false);
-      }
       final darkMode = map['darkMode'];
       if (darkMode is bool && darkMode != _darkMode) {
         await setDarkMode(darkMode, pushCloud: false);
@@ -175,6 +188,12 @@ class SettingsProvider extends ChangeNotifier {
       );
       final map = data is Map<String, dynamic> ? data : <String, dynamic>{};
       final dingtalk = map['dingtalk'];
+      final themeIndex = map['themeIndex'];
+      if (themeIndex is int &&
+          themeIndex >= 0 &&
+          themeIndex < ThemeConfig.all.length) {
+        await setTheme(ThemeConfig.all[themeIndex], pushCloud: false);
+      }
       final box = await Hive.openBox(_boxName);
       if (dingtalk is Map) {
         final configured = dingtalk['configured'] == true;
@@ -214,14 +233,12 @@ class SettingsProvider extends ChangeNotifier {
   void _pushUserSettings() {
     final userId = _userId;
     if (userId == null || userId.isEmpty) return;
-    final themeIndex = ThemeConfig.all.indexOf(_theme);
     final nickname = _nickname;
     final darkMode = _darkMode;
     _cloud.callChecked(
       'save-user-settings',
       params: {
         'userId': userId,
-        'themeIndex': themeIndex,
         'nickname': nickname,
         'darkMode': darkMode,
       },

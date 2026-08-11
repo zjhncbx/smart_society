@@ -62,6 +62,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         s.roleLabels = JSON.stringify(params.roleLabels || {});
       }
     }
+    if (params.themeIndex !== undefined) s.themeIndex = Number(params.themeIndex) || 0;
     if (params.dingtalkClientId !== undefined) s.dingtalkClientId = String(params.dingtalkClientId || '');
     if (params.dingtalkClientSecret !== undefined) s.dingtalkClientSecret = String(params.dingtalkClientSecret || '');
     if (params.dingtalkLastSyncAt !== undefined) s.dingtalkLastSyncAt = Number(params.dingtalkLastSyncAt) || 0;

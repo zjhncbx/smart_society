@@ -56,6 +56,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     }
 
     const configured = !!s && !!s.dingtalkClientId && !!s.dingtalkClientSecret;
+    const themeIndex = s ? s.themeIndex : 0;
     const lastSyncAt = s && s.dingtalkLastSyncAt ? s.dingtalkLastSyncAt : null;
     const lastResult = s && s.dingtalkLastResult ? s.dingtalkLastResult : null;
 
@@ -71,7 +72,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       ret: {
         code: 0,
         message: 'ok',
-        data: { orgId, roleLabels, dingtalk },
+        data: { orgId, themeIndex, roleLabels, dingtalk },
       },
     });
   } catch (err: any) {

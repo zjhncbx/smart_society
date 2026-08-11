@@ -10,6 +10,15 @@
       "belongPrimaryKey": true
     },
     {
+      "fieldName": "themeIndex",
+      "fieldType": "Integer",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "0",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "roleLabels",
       "fieldType": "String",
       "isNeedEncrypt": false,
