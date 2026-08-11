@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'config/org_labels.dart';
 import 'config/theme_config.dart';
 import 'providers/auth_provider.dart';
+import 'providers/finance_provider.dart';
 import 'providers/member_provider.dart';
 import 'providers/notice_provider.dart';
 import 'providers/organization_provider.dart';
@@ -136,6 +137,13 @@ class SmartSocietyApp extends StatelessWidget {
             p.load();
             return p;
           },
+        ),
+        ChangeNotifierProvider(
+          create: (_) => FinanceProvider(
+            orgIdGetter: orgIdGetter(),
+            userIdGetter: () => authProvider.user?.openId ?? '',
+            userNameGetter: () => settingsProvider.nickname,
+          ),
         ),
       ],
       child: Consumer<AuthProvider>(

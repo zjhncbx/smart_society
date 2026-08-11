@@ -4,11 +4,15 @@ import 'package:provider/provider.dart';
 
 import '../../config/org_config_provider.dart';
 import '../../config/org_labels.dart';
+import '../../config/finance_config.dart';
 import '../../models/member.dart';
 import '../../models/project.dart';
+import '../../models/finance_record.dart';
+import '../../providers/finance_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/project_provider.dart';
 import '../../utils/date_format.dart';
+import '../../utils/finance_format.dart';
 import '../../widgets/app_badges.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_empty_state.dart';
@@ -113,6 +117,12 @@ class ProjectDetailPage extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 8),
+          // ── 项目财务 ──
+          _ProjectFinanceSection(
+            projectId: project.id,
+            budget: project.budget,
           ),
           const SizedBox(height: 8),
           // ── 里程碑 ──
@@ -504,6 +514,147 @@ class ProjectDetailPage extends StatelessWidget {
         kProjectCompleted => const [kProjectActive],
         _ => const [],
       };
+}
+
+class _ProjectFinanceSection extends StatefulWidget {
+  const _ProjectFinanceSection({
+    required this.projectId,
+    required this.budget,
+  });
+
+  final String projectId;
+  final double budget;
+
+  @override
+  State<_ProjectFinanceSection> createState() => _ProjectFinanceSectionState();
+}
+
+class _ProjectFinanceSectionState extends State<_ProjectFinanceSection> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = context.read<FinanceProvider>();
+      p.loadStats(projectId: widget.projectId);
+      p.loadProjectRecords(widget.projectId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = FinanceLabels.forType(context.orgType);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final provider = context.watch<FinanceProvider>();
+    final stats = provider.stats;
+    final records = provider.projectRecords;
+
+    return AppCard(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    labels.projectFinance,
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => context.push(
+                    '/finance/new?projectId=${widget.projectId}',
+                  ),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: Text(labels.linkRecord),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                _FinanceStat(
+                  label: labels.budgetLabel,
+                  value: '¥${formatAmount(widget.budget)}',
+                  color: cs.primary,
+                ),
+                _FinanceStat(
+                  label: labels.incomeLabel,
+                  value: '¥${formatAmount(stats.income)}',
+                  color: Colors.green.shade700,
+                ),
+                _FinanceStat(
+                  label: labels.spentLabel,
+                  value: '¥${formatAmount(stats.expense)}',
+                  color: Colors.red.shade700,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (records.isEmpty)
+              Text(
+                '暂无财务记录',
+                style: theme.textTheme.bodySmall?.copyWith(color: cs.outline),
+              )
+            else
+              for (final r in records.take(5))
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(r.summary,
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(r.categoryLabel),
+                  trailing: Text(
+                    '¥${formatAmount(r.amount)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: r.type == kFinanceIncome
+                          ? Colors.green.shade700
+                          : cs.primary,
+                    ),
+                  ),
+                  onTap: () => context.push('/finance/${r.id}'),
+                ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FinanceStat extends StatelessWidget {
+  const _FinanceStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12)),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _MilestoneTile extends StatelessWidget {

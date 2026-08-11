@@ -7,6 +7,7 @@ export class Project {
   endDate: Date = new Date();
   status: number = 0;
   progress: number = 0;
+  budget: number = 0;
   tasks: string = '[]';
   milestones: string = '[]';
   createdAt: Date = new Date();
@@ -27,6 +28,7 @@ export class Project {
     map.set('endDate', 'Date');
     map.set('status', 'Integer');
     map.set('progress', 'Integer');
+    map.set('budget', 'Double');
     map.set('tasks', 'String');
     map.set('milestones', 'String');
     map.set('createdAt', 'Date');
@@ -65,6 +67,7 @@ export class Project {
       obj.endDate = data.endDate ? new Date(data.endDate) : new Date();
       obj.status = data.status ?? 0;
       obj.progress = data.progress ?? 0;
+      obj.budget = Number(data.budget) || 0;
       obj.tasks = Project.toJsonString(data.tasks);
       obj.milestones = Project.toJsonString(data.milestones);
       obj.createdAt = data.createdAt ? new Date(data.createdAt) : new Date();

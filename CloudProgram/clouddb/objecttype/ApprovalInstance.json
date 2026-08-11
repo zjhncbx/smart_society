@@ -1,5 +1,5 @@
 {
-  "objectTypeName": "Project",
+  "objectTypeName": "ApprovalInstance",
   "fields": [
     {
       "fieldName": "id",
@@ -10,7 +10,7 @@
       "belongPrimaryKey": true
     },
     {
-      "fieldName": "name",
+      "fieldName": "orgId",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": true,
@@ -19,7 +19,7 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "description",
+      "fieldName": "flowId",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -28,32 +28,52 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "managerId",
+      "fieldName": "flowName",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "bizType",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": true,
       "isSensitive": false,
+      "defaultValue": "finance",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "bizId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
       "defaultValue": "",
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "startDate",
-      "fieldType": "Date",
+      "fieldName": "title",
+      "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "endDate",
-      "fieldType": "Date",
-      "isNeedEncrypt": false,
-      "notNull": false,
-      "isSensitive": false,
+      "defaultValue": "",
       "belongPrimaryKey": false
     },
     {
       "fieldName": "status",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "running",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "currentIndex",
       "fieldType": "Integer",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -62,25 +82,16 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "progress",
-      "fieldType": "Integer",
+      "fieldName": "nodeSnapshot",
+      "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
-      "defaultValue": "0",
+      "defaultValue": "{}",
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "budget",
-      "fieldType": "Double",
-      "isNeedEncrypt": false,
-      "notNull": false,
-      "isSensitive": false,
-      "defaultValue": "0",
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "tasks",
+      "fieldName": "history",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -89,12 +100,21 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "milestones",
+      "fieldName": "createdBy",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
-      "defaultValue": "[]",
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createdByName",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
       "belongPrimaryKey": false
     },
     {
@@ -103,15 +123,6 @@
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "orgId",
-      "fieldType": "String",
-      "isNeedEncrypt": false,
-      "notNull": true,
-      "isSensitive": false,
-      "defaultValue": "",
       "belongPrimaryKey": false
     },
     {
@@ -125,7 +136,7 @@
   ],
   "indexes": [
     {
-      "indexName": "project_id",
+      "indexName": "approval_instance_id",
       "indexList": [{ "fieldName": "id", "sortType": "ASC" }]
     }
   ],

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../config/org_config_provider.dart';
+import '../providers/finance_provider.dart';
 import '../providers/notice_provider.dart';
 import '../providers/organization_provider.dart';
 
@@ -40,11 +41,36 @@ class HomeShell extends StatelessWidget {
             label: labels.tabNotices,
           ),
           NavigationDestination(
+            icon: _FinanceTabIcon(selected: false),
+            selectedIcon: _FinanceTabIcon(selected: true),
+            label: labels.tabFinance,
+          ),
+          NavigationDestination(
             icon: const Icon(Icons.person_outline),
             selectedIcon: const Icon(Icons.person),
             label: labels.tabProfile,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FinanceTabIcon extends StatelessWidget {
+  const _FinanceTabIcon({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = context.select<FinanceProvider, int>((p) => p.taskCount);
+    return Badge(
+      label: Text('$count'),
+      isLabelVisible: count > 0,
+      child: Icon(
+        selected
+            ? Icons.account_balance_wallet
+            : Icons.account_balance_wallet_outlined,
       ),
     );
   }

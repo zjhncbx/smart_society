@@ -37,6 +37,15 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "memberId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "joinedAt",
       "fieldType": "Date",
       "isNeedEncrypt": false,
@@ -53,6 +62,10 @@
     {
       "indexName": "user_org_userid",
       "indexList": [{ "fieldName": "userId", "sortType": "ASC" }]
+    },
+    {
+      "indexName": "user_org_memberid",
+      "indexList": [{ "fieldName": "memberId", "sortType": "ASC" }]
     }
   ],
   "permissions": [

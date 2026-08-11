@@ -94,6 +94,7 @@ class Project {
     required this.endDate,
     this.status = kProjectPreparing,
     this.progress = 0,
+    this.budget = 0,
     List<ProjectTask>? tasks,
     List<ProjectMilestone>? milestones,
     required this.createdAt,
@@ -110,6 +111,7 @@ class Project {
   DateTime endDate;
   int status;
   int progress;
+  double budget;
   final List<ProjectTask> tasks;
   final List<ProjectMilestone> milestones;
   final DateTime createdAt;
@@ -141,6 +143,7 @@ class Project {
         'endDate': endDate.millisecondsSinceEpoch,
         'status': status,
         'progress': progress,
+        'budget': budget,
         // 与云端约定一致：子对象整体存为 JSON 字符串
         'tasks': jsonEncode(tasks.map((t) => t.toJson()).toList()),
         'milestones': jsonEncode(milestones.map((m) => m.toJson()).toList()),
@@ -158,6 +161,7 @@ class Project {
         endDate: _toDate(json['endDate']) ?? DateTime.now(),
         status: (json['status'] as int?) ?? kProjectPreparing,
         progress: (json['progress'] as int?) ?? 0,
+        budget: (json['budget'] as num?)?.toDouble() ?? 0,
         tasks: _parseTasks(json['tasks']),
         milestones: _parseMilestones(json['milestones']),
         createdAt: _toDate(json['createdAt']) ?? DateTime.now(),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/finance_config.dart';
 import '../../config/org_config_provider.dart';
 import '../../models/project.dart';
 import '../../providers/member_provider.dart';
@@ -24,6 +26,7 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _descController;
+  late final TextEditingController _budgetController;
   String? _managerId;
   DateTime? _startDate;
   DateTime? _endDate;
@@ -39,6 +42,11 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
     }
     _nameController = TextEditingController(text: _existing?.name ?? '');
     _descController = TextEditingController(text: _existing?.description ?? '');
+    _budgetController = TextEditingController(
+      text: (_existing?.budget ?? 0) > 0
+          ? _existing!.budget.toString()
+          : '',
+    );
     _managerId = _existing?.managerId;
     _startDate = _existing?.startDate;
     _endDate = _existing?.endDate;
@@ -48,6 +56,7 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
   void dispose() {
     _nameController.dispose();
     _descController.dispose();
+    _budgetController.dispose();
     super.dispose();
   }
 
@@ -84,6 +93,7 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
       _existing!.managerId = _managerId ?? '';
       _existing!.startDate = _startDate!;
       _existing!.endDate = _endDate!;
+      _existing!.budget = double.tryParse(_budgetController.text) ?? 0;
       await provider.saveProject(_existing!);
     } else {
       final project = Project(
@@ -94,6 +104,7 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
         startDate: _startDate ?? DateTime.now(),
         endDate: _endDate ?? DateTime.now(),
         status: kProjectPreparing,
+        budget: double.tryParse(_budgetController.text) ?? 0,
         createdAt: DateTime.now(),
       );
       await provider.saveProject(project);
@@ -157,6 +168,20 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
               controller: _descController,
               decoration: InputDecoration(labelText: labels.labelProjectDesc),
               maxLines: 5,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _budgetController,
+              decoration: InputDecoration(
+                labelText:
+                    '${FinanceLabels.forType(context.orgTypeRead).budgetLabel}（元）',
+                hintText: '0 = 未设置预算',
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
             ),
             const SizedBox(height: 24),
             FilledButton(

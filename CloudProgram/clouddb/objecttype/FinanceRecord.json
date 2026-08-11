@@ -1,5 +1,5 @@
 {
-  "objectTypeName": "Project",
+  "objectTypeName": "FinanceRecord",
   "fields": [
     {
       "fieldName": "id",
@@ -10,7 +10,7 @@
       "belongPrimaryKey": true
     },
     {
-      "fieldName": "name",
+      "fieldName": "orgId",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": true,
@@ -19,7 +19,7 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "description",
+      "fieldName": "projectId",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -28,16 +28,43 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "managerId",
+      "fieldName": "type",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": true,
       "isSensitive": false,
+      "defaultValue": "expense",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "amount",
+      "fieldType": "Double",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "0",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "category",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
       "defaultValue": "",
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "startDate",
+      "fieldName": "categoryLabel",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "date",
       "fieldType": "Date",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -45,56 +72,102 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "endDate",
-      "fieldType": "Date",
+      "fieldName": "summary",
+      "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "counterparty",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "voucherNo",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "entries",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "[]",
       "belongPrimaryKey": false
     },
     {
       "fieldName": "status",
-      "fieldType": "Integer",
+      "fieldType": "String",
       "isNeedEncrypt": false,
-      "notNull": false,
+      "notNull": true,
       "isSensitive": false,
-      "defaultValue": "0",
+      "defaultValue": "approving",
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "progress",
-      "fieldType": "Integer",
-      "isNeedEncrypt": false,
-      "notNull": false,
-      "isSensitive": false,
-      "defaultValue": "0",
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "budget",
-      "fieldType": "Double",
-      "isNeedEncrypt": false,
-      "notNull": false,
-      "isSensitive": false,
-      "defaultValue": "0",
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "tasks",
+      "fieldName": "flowId",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
-      "defaultValue": "[]",
+      "defaultValue": "",
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "milestones",
+      "fieldName": "instanceId",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
-      "defaultValue": "[]",
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createdBy",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createdByName",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "period",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "restricted",
+      "fieldType": "Boolean",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "false",
       "belongPrimaryKey": false
     },
     {
@@ -103,15 +176,6 @@
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "orgId",
-      "fieldType": "String",
-      "isNeedEncrypt": false,
-      "notNull": true,
-      "isSensitive": false,
-      "defaultValue": "",
       "belongPrimaryKey": false
     },
     {
@@ -125,7 +189,7 @@
   ],
   "indexes": [
     {
-      "indexName": "project_id",
+      "indexName": "finance_record_id",
       "indexList": [{ "fieldName": "id", "sortType": "ASC" }]
     }
   ],
