@@ -1,7 +1,7 @@
 # 社易管（SmartSociety）
 
 <p align="center">
-  <img src="Application/AppScope/resources/base/media/app_icon.png" width="96" height="96" alt="社易管 Logo" />
+  <img src="../mobile/Application/AppScope/resources/base/media/app_icon.png" width="96" height="96" alt="社易管 Logo" />
 </p>
 
 基于 **Flutter + HarmonyOS 混合开发** 的多组织社团管理平台，支持华为账号登录、多组织管理、自动双向同步、组织层级与数据共享。
@@ -55,7 +55,7 @@
 - **多语言文案体系**：全部 UI 文案经 `OrgLabels` 按组织类型分发
 - **钉钉通讯录单向同步**：按组织配置钉钉 Client ID/Secret，同步前可选择要同步的钉钉组织（部门），一键同步通讯录成员到本应用（`d+userid` 幂等 upsert、只增改不删）；自动取钉钉数据中的工号/手机号等作为会员编号（优先级：工号 > 手机号 > 固定电话 > unionid > userid）；启用钉钉的组织成员列表只读，但支持变更成员角色，同步默认分配普通成员（社员/队员/会员）并保留人工调整的角色
 - **财务管理**：社会团体按《民间非营利组织会计制度》提供会计科目、记账凭证（借贷分录、平衡校验）、期初余额（支持从上期期末结转）、科目余额表、总账/明细账、资产负债表、业务活动表（限定/非限定）、现金流量表与期末结账（自动生成结转凭证）；学校社团/志愿组织提供简化版收支登记；财务单据可关联项目（项目预算/支出联动），并接入自定义审批流程（审批/办理/抄送三类节点），抄送与完成结果自动生成通知公告
-- **工作台看板与 UI 设计语言**：工作台首页集成全览看板（成员/进行中项目/未读通知/待办统计、我的任务逾期与到期提醒、财务收支概览、预算预警、快捷入口、最近动态）；项目详情支持任务看板（待办/进行中/已完成三列、状态流转）；底部导航 5 栏（首页/成员/项目/通知/财务）；全局主题对标钉钉/飞书（浅灰画布、白卡细边框、语义化功能色、统一圆角与字阶、渐变头像、浮动圆角提示）。完整审视与优化路线见 `docs/产品审视与优化路线.md`
+- **工作台看板与 UI 设计语言**：工作台首页集成全览看板（成员/进行中项目/未读通知/待办统计、我的任务逾期与到期提醒、财务收支概览、预算预警、快捷入口、最近动态）；项目详情支持任务看板（待办/进行中/已完成三列、状态流转）；底部导航 5 栏（首页/成员/项目/通知/财务）；全局主题对标钉钉/飞书（浅灰画布、白卡细边框、语义化功能色、统一圆角与字阶、渐变头像、浮动圆角提示）。完整审视与优化路线见 `产品审视与优化路线.md`
 - **成员数据管理**：支持 CSV 导出与粘贴导入（钉钉托管组织仅可导出）；财务支持反结账（撤销结转凭证，恢复年度录入）
 - **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
 
@@ -66,95 +66,47 @@
 
 ## 仓库结构
 
-项目采用 DevEco Studio **端云一体化** 工程结构：
+项目采用 DevEco Studio **端云一体化** 工程结构；仓库根目录按模块拆分，`mobile/` 为手机端端云一体化工程根（DevEco Studio 打开此目录）：
 
 ```
-smart_society/                     # 仓库根目录（用 DevEco Studio 打开此目录）
-├── README.md
+smart_society/                     # 仓库根目录
 ├── .gitignore
-├── Application/                   # 端侧工程（Flutter + HarmonyOS 原生壳）
-│   ├── lib/                       # Flutter 业务代码
-│   │   ├── main.dart / app.dart   # 入口，MultiProvider 初始化链路
-│   │   ├── router.dart            # go_router 配置（含认证守卫 + 组织路由）
-│   │   ├── config/                # 组织类型、主题、OrgLabels
-│   │   ├── models/                # Member / Project / Notice / CustomRoleConfig
-│   │   │                          # AuthUser / Organization / UserOrgMembership (new)
-│   │   ├── providers/             # Settings / Auth / Organization / Sync
-│   │   │                          # Member / Project / Notice / RoleConfig / OrgTree
-│   │   ├── screens/
-│   │   │   ├── auth/              # 登录页（华为账号一键登录）
-│   │   │   ├── org/               # 组织创建 / 组织选择器
-│   │   │   ├── member/ project/ notice/   # 三模块：列表 + 详情 + 表单
-│   │   │   ├── profile/                    # 管理仪表盘（用户信息 + 组织切换）
-│   │   │   └── settings/                   # 设置、角色编辑器、引导页
-│   │   ├── services/
-│   │   │   ├── auth_service.dart           # 华为账号 MethodChannel 桥接 (new)
-│   │   │   ├── cloud_function_service.dart # 云函数调用（含 callWithRetry）
-│   │   │   ├── storage_service.dart        # Hive 初始化
-│   │   │   ├── api_client.dart             # Dio 封装
-│   │   │   ├── dingtalk_api.dart           # 钉钉通讯录同步（云函数调用）
-│   │   │   └── dingtalk_sync_service.dart  # 钉钉同步编排（同步+拉取落库）
-│   │   ├── widgets/                # AppCard / StatusBadge / AppEmptyState / AppTheme
-│   │   └── utils/
-│   ├── entry/                      # 鸿蒙 entry 模块
-│   │   └── src/main/ets/
-│   │       ├── entryability/EntryAbility.ets   # 云开发初始化 + 3 个 MethodChannel
-│   │       └── resources/rawfile/agconnect-services.json
-│   ├── AppScope/
-│   ├── build-profile.json5
-│   ├── ohos/                       # → Application/ 自身（NTFS Junction）
-│   └── pubspec.yaml
-└── CloudProgram/                   # 云侧工程
-    ├── cloud-config.json
-    ├── clouddb/
-    │   ├── db-config.json
-    │   ├── objecttype/             # 12 个对象类型定义
-    │   │   ├── Member.json         # +orgId +updatedAt
-    │   │   ├── Project.json        # +orgId +updatedAt，tasks/milestones 为 JSON 字符串
-    │   │   ├── Notice.json         # +orgId +updatedAt
-    │   │   ├── Organization.json   # (new)
-    │   │   ├── OrganizationRelationship.json  # (new)
-    │   │   ├── UserOrganization.json          # (new)
-    │   │   ├── OrgSettings.json               # (new) 组织级设置：角色名/钉钉配置
-    │   │   └── UserSettings.json              # (new) 用户级设置：主题/昵称
-    │   └── dataentry/              # 种子数据
-    └── cloudfunctions/             # 34 个云函数
-        ├── common/                 # 共享 TS 模型
-        │   ├── Organization.ts
-        │   ├── OrganizationRelationship.ts
-        │   └── UserOrganization.ts
-        ├── get-all-data/           # 全量拉取（按 orgId 过滤）
-        ├── dingtalk-sync-contacts/ # 钉钉通讯录单向同步
-        ├── dingtalk-list-departments/ # 钉钉组织架构（部门树）获取，同步前选择
-        ├── save-approval-flow/     # 审批流程定义保存
-        ├── get-approval-flows/     # 审批流程列表
-        ├── submit-finance-record/  # 财务单据提交（发起审批）
-        ├── act-finance-node/       # 审批/办理/驳回，流程推进 + 通知
-        ├── get-finance-records/    # 财务单据列表/详情
-        ├── get-approval-tasks/     # 我的待办
-        ├── get-finance-stats/      # 收支/收入费用统计
-        ├── save-opening-balances/  # 期初余额保存/上年期末结转
-        ├── get-opening-balances/   # 期初余额查询
-        ├── get-accounting-reports/ # 科目余额表/资产负债表/业务活动表/现金流量表
-        ├── get-ledger/             # 总账/明细账
-        └── close-period/           # 期末结账（生成结转凭证 + 通知）
-        ├── upsert-member/  delete-member/
-        ├── upsert-project/  delete-project/
-        ├── upsert-notice/  delete-notice/
-        ├── create-org/             # 创建组织
-        ├── get-my-orgs/            # 获取用户所属组织列表
-        ├── join-org/               # 加入已有组织
-        ├── set-org-relationship/   # 设置组织间关系
-        ├── get-org-hierarchy/      # 获取组织层级树
-        ├── set-org-admin/          # 管理员变更
-        ├── delete-org/             # 注销组织（级联删数据与设置）
-        ├── bind-member/            # 按手机号绑定会员
-        ├── delete-user/            # 注销账号（级联删组织与设置）
-        ├── get-org-settings/  save-org-settings/    # 组织设置读写（钉钉凭证仅管理员）
-        └── get-user-settings/  save-user-settings/  # 用户设置读写
+├── docs/                          # 文档
+│   ├── README.md                  # 本说明
+│   └── 产品审视与优化路线.md       # 功能审视与优化路线
+├── mobile/                        # 手机端 · 端云一体化工程（DevEco Studio 打开此目录）
+│   ├── .gitignore
+│   ├── Application/               # 端侧工程（Flutter + HarmonyOS 原生壳）
+│   │   ├── lib/                   # Flutter 业务代码
+│   │   │   ├── main.dart / app.dart   # 入口，MultiProvider 初始化链路
+│   │   │   ├── router.dart            # go_router 配置（含认证守卫 + 组织路由）
+│   │   │   ├── config/                # 组织类型、主题、OrgLabels / FinanceLabels
+│   │   │   ├── models/                # Member / Project / Notice / AuthUser / 财务与审批
+│   │   │   ├── providers/             # Settings / Auth / Organization / Sync / Finance
+│   │   │   ├── screens/               # auth / org / member / project / notice / finance / home / profile / settings
+│   │   │   ├── services/              # auth / cloud_function / storage / api_client / dingtalk
+│   │   │   ├── widgets/               # AppCard / StatusBadge / AppEmptyState / AppTheme
+│   │   │   └── utils/
+│   │   ├── entry/                  # 鸿蒙 entry 模块
+│   │   │   └── src/main/ets/
+│   │   │       ├── entryability/EntryAbility.ets   # 云开发初始化 + 3 个 MethodChannel
+│   │   │       └── resources/rawfile/agconnect-services.json
+│   │   ├── AppScope/
+│   │   ├── build-profile.json5
+│   │   ├── ohos/                   # → mobile/Application/ 自身（NTFS Junction）
+│   │   └── pubspec.yaml
+│   └── CloudProgram/               # 云侧工程
+│       ├── cloud-config.json
+│       ├── clouddb/
+│       │   ├── db-config.json
+│       │   ├── objecttype/         # 12 个对象类型定义（Member/Project/Notice/Org/Finance…）
+│       │   └── dataentry/          # 种子数据
+│       └── cloudfunctions/         # 37 个云函数（含注册登录、财务、审批、结账等）
+└── web/                            # 网页端（规划中）
+    └── README.md
 ```
 
-> **注意**：`Application/ohos/` 是 NTFS Junction（目录联结），指向 `Application/` 自身，供 Flutter 工具链（`flutter build/run`）与 `flutter-hvigor-plugin` 解析 `ohos/local.properties`。**根目录无需创建 `ohos/` Junction**，否则 DevEco Studio 无法识别端云一体化工程（根目录必须仅含 `Application/` 与 `CloudProgram/` 两个目录）。
+> **注意**：`mobile/Application/ohos/` 是 NTFS Junction（目录联结），指向 `mobile/Application/` 自身，供 Flutter 工具链（`flutter build/run`）与 `flutter-hvigor-plugin` 解析 `ohos/local.properties`。**DevEco Studio 请打开 `mobile/` 目录**（工程根仅含 `Application/` 与 `CloudProgram/` 两个目录，不含其他文件）；仓库根目录按模块拆分，不直接作为 DevEco 工程根。
 
 ## 环境要求
 
@@ -171,7 +123,7 @@ smart_society/                     # 仓库根目录（用 DevEco Studio 打开�
 ## 快速开始
 
 ```bash
-cd Application
+cd mobile/Application
 flutter doctor -v
 flutter pub get
 flutter analyze
@@ -323,7 +275,7 @@ flutter run --debug -d <deviceId>
 | 核心 UI（三模块 + 仪表盘） | ✅ | 成员/项目/公告/设置页 |
 | 角色体系与文案重构 | ✅ | 分级角色、自定义角色名、OrgLabels |
 | 本地持久化 | ✅ | Hive 多盒存储 |
-| 端云一体化工程结构 | ✅ | Application/ + CloudProgram/ |
+| 端云一体化工程结构 | ✅ | mobile/Application/ + mobile/CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
 | 云函数部署 + 真机联调 | ✅ | 34 个云函数 + 12 张表部署至 AGC |
@@ -338,7 +290,7 @@ flutter run --debug -d <deviceId>
 |------|----------|
 | `flutter doctor` 报 OpenHarmony toolchain 缺失 | 检查 `DEVECO_SDK_HOME` / `HOS_SDK_HOME` |
 | 真机签名失效 | DevEco → Project Structure → Signing Configs 重新生成 |
-| DevEco 不显示 CloudProgram | 确保根目录仅有 `Application/` + `CloudProgram/` |
+| DevEco 不显示 CloudProgram | 用 DevEco 打开 `mobile/` 目录，确保其下仅有 `Application/` + `CloudProgram/` |
 | 云函数调用报 `160404: Trigger not exist` | 函数未部署，在 DevEco 中重新部署 |
 | 云函数报 `2047: the input class is invalid` | 模型类未实现 CloudDB SDK 要求的 5 个方法 |
 | 云函数报权限错误 | 确认认证类型为 `apigw-client`、证书指纹已登记 |

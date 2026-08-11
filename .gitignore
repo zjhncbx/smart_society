@@ -46,23 +46,22 @@ app.*.map.json
 /android/app/release
 
 # AGC config (contains secrets)
-ohos/
-ohos/entry/src/main/resources/rawfile/agconnect-services.json
+mobile/Application/ohos/
+mobile/Application/ohos/entry/src/main/resources/rawfile/agconnect-services.json
 agconnect-services.json
-Application/agconnect-services.json
+mobile/Application/agconnect-services.json
 
 # HarmonyOS / DevEco Studio
-Application/.hvigor/
-Application/build/
-Application/node_modules/
-Application/oh_modules/
-Application/ohos/
-Application/local.properties
-Application/flutter_*.log
-Application/**/oh-package-lock.json5
+mobile/Application/.hvigor/
+mobile/Application/build/
+mobile/Application/node_modules/
+mobile/Application/oh_modules/
+mobile/Application/local.properties
+mobile/Application/flutter_*.log
+mobile/Application/**/oh-package-lock.json5
 
 # Cloud build
-CloudProgram/build/
-CloudProgram/**/node_modules/
-CloudProgram/package-lock.json
-CloudProgram/cloudfunctions/*/package-lock.json
+mobile/CloudProgram/build/
+mobile/CloudProgram/**/node_modules/
+mobile/CloudProgram/package-lock.json
+mobile/CloudProgram/cloudfunctions/*/package-lock.json
