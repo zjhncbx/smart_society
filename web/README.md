@@ -4,6 +4,6 @@
 
 当前仓库结构：
 
-- `docs/` — 文档（README 与产品审视/优化路线）
+- `docs/` — 文档（产品审视与优化路线等，总 README 在仓库根目录）
 - `mobile/` — 手机端端云一体化工程（DevEco 打开此目录，内含 `Application` + `CloudProgram`）
 - `web/` — 网页端（本目录，待建设）
