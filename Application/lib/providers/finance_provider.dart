@@ -326,6 +326,22 @@ class FinanceProvider extends ChangeNotifier {
     return map;
   }
 
+  /// 反结账：删除该年度结转凭证，恢复可录入
+  Future<Map<String, dynamic>> unclosePeriod(String year) async {
+    final data = await _cloud.callChecked(
+      'unclose-period',
+      params: {
+        ..._base,
+        'userName': _userNameGetter(),
+        'year': year,
+      },
+      timeout: const Duration(seconds: 40),
+    );
+    final map = data is Map<String, dynamic> ? data : <String, dynamic>{};
+    await loadReports(year);
+    return map;
+  }
+
   Future<void> loadDetail(String id) async {
     final orgId = _orgIdGetter();
     final userId = _userIdGetter();

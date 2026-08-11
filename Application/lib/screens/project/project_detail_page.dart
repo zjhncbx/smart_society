@@ -47,6 +47,11 @@ class ProjectDetailPage extends StatelessWidget {
         title: Text(project.name),
         actions: [
           IconButton(
+            icon: const Icon(Icons.view_kanban_outlined),
+            tooltip: '任务看板',
+            onPressed: () => context.push('/projects/${project.id}/board'),
+          ),
+          IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: labels.editTooltip,
             onPressed: () => context.push('/projects/${project.id}/edit'),

@@ -21,6 +21,7 @@ import 'screens/finance/opening_balance_page.dart';
 import 'screens/project/project_detail_page.dart';
 import 'screens/project/project_form_page.dart';
 import 'screens/project/project_list_page.dart';
+import 'screens/project/project_board_page.dart';
 import 'screens/org/org_selector_page.dart';
 import 'screens/profile/profile_page.dart';
 import 'screens/settings/settings_page.dart';
@@ -115,6 +116,11 @@ final GoRouter appRouter = GoRouter(
       path: '/projects/:id/edit',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => ProjectFormPage(id: s.pathParameters['id']),
+    ),
+    GoRoute(
+      path: '/projects/:id/board',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => ProjectBoardPage(id: s.pathParameters['id']!),
     ),
     GoRoute(
       path: '/notices/new',

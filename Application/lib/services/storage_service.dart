@@ -22,12 +22,17 @@ class StorageService {
   late final Box<dynamic> membersBox;
   late final Box<dynamic> projectsBox;
   late final Box<dynamic> noticesBox;
+  String? _storagePath;
+
+  /// 应用沙箱/文档目录（用于导出文件等）
+  String get storagePath => _storagePath ?? '';
 
   bool _initialized = false;
 
   Future<void> init() async {
     if (_initialized) return;
     final path = await _resolveStoragePath();
+    _storagePath = path;
     Hive.init(path);
     // 旧版活动数据已被项目管理取代，直接弃用旧 box
     if (await Hive.boxExists('activities')) {

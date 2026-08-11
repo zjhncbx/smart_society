@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/finance_config.dart';
 import '../../config/org_config_provider.dart';
 import '../../models/project.dart';
 import '../../providers/finance_provider.dart';
@@ -9,8 +10,10 @@ import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
 import '../../providers/organization_provider.dart';
 import '../../providers/project_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../utils/date_format.dart';
+import '../../utils/finance_format.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_theme.dart';
 
@@ -88,6 +91,37 @@ class _HomePageState extends State<HomePage> {
     final unread = context.watch<NoticeProvider>().unreadCount;
     final notices = context.watch<NoticeProvider>().sortedNotices.take(3).toList();
     final taskCount = context.watch<FinanceProvider>().taskCount;
+    final finance = context.watch<FinanceProvider>();
+    final orgId = context.watch<OrganizationProvider>().currentOrgId ?? '';
+    final binding = context.watch<SettingsProvider>().memberBinding(orgId);
+    final myTasks = [
+      for (final p in projects)
+        for (final t in p.tasks)
+          if (binding != null && t.assigneeId == binding.memberId) t,
+    ];
+    final today = DateTime.now();
+    final startOfToday = DateTime(today.year, today.month, today.day);
+    int overdue = 0, dueToday = 0, dueWeek = 0;
+    for (final t in myTasks) {
+      if (t.status == kTaskDone || t.dueDate == null) continue;
+      final due = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+      final diff = due.difference(startOfToday).inDays;
+      if (diff < 0) {
+        overdue++;
+      } else if (diff == 0) {
+        dueToday++;
+      } else if (diff <= 7) {
+        dueWeek++;
+      }
+    }
+    final projectExpense = {
+      for (final p in finance.stats.projects) p.projectId: p.expense,
+    };
+    final budgetWarnings = activeProjects
+        .where((p) =>
+            p.budget > 0 &&
+            (projectExpense[p.id] ?? 0) / p.budget >= 0.9)
+        .toList();
 
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -144,6 +178,26 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          // 我的任务
+          _MyTasksCard(
+            binding: binding,
+            overdue: overdue,
+            dueToday: dueToday,
+            dueWeek: dueWeek,
+            onTap: () => context.go('/projects'),
+          ),
+          const SizedBox(height: 12),
+          // 财务概览
+          _FinanceOverviewCard(stats: finance.stats),
+          if (budgetWarnings.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _BudgetWarningsCard(
+              warnings: budgetWarnings,
+              projectExpense: projectExpense,
+              onTap: (id) => context.go('/projects/$id'),
+            ),
+          ],
           const SizedBox(height: 20),
           // 快捷入口
           AppCard(
@@ -389,6 +443,245 @@ class _StatCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MyTasksCard extends StatelessWidget {
+  const _MyTasksCard({
+    required this.binding,
+    required this.overdue,
+    required this.dueToday,
+    required this.dueWeek,
+    required this.onTap,
+  });
+
+  final ({String memberId, String memberName})? binding;
+  final int overdue;
+  final int dueToday;
+  final int dueWeek;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appTheme = context.appTheme;
+    return AppCard(
+      margin: EdgeInsets.zero,
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '我的任务${binding != null ? '（${binding!.memberName}）' : ''}',
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          if (binding == null)
+            Text(
+              '尚未绑定会员，请先在「我的」中绑定身份',
+              style: TextStyle(fontSize: 13, color: appTheme.textSecondary),
+            )
+          else
+            Row(
+              children: [
+                _TaskStat(
+                  label: '已逾期',
+                  value: '$overdue',
+                  color: const Color(0xFFF54A45),
+                ),
+                _TaskStat(
+                  label: '今日到期',
+                  value: '$dueToday',
+                  color: const Color(0xFFFF8800),
+                ),
+                _TaskStat(
+                  label: '7 天内',
+                  value: '$dueWeek',
+                  color: theme.colorScheme.primary,
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskStat extends StatelessWidget {
+  const _TaskStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(fontSize: 12)),
+        ],
+      ),
+    );
+  }
+}
+
+class _FinanceOverviewCard extends StatelessWidget {
+  const _FinanceOverviewCard({required this.stats});
+
+  final FinanceStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final appTheme = context.appTheme;
+    return AppCard(
+      margin: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '财务概览',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _FinanceStat(
+                label: '收入',
+                value: formatAmount(stats.income),
+                color: const Color(0xFF00B96B),
+              ),
+              _FinanceStat(
+                label: '支出',
+                value: formatAmount(stats.expense),
+                color: const Color(0xFFF54A45),
+              ),
+              _FinanceStat(
+                label: '结余',
+                value: formatAmount(stats.balance),
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '已生效单据汇总，详见财务模块',
+            style: TextStyle(fontSize: 12, color: appTheme.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FinanceStat extends StatelessWidget {
+  const _FinanceStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12)),
+          const SizedBox(height: 2),
+          Text(
+            '¥$value',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BudgetWarningsCard extends StatelessWidget {
+  const _BudgetWarningsCard({
+    required this.warnings,
+    required this.projectExpense,
+    required this.onTap,
+  });
+
+  final List<Project> warnings;
+  final Map<String, double> projectExpense;
+  final ValueChanged<String> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AppCard(
+      margin: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded,
+                  size: 18, color: const Color(0xFFFF8800)),
+              const SizedBox(width: 6),
+              const Text(
+                '预算预警',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final p in warnings)
+            InkWell(
+              onTap: () => onTap(p.id),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        p.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    Text(
+                      '${((projectExpense[p.id] ?? 0) / p.budget * 100).round()}%',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

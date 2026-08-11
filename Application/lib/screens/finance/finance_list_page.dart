@@ -108,6 +108,8 @@ class _FinanceListPageState extends State<FinanceListPage> {
                   context.push('/finance/opening');
                 } else if (v == 'close') {
                   _closePeriod(context, labels);
+                } else if (v == 'unclose') {
+                  _unclosePeriod(context, labels);
                 }
               },
               itemBuilder: (_) => [
@@ -123,6 +125,10 @@ class _FinanceListPageState extends State<FinanceListPage> {
                   const PopupMenuItem(
                     value: 'close',
                     child: Text('期末结账'),
+                  ),
+                  const PopupMenuItem(
+                    value: 'unclose',
+                    child: Text('反结账'),
                   ),
                 ],
               ],
@@ -255,6 +261,61 @@ class _FinanceListPageState extends State<FinanceListPage> {
         showToast(context,
             '$year 年度结转完成：收入 ¥${res['income']} 费用 ¥${res['expense']}');
       }
+      provider.loadRecords(status: _statusFilter);
+      provider.loadStats();
+      provider.loadTasks();
+    } catch (e) {
+      if (!context.mounted) return;
+      showToast(context, '$e');
+    }
+  }
+
+  Future<void> _unclosePeriod(BuildContext context, FinanceLabels labels) async {
+    var year = DateTime.now().year;
+    final provider = context.read<FinanceProvider>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('反结账'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('将删除所选年度的结转凭证，恢复该年度凭证录入权限。'),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<int>(
+                initialValue: year,
+                decoration: const InputDecoration(labelText: '年度'),
+                items: [
+                  for (var y = DateTime.now().year - 5;
+                      y <= DateTime.now().year;
+                      y++)
+                    DropdownMenuItem(value: y, child: Text('$y 年')),
+                ],
+                onChanged: (v) {
+                  if (v != null) setState(() => year = v);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('反结账'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await provider.unclosePeriod('$year');
+      if (!context.mounted) return;
+      showToast(context, '$year 年度已反结账');
       provider.loadRecords(status: _statusFilter);
       provider.loadStats();
       provider.loadTasks();
