@@ -100,6 +100,15 @@ async function queryAllMembersByOrg(col: CloudDBCollection<Member>, orgId: strin
   return all;
 }
 
+/** 解析钉钉入职时间作为入会时间：优先 hired_date_v2（毫秒时间戳），其次 hired_date（yyyy-MM-dd） */
+function parseHiredDate(u: any): Date | null {
+  const v2 = Number(u?.hired_date_v2);
+  if (Number.isInteger(v2) && v2 > 0) return new Date(v2);
+  const s = String(u?.hired_date || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T00:00:00');
+  return null;
+}
+
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('dingtalk-sync-contacts called');
 
@@ -217,7 +226,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       const obj = new Member();
       obj.id = id;
       obj.name = u.name || '';
-      // 自动取钉钉数据中的合适编号作为会员编号：工号 > 手机号 > 固定电话 > unionid > userid
+      // 会员编号兜底（仅部分部门同步时使用）：工号 > 手机号 > 固定电话 > unionid > userid
       obj.studentNo = String(
         u.job_number || u.mobile || u.telephone || u.unionid || u.userid || '',
       );
@@ -228,15 +237,16 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       obj.department = deptName || '';
       obj.phone = u.mobile || '';
       obj.email = u.email || '';
+      const hired = parseHiredDate(u);
       const prev = existingById.get(id);
       if (prev) {
-        obj.joinedAt = prev.joinedAt ? new Date(prev.joinedAt) : now;
+        obj.joinedAt = hired ?? (prev.joinedAt ? new Date(prev.joinedAt) : now);
         // 已有成员保留人工调整过的角色；仅在角色为空时回退到默认角色
         obj.roleId = prev.roleId || (roleId || '');
         obj.roleLabel = prev.roleLabel || (roleLabel || '');
         updated++;
       } else {
-        obj.joinedAt = now;
+        obj.joinedAt = hired ?? now;
         obj.roleId = roleId || '';
         obj.roleLabel = roleLabel || '';
         added++;
@@ -248,6 +258,19 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       obj.updatedAt = now;
       return obj;
     });
+
+    // 会员编号：全量同步时按（入会时间, 姓名）排序，从 1 开始递增
+    if (!isSubsetSync) {
+      const sorted = [...members].sort((a, b) => {
+        const d = a.joinedAt.getTime() - b.joinedAt.getTime();
+        if (d !== 0) return d;
+        const n = a.name.localeCompare(b.name, 'zh-CN');
+        return n !== 0 ? n : a.id.localeCompare(b.id);
+      });
+      sorted.forEach((m, i) => {
+        m.studentNo = String(i + 1);
+      });
+    }
 
     // removed：本组织已同步但钉钉已不存在的成员（仅统计，不删除）
     const syncedIds = new Set(members.map((m) => m.id));
