@@ -11,22 +11,22 @@ class ThemeConfig {
     this.brightness = Brightness.light,
   });
 
+  ThemeConfig copyWithBrightness(Brightness b) =>
+      ThemeConfig(name: name, seedColor: seedColor, brightness: b);
+
   static const campus = ThemeConfig(
     name: '校园风',
     seedColor: Color(0xFF3370FF),
-  );
-  static const volunteer = ThemeConfig(
-    name: '志愿风',
-    seedColor: Color(0xFF00B96B),
   );
   static const youth = ThemeConfig(
     name: '青年风',
     seedColor: Color(0xFF7B61FF),
   );
-  static const government = ThemeConfig(
-    name: '政务风',
-    seedColor: Color(0xFFC41E3A),
+  static const welfare = ThemeConfig(
+    name: '公益红',
+    seedColor: Color(0xFFE64545),
   );
 
-  static const List<ThemeConfig> all = [campus, volunteer, youth, government];
+  /// 主题色列表（志愿风与政务风已合并为公益红）
+  static const List<ThemeConfig> all = [campus, youth, welfare];
 }

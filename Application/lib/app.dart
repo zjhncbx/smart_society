@@ -69,6 +69,9 @@ class SmartSocietyApp extends StatelessWidget {
     final scaffoldBg = appTheme.scaffoldBackground;
     final cardColor = appTheme.cardColor;
     final borderColor = appTheme.cardBorderColor;
+    final inputFill = dark
+        ? const Color(0xFF232326)
+        : const Color(0xFFF2F3F5);
     final navLabelStyle = WidgetStateProperty.resolveWith<TextStyle?>((states) {
       final selected = states.contains(WidgetState.selected);
       return TextStyle(
@@ -102,7 +105,7 @@ class SmartSocietyApp extends StatelessWidget {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: dark ? cs.surfaceContainerHigh : const Color(0xFFF2F3F5),
+        fillColor: inputFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(appTheme.controlRadius),
           borderSide: BorderSide.none,
@@ -119,7 +122,7 @@ class SmartSocietyApp extends StatelessWidget {
             const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: dark ? cs.surfaceContainerLow : Colors.white,
+        backgroundColor: dark ? const Color(0xFF161618) : Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         height: 64,
@@ -283,7 +286,7 @@ class SmartSocietyApp extends StatelessWidget {
             return MaterialApp(
               title: '社易管',
               debugShowCheckedModeBanner: false,
-              theme: _buildTheme(settings.theme),
+              theme: _buildTheme(settings.effectiveTheme),
               home: const LoginPage(),
             );
           }
@@ -293,7 +296,7 @@ class SmartSocietyApp extends StatelessWidget {
                 return MaterialApp(
                   title: '社易管',
                   debugShowCheckedModeBanner: false,
-                  theme: _buildTheme(settings.theme),
+                  theme: _buildTheme(settings.effectiveTheme),
                   home: const SetupWizardPage(),
                 );
               }
@@ -301,7 +304,7 @@ class SmartSocietyApp extends StatelessWidget {
                 return MaterialApp(
                   title: '社易管',
                   debugShowCheckedModeBanner: false,
-                  theme: _buildTheme(settings.theme),
+                  theme: _buildTheme(settings.effectiveTheme),
                   home: const SetupWizardPage(),
                 );
               }
@@ -313,7 +316,7 @@ class SmartSocietyApp extends StatelessWidget {
               return MaterialApp.router(
                 title: labels.appTitle,
                 debugShowCheckedModeBanner: false,
-                theme: _buildTheme(settings.theme),
+                theme: _buildTheme(settings.effectiveTheme),
                 routerConfig: appRouter,
               );
             },

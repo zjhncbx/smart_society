@@ -26,6 +26,15 @@
       "isSensitive": false,
       "defaultValue": "",
       "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "darkMode",
+      "fieldType": "Boolean",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "false",
+      "belongPrimaryKey": false
     }
   ],
   "indexes": [

@@ -45,6 +45,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         data: {
           themeIndex: s ? s.themeIndex : null,
           nickname: s && s.nickname ? s.nickname : null,
+          darkMode: s ? s.darkMode : null,
         },
       },
     });

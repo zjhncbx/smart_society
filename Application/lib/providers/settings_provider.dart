@@ -10,6 +10,9 @@ class SettingsProvider extends ChangeNotifier {
   static const _boxName = 'settings';
   static const _orgTypeKey = 'orgType';
   static const _themeIndexKey = 'themeIndex';
+  static const _themeVersionKey = 'themeVersion';
+  static const _themeVersion = 2;
+  static const _darkModeKey = 'darkMode';
   static const _initializedKey = 'initialized';
   static const _currentOrgIdKey = 'currentOrgId';
   static const _nicknameKey = 'nickname';
@@ -25,6 +28,7 @@ class SettingsProvider extends ChangeNotifier {
 
   OrgType _orgType = OrgType.schoolClub;
   ThemeConfig _theme = ThemeConfig.campus;
+  bool _darkMode = false;
   bool _isInitialized = false;
   String? _currentOrgId;
   String _nickname = '';
@@ -32,6 +36,10 @@ class SettingsProvider extends ChangeNotifier {
 
   OrgType get orgType => _orgType;
   ThemeConfig get theme => _theme;
+  ThemeConfig get effectiveTheme => _darkMode
+      ? _theme.copyWithBrightness(Brightness.dark)
+      : _theme;
+  bool get darkMode => _darkMode;
   bool get isInitialized => _isInitialized;
   String? get currentOrgId => _currentOrgId;
   String get nickname => _nickname;
@@ -44,8 +52,24 @@ class SettingsProvider extends ChangeNotifier {
     }
     final themeIndex = box.get(_themeIndexKey);
     if (themeIndex != null) {
-      _theme = ThemeConfig.all[themeIndex as int];
+      final idx = themeIndex as int;
+      final version = box.get(_themeVersionKey);
+      if (version == _themeVersion) {
+        _theme = idx >= 0 && idx < ThemeConfig.all.length
+            ? ThemeConfig.all[idx]
+            : ThemeConfig.campus;
+      } else {
+        // 旧版 4 主题迁移：0 校园、1 志愿→公益红、2 青年、3 政务→公益红
+        _theme = switch (idx) {
+          1 || 3 => ThemeConfig.welfare,
+          2 => ThemeConfig.youth,
+          _ => ThemeConfig.campus,
+        };
+        await box.put(_themeIndexKey, ThemeConfig.all.indexOf(_theme));
+        await box.put(_themeVersionKey, _themeVersion);
+      }
     }
+    _darkMode = box.get(_darkModeKey, defaultValue: false) as bool;
     _isInitialized = box.get(_initializedKey, defaultValue: false) as bool;
     _currentOrgId = box.get(_currentOrgIdKey) as String?;
     _nickname = box.get(_nicknameKey, defaultValue: '') as String;
@@ -84,6 +108,17 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     final box = await Hive.openBox(_boxName);
     await box.put(_themeIndexKey, ThemeConfig.all.indexOf(config));
+    await box.put(_themeVersionKey, _themeVersion);
+    if (pushCloud) _pushUserSettings();
+  }
+
+  /// 深色模式（黑色画布）：本地立即生效并异步推送云端
+  Future<void> setDarkMode(bool enabled, {bool pushCloud = true}) async {
+    if (_darkMode == enabled) return;
+    _darkMode = enabled;
+    notifyListeners();
+    final box = await Hive.openBox(_boxName);
+    await box.put(_darkModeKey, enabled);
     if (pushCloud) _pushUserSettings();
   }
 
@@ -110,6 +145,10 @@ class SettingsProvider extends ChangeNotifier {
           themeIndex >= 0 &&
           themeIndex < ThemeConfig.all.length) {
         await setTheme(ThemeConfig.all[themeIndex], pushCloud: false);
+      }
+      final darkMode = map['darkMode'];
+      if (darkMode is bool && darkMode != _darkMode) {
+        await setDarkMode(darkMode, pushCloud: false);
       }
       final nickname = map['nickname'];
       if (nickname is String && nickname.isNotEmpty && nickname != _nickname) {
@@ -177,12 +216,14 @@ class SettingsProvider extends ChangeNotifier {
     if (userId == null || userId.isEmpty) return;
     final themeIndex = ThemeConfig.all.indexOf(_theme);
     final nickname = _nickname;
+    final darkMode = _darkMode;
     _cloud.callChecked(
       'save-user-settings',
       params: {
         'userId': userId,
         'themeIndex': themeIndex,
         'nickname': nickname,
+        'darkMode': darkMode,
       },
     ).catchError((Object e) {
       debugPrint('save-user-settings failed: $e');
@@ -336,6 +377,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> clearAll() async {
     _orgType = OrgType.schoolClub;
     _theme = ThemeConfig.campus;
+    _darkMode = false;
     _isInitialized = false;
     _currentOrgId = null;
     _nickname = '';

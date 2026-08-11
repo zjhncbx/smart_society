@@ -40,11 +40,12 @@ class AppTheme extends ThemeExtension<AppTheme> {
   factory AppTheme.fromColorScheme(ColorScheme cs) {
     final dark = cs.brightness == Brightness.dark;
     return AppTheme(
-      scaffoldBackground: dark ? cs.surface : const Color(0xFFF5F6F7),
-      cardColor: dark ? cs.surfaceContainerLow : Colors.white,
-      cardBorderColor: dark ? cs.outlineVariant : const Color(0xFFECECEF),
-      dividerColor: dark ? cs.outlineVariant : const Color(0xFFF0F0F3),
-      textSecondary: dark ? cs.onSurfaceVariant : const Color(0xFF8A9099),
+      // 深色模式为黑色画布 + 深灰卡片（钉钉/飞书深色风格）
+      scaffoldBackground: dark ? Colors.black : const Color(0xFFF5F6F7),
+      cardColor: dark ? const Color(0xFF1C1C1E) : Colors.white,
+      cardBorderColor: dark ? const Color(0xFF2C2C2E) : const Color(0xFFECECEF),
+      dividerColor: dark ? const Color(0xFF26262A) : const Color(0xFFF0F0F3),
+      textSecondary: dark ? const Color(0xFF9A9AA0) : const Color(0xFF8A9099),
       brandColor: cs.primary,
     );
   }

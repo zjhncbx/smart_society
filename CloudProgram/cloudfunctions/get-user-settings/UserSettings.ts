@@ -2,6 +2,7 @@ export class UserSettings {
   userId: string = '';
   themeIndex: number = 0;
   nickname: string = '';
+  darkMode: boolean = false;
 
   getClassName(): string {
     return 'UserSettings';
@@ -12,6 +13,7 @@ export class UserSettings {
     map.set('userId', 'String');
     map.set('themeIndex', 'Integer');
     map.set('nickname', 'String');
+    map.set('darkMode', 'Boolean');
     return map;
   }
 
@@ -33,6 +35,7 @@ export class UserSettings {
       obj.userId = data.userId ?? '';
       obj.themeIndex = data.themeIndex ?? 0;
       obj.nickname = data.nickname ?? '';
+      obj.darkMode = data.darkMode ?? false;
     }
     return obj;
   }

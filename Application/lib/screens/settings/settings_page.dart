@@ -75,6 +75,13 @@ class _SettingsPageState extends State<SettingsPage> {
           ? ListView(
               children: [
                 _SectionHeader(title: labels.themeLabel),
+                SwitchListTile(
+                  title: const Text('深色模式'),
+                  subtitle: const Text('黑色画布，跟随主题色'),
+                  value: context.watch<SettingsProvider>().darkMode,
+                  onChanged: (v) =>
+                      context.read<SettingsProvider>().setDarkMode(v),
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Wrap(
