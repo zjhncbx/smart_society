@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'app_theme.dart';
-
-extension AppThemeExtension on BuildContext {
-  AppTheme get appTheme => Theme.of(this).extension<AppTheme>() ?? AppTheme();
-}
-
 /// 空态视图
 class EmptyView extends StatelessWidget {
   const EmptyView({
@@ -22,16 +16,28 @@ class EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 64, color: theme.colorScheme.outlineVariant),
-          const SizedBox(height: 12),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: cs.primary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              size: 32,
+              color: cs.primary.withValues(alpha: 0.65),
+            ),
+          ),
+          const SizedBox(height: 14),
           Text(
             message,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: theme.colorScheme.outline),
+            style: theme.textTheme.bodyMedium?.copyWith(color: cs.outline),
           ),
           if (action != null) ...[
             const SizedBox(height: 16),

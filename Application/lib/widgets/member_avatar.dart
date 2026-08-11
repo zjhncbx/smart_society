@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// 成员首字母头像（颜色由索引稳定映射）
+import 'app_theme.dart';
+
+/// 成员头像：品牌渐变底 + 白色首字（钉钉/飞书风格）
 class MemberAvatar extends StatelessWidget {
   const MemberAvatar({
     super.key,
@@ -13,30 +15,31 @@ class MemberAvatar extends StatelessWidget {
   final int colorIndex;
   final double radius;
 
-  static const List<Color> _palette = [
-    Color(0xFF5B8DEF),
-    Color(0xFF7C6FE0),
-    Color(0xFF4FB3A6),
-    Color(0xFFE8A33D),
-    Color(0xFFE06B6B),
-    Color(0xFF6BA8E0),
-    Color(0xFF9B6FE0),
-    Color(0xFF5FAE6B),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final appTheme = Theme.of(context).extension<AppTheme>() ?? AppTheme();
     final letter = name.isEmpty ? '?' : name.characters.first;
-    final color = _palette[colorIndex % _palette.length];
+    final gradients = appTheme.avatarGradients;
+    final colors = gradients[colorIndex % gradients.length];
     return CircleAvatar(
       radius: radius,
-      backgroundColor: color.withValues(alpha: 0.15),
-      child: Text(
-        letter,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: radius * 0.9,
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: colors,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          letter,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: radius * 0.85,
+          ),
         ),
       ),
     );

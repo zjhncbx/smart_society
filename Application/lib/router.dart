@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'screens/auth/login_page.dart';
 import 'screens/home_shell.dart';
+import 'screens/home/home_page.dart';
 import 'screens/member/member_detail_page.dart';
 import 'screens/member/member_form_page.dart';
 import 'screens/member/member_list_page.dart';
@@ -30,7 +31,7 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/members',
+  initialLocation: '/home',
   // 路由是全局单例，登出后位置可能残留 /login；重新登录时兜底跳回内容页
   redirect: (context, state) {
     final loc = state.uri.path;
@@ -43,6 +44,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state, navigationShell) =>
           HomeShell(navigationShell: navigationShell),
       branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(path: '/home', builder: (c, s) => const HomePage()),
+          ],
+        ),
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/members', builder: (c, s) => const MemberListPage()),
@@ -61,11 +67,6 @@ final GoRouter appRouter = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(path: '/finance', builder: (c, s) => const FinanceListPage()),
-          ],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(path: '/profile', builder: (c, s) => const ProfilePage()),
           ],
         ),
       ],
@@ -173,6 +174,11 @@ final GoRouter appRouter = GoRouter(
       path: '/settings/roles',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: '/profile',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const ProfilePage(),
     ),
     GoRoute(
       path: '/setup',

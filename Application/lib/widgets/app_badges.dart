@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 
 enum BadgeVariant { info, success, warning, error, neutral }
 
+const Color kBadgeInfo = Color(0xFF3370FF);
+const Color kBadgeSuccess = Color(0xFF00B96B);
+const Color kBadgeWarning = Color(0xFFFF8800);
+const Color kBadgeError = Color(0xFFF54A45);
+const Color kBadgeNeutral = Color(0xFF8A9099);
+
 class StatusBadge extends StatelessWidget {
   final String label;
   final BadgeVariant variant;
@@ -13,11 +19,11 @@ class StatusBadge extends StatelessWidget {
   });
 
   Color _color(ColorScheme cs) => switch (variant) {
-        BadgeVariant.info => cs.primary,
-        BadgeVariant.success => cs.tertiary,
-        BadgeVariant.warning => cs.error,
-        BadgeVariant.error => cs.error,
-        BadgeVariant.neutral => cs.outline,
+        BadgeVariant.info => kBadgeInfo,
+        BadgeVariant.success => kBadgeSuccess,
+        BadgeVariant.warning => kBadgeWarning,
+        BadgeVariant.error => kBadgeError,
+        BadgeVariant.neutral => kBadgeNeutral,
       };
 
   @override
@@ -28,7 +34,7 @@ class StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,

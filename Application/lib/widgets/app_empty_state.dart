@@ -17,19 +17,32 @@ class AppEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: cs.outlineVariant),
-            const SizedBox(height: 16),
+            Container(
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 38,
+                color: cs.primary.withValues(alpha: 0.65),
+              ),
+            ),
+            const SizedBox(height: 18),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: theme.textTheme.titleMedium?.copyWith(
                     color: cs.onSurface,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
               textAlign: TextAlign.center,
             ),

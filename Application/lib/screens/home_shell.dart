@@ -6,6 +6,7 @@ import '../config/org_config_provider.dart';
 import '../providers/finance_provider.dart';
 import '../providers/notice_provider.dart';
 import '../providers/organization_provider.dart';
+import '../widgets/member_avatar.dart';
 
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.navigationShell});
@@ -17,7 +18,23 @@ class HomeShell extends StatelessWidget {
     final labels = context.labels;
     final org = context.watch<OrganizationProvider>().currentOrg;
     return Scaffold(
-      appBar: AppBar(title: Text(org?.name ?? labels.appTitle)),
+      appBar: AppBar(
+        title: Text(org?.name ?? labels.appTitle),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: InkWell(
+              onTap: () => context.push('/profile'),
+              customBorder: const CircleBorder(),
+              child: MemberAvatar(
+                name: org?.name ?? labels.appTitle,
+                colorIndex: org?.orgId.hashCode.abs() ?? 0,
+                radius: 17,
+              ),
+            ),
+          ),
+        ],
+      ),
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         surfaceTintColor: Colors.transparent,
@@ -25,6 +42,11 @@ class HomeShell extends StatelessWidget {
         onDestinationSelected: (index) =>
             navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
         destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: labels.tabHome,
+          ),
           NavigationDestination(
             icon: const Icon(Icons.people_outline),
             selectedIcon: const Icon(Icons.people),
@@ -44,11 +66,6 @@ class HomeShell extends StatelessWidget {
             icon: _FinanceTabIcon(selected: false),
             selectedIcon: _FinanceTabIcon(selected: true),
             label: labels.tabFinance,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: labels.tabProfile,
           ),
         ],
       ),

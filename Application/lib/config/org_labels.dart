@@ -23,6 +23,7 @@ class RoleConfig {
 
 class OrgLabels {
   final String appTitle;
+  final String tabHome;
   final String tabMembers;
   final String tabProjects;
   final String tabNotices;
@@ -161,6 +162,7 @@ class OrgLabels {
 
   const OrgLabels({
     required this.appTitle,
+    required this.tabHome,
     required this.tabMembers,
     required this.tabProjects,
     required this.tabNotices,
@@ -300,6 +302,7 @@ class OrgLabels {
 
   static const _schoolClub = OrgLabels(
     appTitle: '社易管',
+    tabHome: '首页',
     tabMembers: '成员',
     tabProjects: '项目',
     tabNotices: '通知',
@@ -443,6 +446,7 @@ class OrgLabels {
 
   static const _volunteerTeam = OrgLabels(
     appTitle: '志愿之家',
+    tabHome: '首页',
     tabMembers: '志愿者',
     tabProjects: '志愿项目',
     tabNotices: '公告',
@@ -586,6 +590,7 @@ class OrgLabels {
 
   static const _socialOrg = OrgLabels(
     appTitle: '组织通',
+    tabHome: '首页',
     tabMembers: '会员',
     tabProjects: '项目',
     tabNotices: '公告',

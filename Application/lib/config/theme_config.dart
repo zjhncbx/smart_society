@@ -13,15 +13,15 @@ class ThemeConfig {
 
   static const campus = ThemeConfig(
     name: '校园风',
-    seedColor: Color(0xFF3D6BD6),
+    seedColor: Color(0xFF3370FF),
   );
   static const volunteer = ThemeConfig(
     name: '志愿风',
-    seedColor: Color(0xFFE06B3D),
+    seedColor: Color(0xFF00B96B),
   );
   static const youth = ThemeConfig(
     name: '青年风',
-    seedColor: Color(0xFF2E7D32),
+    seedColor: Color(0xFF7B61FF),
   );
   static const government = ThemeConfig(
     name: '政务风',
