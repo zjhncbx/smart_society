@@ -140,7 +140,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         credit: round2(credit),
       });
     };
-    for (const [code, v] of nets) {
+    nets.forEach((v, code) => {
       if (code.startsWith('4')) {
         // 收入转入净资产：借收入，贷净资产
         income += v.free + v.restricted;
@@ -164,7 +164,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
           add('3201', v.restricted, 0);
         }
       }
-    }
+    });
 
     if (entries.length === 0) {
       callback({ ret: { code: 0, message: 'ok', data: { nothingToClose: true } } });

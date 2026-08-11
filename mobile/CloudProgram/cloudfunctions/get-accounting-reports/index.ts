@@ -296,14 +296,14 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     }
     const flowRows: any[] = [];
     let op = 0, inv = 0, fin = 0;
-    for (const [key, amount] of flow) {
+    flow.forEach((amount, key) => {
       const category = key.split('|')[0];
       const line = flowMeta.get(key) || key;
       if (category === '经营活动') op += amount;
       else if (category === '投资活动') inv += amount;
       else if (category === '筹资活动') fin += amount;
       flowRows.push({ line, category, amount: round2(amount) });
-    }
+    });
     const cashFlow = {
       rows: flowRows.sort((a, b) => a.category.localeCompare(b.category)),
       totals: {

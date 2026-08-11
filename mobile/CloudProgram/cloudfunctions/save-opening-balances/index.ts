@@ -112,16 +112,16 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       const prevRecords = (await queryAllByOrg(recordCol, orgId))
         .filter((r) => r.status === 'approved' && r.period === prevYear);
       const nets = new Map<string, number>();
-      for (const [code, ob] of prevOpenings) {
+      prevOpenings.forEach((ob, code) => {
         nets.set(code, (nets.get(code) || 0) + ob.debit - ob.credit);
-      }
+      });
       for (const r of prevRecords) {
         for (const e of parseEntries(r.entries)) {
           nets.set(e.account, (nets.get(e.account) || 0) + e.debit - e.credit);
         }
       }
-      for (const [code, net] of nets) {
-        if (!/^[123]/.test(code)) continue; // 只结转资产负债表科目
+      nets.forEach((net, code) => {
+        if (!/^[123]/.test(code)) return; // 只结转资产负债表科目
         const dc = toDebitCredit(net);
         const ob = new FinanceOpeningBalance();
         ob.id = `ob_${orgId}_${year}_${code}`;
@@ -133,7 +133,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         ob.credit = dc.credit;
         ob.updatedAt = new Date();
         balances.push(ob);
-      }
+      });
       await obCol.upsert(balances);
       callback({ ret: { code: 0, message: 'ok', data: { balances, carried: balances.length } } });
       return;
