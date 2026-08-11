@@ -22,6 +22,14 @@ class ProjectListPage extends StatefulWidget {
 
 class _ProjectListPageState extends State<ProjectListPage> {
   int? _statusFilter;
+  final _searchController = TextEditingController();
+  String _keyword = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +39,29 @@ class _ProjectListPageState extends State<ProjectListPage> {
 
     final projects = provider.sortedProjects
         .where((p) => _statusFilter == null || p.status == _statusFilter)
+        .where((p) =>
+            _keyword.isEmpty ||
+            p.name.toLowerCase().contains(_keyword) ||
+            p.description.toLowerCase().contains(_keyword))
         .toList();
 
     return Scaffold(
       appBar: AppBar(title: Text(labels.projectMgmtTitle)),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (v) =>
+                  setState(() => _keyword = v.trim().toLowerCase()),
+              decoration: InputDecoration(
+                hintText: '搜索项目名称 / 介绍',
+                prefixIcon: const Icon(Icons.search),
+                isDense: true,
+              ),
+            ),
+          ),
           SizedBox(
             height: 48,
             child: ListView(

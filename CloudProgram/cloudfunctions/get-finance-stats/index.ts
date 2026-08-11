@@ -1,5 +1,6 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { FinanceRecord } from './FinanceRecord';
+import { ApprovalInstance } from './ApprovalInstance';
 import { UserOrganization } from './UserOrganization';
 
 function parseParams(event: any): any {
@@ -31,6 +32,30 @@ async function queryAllByOrg<T>(col: CloudDBCollection<T>, orgId: string): Promi
     if (rows.length < PAGE_SIZE) break;
   }
   return all;
+}
+
+function actorsInclude(snapRaw: string, histRaw: string, myIds: Set<string>): boolean {
+  let snap: any = {};
+  try {
+    snap = JSON.parse(snapRaw || '{}');
+  } catch {
+    snap = {};
+  }
+  const mids: string[] = Array.isArray(snap.actorMemberIds) ? snap.actorMemberIds : [];
+  const uids: string[] = Array.isArray(snap.actorUserIds) ? snap.actorUserIds : [];
+  for (const id of mids.concat(uids)) {
+    if (myIds.has(id)) return true;
+  }
+  let hist: any[] = [];
+  try {
+    hist = JSON.parse(histRaw || '[]');
+  } catch {
+    hist = [];
+  }
+  for (const h of hist) {
+    if (h && h.actorId && myIds.has(h.actorId)) return true;
+  }
+  return false;
 }
 
 interface Entry {
@@ -69,9 +94,26 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       callback({ ret: { code: -1, message: '您不是该组织成员' } });
       return;
     }
+    const isAdmin = mine[0].role === 'admin';
+    const myMemberId = mine[0].memberId || '';
+    const myIds = new Set<string>([userId]);
+    if (myMemberId) myIds.add(myMemberId);
 
     const col: CloudDBCollection<FinanceRecord> = db.collection(FinanceRecord);
-    const records = (await queryAllByOrg(col, orgId)).filter((r) => r.status === 'approved');
+    let records = (await queryAllByOrg(col, orgId)).filter((r) => r.status === 'approved');
+    if (!isAdmin) {
+      const instCol = db.collection(ApprovalInstance);
+      const visibleBiz = new Set<string>();
+      const insts = await queryAllByOrg(instCol, orgId);
+      for (const inst of insts) {
+        if (inst.bizId && actorsInclude(inst.nodeSnapshot, inst.history, myIds)) {
+          visibleBiz.add(inst.bizId);
+        }
+      }
+      records = records.filter(
+        (r) => r.createdBy === userId || (r.instanceId && visibleBiz.has(r.instanceId)),
+      );
+    }
 
     let income = 0;
     let expense = 0;

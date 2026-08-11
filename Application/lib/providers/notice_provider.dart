@@ -57,21 +57,50 @@ class NoticeProvider extends ChangeNotifier {
     final notice = _notices[index];
     if (notice.isRead) return;
 
-    final updated = Notice(
-      id: notice.id,
-      title: notice.title,
-      content: notice.content,
-      publisher: notice.publisher,
-      publishTime: notice.publishTime,
-      isRead: true,
-      isImportant: notice.isImportant,
-      orgId: notice.orgId,
-      updatedAt: notice.updatedAt,
-    );
+    final updated = _withRead(notice, true);
     _notices[index] = updated;
     await _storage.noticesBox.put(updated.id, updated.toJson());
     notifyListeners();
+    // 已读状态上云，换设备可恢复
+    SyncProvider.instance.enqueue(
+      'notice',
+      updated.id,
+      SyncOp.upsert,
+      updated.toJson(),
+    );
   }
+
+  /// 全部标记为已读（本地 + 云端队列）
+  Future<void> markAllRead() async {
+    var changed = false;
+    for (var i = 0; i < _notices.length; i++) {
+      final n = _notices[i];
+      if (n.isRead) continue;
+      final updated = _withRead(n, true);
+      _notices[i] = updated;
+      await _storage.noticesBox.put(updated.id, updated.toJson());
+      SyncProvider.instance.enqueue(
+        'notice',
+        updated.id,
+        SyncOp.upsert,
+        updated.toJson(),
+      );
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
+
+  Notice _withRead(Notice n, bool read) => Notice(
+        id: n.id,
+        title: n.title,
+        content: n.content,
+        publisher: n.publisher,
+        publishTime: n.publishTime,
+        isRead: read,
+        isImportant: n.isImportant,
+        orgId: n.orgId,
+        updatedAt: n.updatedAt,
+      );
 
   Future<void> delete(String id) async {
     _notices.removeWhere((n) => n.id == id);

@@ -35,6 +35,30 @@ async function queryAllByOrg<T>(col: CloudDBCollection<T>, orgId: string): Promi
   return all;
 }
 
+function actorsInclude(snapRaw: string, histRaw: string, myIds: Set<string>): boolean {
+  let snap: any = {};
+  try {
+    snap = JSON.parse(snapRaw || '{}');
+  } catch {
+    snap = {};
+  }
+  const mids: string[] = Array.isArray(snap.actorMemberIds) ? snap.actorMemberIds : [];
+  const uids: string[] = Array.isArray(snap.actorUserIds) ? snap.actorUserIds : [];
+  for (const id of mids.concat(uids)) {
+    if (myIds.has(id)) return true;
+  }
+  let hist: any[] = [];
+  try {
+    hist = JSON.parse(histRaw || '[]');
+  } catch {
+    hist = [];
+  }
+  for (const h of hist) {
+    if (h && h.actorId && myIds.has(h.actorId)) return true;
+  }
+  return false;
+}
+
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('get-finance-records called');
 
@@ -55,6 +79,10 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       callback({ ret: { code: -1, message: '您不是该组织成员' } });
       return;
     }
+    const isAdmin = mine[0].role === 'admin';
+    const myMemberId = mine[0].memberId || '';
+    const myIds = new Set<string>([userId]);
+    if (myMemberId) myIds.add(myMemberId);
 
     const col: CloudDBCollection<FinanceRecord> = db.collection(FinanceRecord);
     if (id) {
@@ -69,6 +97,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         const instCol: CloudDBCollection<ApprovalInstance> = db.collection(ApprovalInstance);
         const insts = await instCol.query().equalTo('id', record.instanceId).get();
         if (insts.length > 0) instance = insts[0];
+      }
+      // 权限：管理员全量；普通成员仅自己创建或参与审批的单据
+      const visible = isAdmin || record.createdBy === userId ||
+        (instance != null && actorsInclude(instance.nodeSnapshot, instance.history, myIds));
+      if (!visible) {
+        callback({ ret: { code: -1, message: '无权查看该单据' } });
+        return;
       }
       let canAct = false;
       if (instance && instance.status === 'running') {
@@ -91,6 +126,19 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const page = Math.max(0, Number(params?.page) || 0);
     const all = await queryAllByOrg(col, orgId);
     let filtered = all.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    if (!isAdmin) {
+      const instCol: CloudDBCollection<ApprovalInstance> = db.collection(ApprovalInstance);
+      const visibleBiz = new Set<string>();
+      const insts = await queryAllByOrg(instCol, orgId);
+      for (const inst of insts) {
+        if (inst.bizId && actorsInclude(inst.nodeSnapshot, inst.history, myIds)) {
+          visibleBiz.add(inst.bizId);
+        }
+      }
+      filtered = filtered.filter(
+        (r) => r.createdBy === userId || (r.instanceId && visibleBiz.has(r.instanceId)),
+      );
+    }
     if (status) filtered = filtered.filter((r) => r.status === status);
     if (projectId) filtered = filtered.filter((r) => r.projectId === projectId);
     const start = page * LIST_PAGE_SIZE;

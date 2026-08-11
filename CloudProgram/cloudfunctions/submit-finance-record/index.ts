@@ -231,6 +231,19 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     record.updatedAt = now;
     record.period = String(record.date.getFullYear());
 
+    // 已结账年度锁定：不允许再新增该年度凭证
+    const recordCol: CloudDBCollection<FinanceRecord> = db.collection(FinanceRecord);
+    const existingRecords = await queryAllByOrg(recordCol, orgId);
+    if (existingRecords.some((r) => r.type === 'closing' && r.period === record.period)) {
+      callback({
+        ret: {
+          code: -1,
+          message: `${record.period} 年度已结账，不能新增该年度凭证（如需修改请先反结账）`,
+        },
+      });
+      return;
+    }
+
     const flowCol: CloudDBCollection<ApprovalFlow> = db.collection(ApprovalFlow);
     let flow: ApprovalFlow | null = null;
     if (params.flowId) {
@@ -283,7 +296,6 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       record.status = 'approved';
     }
 
-    const recordCol: CloudDBCollection<FinanceRecord> = db.collection(FinanceRecord);
     await recordCol.upsert([record]);
 
     logger.info(`submit-finance-record done: id=${record.id}, status=${record.status}`);
