@@ -41,11 +41,15 @@ class _MemberFormPageState extends State<MemberFormPage> {
     final roleConfig = context.read<RoleConfigProvider>();
     final orgId = context.read<OrganizationProvider>().currentOrgId ?? '';
     final defaultLabels = OrgLabels.forType(context.orgTypeRead);
-    _roleId = defaultLabels.roles.first.id;
+    final defaultRole = defaultLabels.roles.firstWhere(
+      (r) => r.id == 'member',
+      orElse: () => defaultLabels.roles.first,
+    );
+    _roleId = defaultRole.id;
     _roleLabel = roleConfig.getLabel(
       orgId,
       _roleId,
-      defaultLabels.roles.first.label,
+      defaultRole.label,
     );
     if (_isEdit) {
       _existing = context.read<MemberProvider>().findById(widget.id!);

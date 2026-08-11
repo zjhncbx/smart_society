@@ -17,6 +17,7 @@ class SettingsProvider extends ChangeNotifier {
   static String _credsKey(String orgId, String suffix) =>
       'dingtalk_${suffix}_$orgId';
   static String _configuredKey(String orgId) => 'dingtalk_configured_$orgId';
+  static String _deptsKey(String orgId) => 'dingtalk_selected_depts_$orgId';
   static String _bindKey(String orgId, String suffix) =>
       'memberBind_${suffix}_$orgId';
 
@@ -243,6 +244,22 @@ class SettingsProvider extends ChangeNotifier {
     return v is int ? DateTime.fromMillisecondsSinceEpoch(v) : null;
   }
 
+  /// 上次同步选择的钉钉组织（部门）ID 列表；空表示未选择过（默认全部）。
+  List<int> dingTalkSelectedDeptIds(String orgId) {
+    if (orgId.isEmpty) return const [];
+    final v = Hive.box(_boxName).get(_deptsKey(orgId));
+    return v is List ? v.whereType<int>().toList() : const [];
+  }
+
+  Future<void> setDingTalkSelectedDeptIds(
+    String orgId,
+    List<int> deptIds,
+  ) async {
+    if (orgId.isEmpty) return;
+    final box = await Hive.openBox(_boxName);
+    await box.put(_deptsKey(orgId), deptIds);
+  }
+
   String? dingTalkLastResult(String orgId) {
     if (orgId.isEmpty) return null;
     return Hive.box(_boxName).get(_credsKey(orgId, 'lastResult')) as String?;
@@ -310,6 +327,7 @@ class SettingsProvider extends ChangeNotifier {
       await box.delete(_credsKey(orgId, suffix));
     }
     await box.delete(_configuredKey(orgId));
+    await box.delete(_deptsKey(orgId));
     await box.delete(_bindKey(orgId, 'id'));
     await box.delete(_bindKey(orgId, 'name'));
   }

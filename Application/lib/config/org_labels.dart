@@ -26,12 +26,14 @@ class OrgLabels {
   final String tabMembers;
   final String tabProjects;
   final String tabNotices;
+  final String tabFinance;
   final String tabProfile;
   final List<RoleConfig> roles;
   final String deptLabel;
   final List<String> defaultDepts;
   final String labelStudentNo;
   final String labelRole;
+  final String labelChangeRole;
   final String labelJoinDate;
   final String labelManager;
   final String memberMgmtTitle;
@@ -162,12 +164,14 @@ class OrgLabels {
     required this.tabMembers,
     required this.tabProjects,
     required this.tabNotices,
+    required this.tabFinance,
     required this.tabProfile,
     required this.roles,
     required this.deptLabel,
     required this.defaultDepts,
     required this.labelStudentNo,
     required this.labelRole,
+    required this.labelChangeRole,
     required this.labelJoinDate,
     required this.labelManager,
     required this.memberMgmtTitle,
@@ -299,15 +303,18 @@ class OrgLabels {
     tabMembers: '成员',
     tabProjects: '项目',
     tabNotices: '通知',
+    tabFinance: '财务',
     tabProfile: '我的',
     roles: [
       RoleConfig(id: 'president', label: '社长', category: RoleCategory.leadership, maxCount: 1),
       RoleConfig(id: 'director', label: '部长', category: RoleCategory.department),
+      RoleConfig(id: 'member', label: '社员', category: RoleCategory.department),
     ],
     deptLabel: '部门',
     defaultDepts: ['主席团', '宣传部', '组织部', '技术部', '外联部'],
     labelStudentNo: '学号',
     labelRole: '角色',
+    labelChangeRole: '变更角色',
     labelJoinDate: '加入时间',
     labelManager: '负责人',
     memberMgmtTitle: '成员管理',
@@ -439,15 +446,18 @@ class OrgLabels {
     tabMembers: '志愿者',
     tabProjects: '志愿项目',
     tabNotices: '公告',
+    tabFinance: '财务',
     tabProfile: '我的',
     roles: [
       RoleConfig(id: 'leader', label: '队长', category: RoleCategory.leadership, maxCount: 1),
       RoleConfig(id: 'director', label: '部长', category: RoleCategory.department),
+      RoleConfig(id: 'member', label: '队员', category: RoleCategory.department),
     ],
     deptLabel: '服务组',
     defaultDepts: ['社区服务组', '环保服务组', '支教服务组', '助老服务组'],
     labelStudentNo: '编号',
     labelRole: '身份',
+    labelChangeRole: '变更身份',
     labelJoinDate: '注册时间',
     labelManager: '项目负责人',
     memberMgmtTitle: '志愿者管理',
@@ -579,6 +589,7 @@ class OrgLabels {
     tabMembers: '会员',
     tabProjects: '项目',
     tabNotices: '公告',
+    tabFinance: '财务',
     tabProfile: '我的',
     roles: [
       RoleConfig(id: 'chairman', label: '会长', category: RoleCategory.leadership, maxCount: 1),
@@ -587,11 +598,13 @@ class OrgLabels {
       RoleConfig(id: 'director', label: '理事', category: RoleCategory.board),
       RoleConfig(id: 'chief_supervisor', label: '监事长', category: RoleCategory.board, maxCount: 1),
       RoleConfig(id: 'supervisor', label: '监事', category: RoleCategory.board),
+      RoleConfig(id: 'member', label: '会员', category: RoleCategory.department),
     ],
     deptLabel: '部门',
     defaultDepts: ['秘书处', '财务部', '会员部', '外联部', '宣传部'],
     labelStudentNo: '会员编号',
     labelRole: '职务',
+    labelChangeRole: '变更职务',
     labelJoinDate: '入会时间',
     labelManager: '负责人',
     memberMgmtTitle: '会员管理',

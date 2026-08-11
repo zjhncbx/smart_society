@@ -7,10 +7,12 @@ import '../../config/theme_config.dart';
 import '../../providers/organization_provider.dart';
 import '../../providers/role_config_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/dingtalk_api.dart';
 import '../../services/dingtalk_sync_service.dart';
 import '../../utils/date_format.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/common.dart';
+import '../../widgets/dingtalk_dept_picker.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -395,8 +397,11 @@ class _SettingsPageState extends State<SettingsPage> {
     }
     final roleConfig = context.read<RoleConfigProvider>();
     final defaultRole = labels.roles.firstWhere(
-      (r) => r.maxCount != 1,
-      orElse: () => labels.roles.last,
+      (r) => r.id == 'member',
+      orElse: () => labels.roles.firstWhere(
+        (r) => r.maxCount != 1,
+        orElse: () => labels.roles.last,
+      ),
     );
     final roleLabel = roleConfig.getLabel(
       _orgId,
@@ -405,12 +410,44 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     setState(() => _syncing = true);
     try {
+      // 1. 先选择要同步的钉钉组织（部门），再同步
+      List<int>? picked;
+      try {
+        final departments = await DingTalkApi.instance.listDepartments(
+          orgId: orgId,
+          clientId: clientId,
+          clientSecret: clientSecret,
+        );
+        if (!mounted) return;
+        final lastSelection = settings.dingTalkSelectedDeptIds(orgId);
+        picked = await showDingTalkDeptPicker(
+          context,
+          departments: departments,
+          initialSelection: lastSelection.isNotEmpty
+              ? lastSelection
+              : const [1],
+        );
+      } catch (e) {
+        if (!mounted) return;
+        showToast(context, '获取钉钉组织架构失败: $e');
+        return;
+      }
+      if (picked == null || !mounted) return; // 用户取消
+      if (picked.isEmpty) {
+        if (!mounted) return;
+        showToast(context, '请至少选择一个组织');
+        return;
+      }
+      await settings.setDingTalkSelectedDeptIds(orgId, picked);
+
+      // 2. 执行同步
       final result = await DingTalkSyncService.instance.performSync(
         orgId: orgId,
         clientId: clientId,
         clientSecret: clientSecret,
         roleId: defaultRole.id,
         roleLabel: roleLabel,
+        deptIds: picked,
       );
       if (!mounted) return;
       final resultText =

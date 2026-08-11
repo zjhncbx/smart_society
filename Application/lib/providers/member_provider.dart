@@ -85,6 +85,38 @@ class MemberProvider extends ChangeNotifier {
     SyncProvider.instance.enqueue('member', member.id, SyncOp.upsert, member.toJson());
   }
 
+  /// 变更成员角色：钉钉同步组织同样允许（仅改角色，不涉及增删成员）。
+  Future<void> changeRole(String id, String roleId, String roleLabel) async {
+    final index = _members.indexWhere((m) => m.id == id);
+    if (index < 0) return;
+    final old = _members[index];
+    final updated = Member(
+      id: old.id,
+      name: old.name,
+      studentNo: old.studentNo,
+      department: old.department,
+      roleId: roleId,
+      roleLabel: roleLabel,
+      phone: old.phone,
+      email: old.email,
+      joinedAt: old.joinedAt,
+      dingTalkUserId: old.dingTalkUserId,
+      syncStatus: old.syncStatus,
+      lastSyncedAt: old.lastSyncedAt,
+      orgId: old.orgId,
+      updatedAt: old.updatedAt,
+    );
+    _members[index] = updated;
+    await _storage.membersBox.put(updated.id, updated.toJson());
+    notifyListeners();
+    SyncProvider.instance.enqueue(
+      'member',
+      updated.id,
+      SyncOp.upsert,
+      updated.toJson(),
+    );
+  }
+
   Future<void> deleteMember(String id) async {
     if (isDingTalkManaged) return;
     _members.removeWhere((m) => m.id == id);

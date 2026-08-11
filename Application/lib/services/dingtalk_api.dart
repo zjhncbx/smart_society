@@ -12,6 +12,7 @@ class DingTalkApi {
     required String clientSecret,
     required String roleId,
     required String roleLabel,
+    List<int>? deptIds,
   }) async {
     final data = await CloudFunctionService.instance.callWithRetry(
       'dingtalk-sync-contacts',
@@ -21,6 +22,7 @@ class DingTalkApi {
         'clientSecret': clientSecret,
         'roleId': roleId,
         'roleLabel': roleLabel,
+        if (deptIds != null && deptIds.isNotEmpty) 'deptIds': deptIds,
       },
       timeout: const Duration(seconds: 55),
       maxRetries: 1,
@@ -33,6 +35,33 @@ class DingTalkApi {
       syncedAt: DateTime.tryParse((map['syncedAt'] as String?) ?? '') ??
           DateTime.now(),
     );
+  }
+
+  /// 获取钉钉组织架构（部门树），返回扁平列表（parentId 用于客户端组装树）。
+  Future<List<DingTalkDepartment>> listDepartments({
+    required String orgId,
+    required String clientId,
+    required String clientSecret,
+  }) async {
+    final data = await CloudFunctionService.instance.callChecked(
+      'dingtalk-list-departments',
+      params: {
+        'orgId': orgId,
+        'clientId': clientId,
+        'clientSecret': clientSecret,
+      },
+      timeout: const Duration(seconds: 30),
+    );
+    final list = (data as Map?)?['depts'];
+    if (list is! List) return const [];
+    return list.map((e) {
+      final m = Map<String, dynamic>.from(e as Map);
+      return DingTalkDepartment(
+        deptId: (m['deptId'] as num?)?.toInt() ?? 0,
+        name: (m['name'] as String?) ?? '',
+        parentId: (m['parentId'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
   }
 
   Future<String> createGroup({
@@ -69,5 +98,17 @@ class DingTalkSyncResult {
     required this.contactsUpdated,
     required this.contactsRemoved,
     required this.syncedAt,
+  });
+}
+
+class DingTalkDepartment {
+  final int deptId;
+  final String name;
+  final int parentId;
+
+  const DingTalkDepartment({
+    required this.deptId,
+    required this.name,
+    required this.parentId,
   });
 }

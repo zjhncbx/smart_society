@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/org_config_provider.dart';
+import '../../models/member.dart';
 import '../../providers/member_provider.dart';
+import '../../providers/organization_provider.dart';
+import '../../providers/role_config_provider.dart';
 import '../../utils/date_format.dart';
 import '../../widgets/common.dart';
 import '../../widgets/member_avatar.dart';
@@ -34,7 +37,13 @@ class MemberDetailPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(labels.memberDetailTitle),
         actions: provider.isDingTalkManaged
-            ? null
+            ? [
+                IconButton(
+                  tooltip: labels.labelChangeRole,
+                  icon: const Icon(Icons.supervised_user_circle_outlined),
+                  onPressed: () => _changeRole(context, member),
+                ),
+              ]
             : [
                 IconButton(
                   tooltip: labels.editTooltip,
@@ -129,6 +138,59 @@ class MemberDetailPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _changeRole(BuildContext context, Member member) async {
+    final labels = context.labelsRead;
+    final roleConfig = context.read<RoleConfigProvider>();
+    final orgId = context.read<OrganizationProvider>().currentOrgId ?? '';
+    final available = labels.roles;
+    var selectedId = available.any((r) => r.id == member.roleId)
+        ? member.roleId
+        : available.first.id;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: Text(labels.labelChangeRole),
+          content: DropdownButtonFormField<String>(
+            initialValue: selectedId,
+            decoration: InputDecoration(labelText: labels.labelRole),
+            items: [
+              for (final role in available)
+                DropdownMenuItem(
+                  value: role.id,
+                  child: Text(roleConfig.getLabel(orgId, role.id, role.label)),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) setState(() => selectedId = value);
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(labels.labelSwitchCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(labels.saveButton),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (saved != true || !context.mounted) return;
+
+    final role = available.firstWhere((r) => r.id == selectedId);
+    await context.read<MemberProvider>().changeRole(
+      member.id,
+      role.id,
+      roleConfig.getLabel(orgId, role.id, role.label),
+    );
+    if (!context.mounted) return;
+    showToast(context, labels.saveSuccess);
   }
 }
 

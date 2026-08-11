@@ -25,6 +25,8 @@ const DINGTALK_HOST = 'oapi.dingtalk.com';
 const CONCURRENCY = 20;
 const UPSERT_BATCH = 100;
 const HTTP_TIMEOUT = 10000;
+const QUERY_PAGE_SIZE = 1000;
+const QUERY_MAX_PAGES = 50;
 
 function httpsGet(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -86,6 +88,18 @@ async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T)
   return results;
 }
 
+// Cloud DB caps a single query result at 1000 records; paginate so members
+// beyond the first 1000 are not missed when preserving joinedAt / counting removed.
+async function queryAllMembersByOrg(col: CloudDBCollection<Member>, orgId: string): Promise<Member[]> {
+  const all: Member[] = [];
+  for (let page = 0; page < QUERY_MAX_PAGES; page++) {
+    const rows = await col.query().equalTo('orgId', orgId).limit(QUERY_PAGE_SIZE, page * QUERY_PAGE_SIZE).get();
+    all.push(...rows);
+    if (rows.length < QUERY_PAGE_SIZE) break;
+  }
+  return all;
+}
+
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('dingtalk-sync-contacts called');
 
@@ -96,6 +110,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const clientSecret = params?.clientSecret as string;
     const roleId = params?.roleId as string;
     const roleLabel = params?.roleLabel as string;
+    const selectedDeptIds = Array.isArray(params?.deptIds)
+      ? (params.deptIds as any[])
+          .map((v: any) => Number(v))
+          .filter((v: any) => Number.isInteger(v) && v > 0)
+      : [];
+    // 选择了“全部组织”（根部门 1）时按全量同步处理，removed 统计仍然有效
+    const isSubsetSync = selectedDeptIds.length > 0 && !selectedDeptIds.includes(1);
     if (!orgId || !clientId || !clientSecret) {
       callback({ ret: { code: -1, message: '缺少 orgId/clientId/clientSecret 参数' } });
       return;
@@ -114,7 +135,11 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     // 2. 递归遍历部门，建 id -> name 映射
     const deptNames = new Map<number, string>();
     const deptIds: number[] = [];
+    const visitedDepts = new Set<number>();
     const visit = async (parentId: number): Promise<void> => {
+      if (visitedDepts.has(parentId)) return;
+      visitedDepts.add(parentId);
+      deptIds.push(parentId);
       const res = await httpsPost(
         `https://${DINGTALK_HOST}/topapi/v2/department/listsub?access_token=${token}`,
         { dept_id: parentId },
@@ -124,12 +149,17 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       }
       const subs: any[] = res.result || [];
       for (const d of subs) {
-        deptIds.push(d.dept_id);
         deptNames.set(d.dept_id, d.name || '');
         await visit(d.dept_id);
       }
     };
-    await visit(1);
+    if (isSubsetSync) {
+      for (const id of selectedDeptIds) {
+        await visit(id);
+      }
+    } else {
+      await visit(1);
+    }
 
     // 3. 逐部门取用户 userid（分页），跨部门去重
     const userIds = new Set<string>();
@@ -172,7 +202,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     // 5. 查询本组织现有成员，保留已有 joinedAt
     const db = cloud.database({ zoneName: ZONE_NAME });
     const col: CloudDBCollection<Member> = db.collection(Member);
-    const existing = await col.query().equalTo('orgId', orgId).get();
+    const existing = await queryAllMembersByOrg(col, orgId);
     const existingById = new Map<string, any>();
     for (const m of existing) {
       existingById.set(m.id, m);
@@ -193,16 +223,19 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         ? deptNames.get(deptId)!
         : (Array.isArray(u.department) && u.department.length > 0 ? u.department[0] : '');
       obj.department = deptName || '';
-      obj.roleId = roleId || '';
-      obj.roleLabel = roleLabel || '';
       obj.phone = u.mobile || '';
       obj.email = u.email || '';
       const prev = existingById.get(id);
       if (prev) {
         obj.joinedAt = prev.joinedAt ? new Date(prev.joinedAt) : now;
+        // 已有成员保留人工调整过的角色；仅在角色为空时回退到默认角色
+        obj.roleId = prev.roleId || (roleId || '');
+        obj.roleLabel = prev.roleLabel || (roleLabel || '');
         updated++;
       } else {
         obj.joinedAt = now;
+        obj.roleId = roleId || '';
+        obj.roleLabel = roleLabel || '';
         added++;
       }
       obj.dingTalkUserId = u.userid;
@@ -216,8 +249,11 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     // removed：本组织已同步但钉钉已不存在的成员（仅统计，不删除）
     const syncedIds = new Set(members.map((m) => m.id));
     let removed = 0;
-    for (const m of existing) {
-      if (m.syncStatus === 'synced' && !syncedIds.has(m.id)) removed++;
+    // 选择部分部门同步时，未选部门的成员不应计为“已移除”
+    if (!isSubsetSync) {
+      for (const m of existing) {
+        if (m.syncStatus === 'synced' && !syncedIds.has(m.id)) removed++;
+      }
     }
 
     // 7. 分批 upsert
