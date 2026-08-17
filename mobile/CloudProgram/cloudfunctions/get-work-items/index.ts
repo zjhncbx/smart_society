@@ -1,6 +1,9 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { WorkItem } from './WorkItem';
 import { UserOrganization } from './UserOrganization';
+import { Role } from './Role';
+import { DataScope } from './DataScope';
+import { AppUser } from './AppUser';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -73,6 +76,12 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       callback({ ret: { code: -1, message: '您不是该组织成员' } });
       return;
     }
+    const userCol: CloudDBCollection<AppUser> = db.collection(AppUser);
+    const userRows = await userCol.query().equalTo('id', userId).get();
+    if (userRows.length === 0) {
+      callback({ ret: { code: -1, message: '用户身份无效' } });
+      return;
+    }
 
     const workItemType = String(params?.workItemType || '');
     const status = String(params?.status || '');
@@ -81,31 +90,53 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const page = Math.max(0, Number(params?.page) || 0);
     const pageSize = Math.min(PAGE_SIZE, Math.max(1, Number(params?.pageSize) || 30));
 
+    // 服务端解析数据范围：用户级 DataScope > 角色级 > 内置默认；self 时按 ownerId 过滤
+    let dataScope = 'org';
+    const membership = mine[0];
+    const roleId = String(membership.roleId || (membership.role === 'admin' ? 'org_admin' : 'member'));
+    const roleCol: CloudDBCollection<Role> = db.collection(Role);
+    const roleRows = await roleCol.query().equalTo('id', `role_${orgId}_${roleId}`).get();
+    if (roleRows.length > 0) {
+      dataScope = roleRows[0].dataScope || 'org';
+    }
+    const scopeCol: CloudDBCollection<DataScope> = db.collection(DataScope);
+    const scopeRows = await scopeCol.query().equalTo('orgId', orgId).get();
+    const userScope = scopeRows.find((s) => s.status === 'active' && s.userId === userId);
+    if (userScope) {
+      dataScope = userScope.scopeType || dataScope;
+    }
+    if (onlyMine) {
+      dataScope = 'self';
+    }
+    const myMemberId = String(membership.memberId || '');
+    const effectiveOwner = myMemberId || userId;
+
     const col: CloudDBCollection<WorkItem> = db.collection(WorkItem);
     let query = col.query().equalTo('orgId', orgId);
     if (workItemType) query = query.equalTo('workItemType', workItemType);
     if (status) query = query.equalTo('status', status);
     if (ownerId) query = query.equalTo('ownerId', ownerId);
+    if (dataScope === 'self') {
+      query = query.equalTo('ownerId', effectiveOwner);
+    }
     const rows = await query.orderByDesc('updatedAt').limit(pageSize, page * pageSize).get();
     const total = await query.orderByDesc('updatedAt').countQuery('id');
 
-    let items = rows.map(toJson);
-    if (onlyMine) {
-      const myMemberId = String(mine[0].memberId || '');
-      items = items.filter((it: any) =>
-        it.ownerId === userId || (myMemberId && it.ownerId === myMemberId),
-      );
+    let countQuery = col.query().equalTo('orgId', orgId).equalTo('status', 'open');
+    if (workItemType) countQuery = countQuery.equalTo('workItemType', workItemType);
+    if (dataScope === 'self') {
+      countQuery = countQuery.equalTo('ownerId', effectiveOwner);
     }
-
-    const counts = await col.query().equalTo('orgId', orgId).equalTo('status', 'open').countQuery('id');
+    const counts = await countQuery.countQuery('id');
     callback({
       ret: {
         code: 0,
         message: 'ok',
         data: {
-          items,
+          items: rows.map(toJson),
           total,
           openCount: counts,
+          dataScope,
           hasMore: page * pageSize + rows.length < total,
         },
       },

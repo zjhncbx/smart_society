@@ -42,7 +42,7 @@
 
 ## 3.1 原则
 
-以下动作支持幂等：`submit-finance-record`、`act-finance-node`、`close-period`、`unclose-period`、`act-auto-task`、`act-risk-alert`、`resolve-data-quality-issue`。
+以下动作**强制要求幂等**（缺失 `idempotencyKey` 直接拒绝执行）：`submit-finance-record`、`act-finance-node`、`close-period`、`unclose-period`、`act-auto-task`、`act-risk-alert`、`resolve-data-quality-issue`。
 
 ## 3.2 调用约定
 
@@ -59,11 +59,15 @@
 
 ## 3.3 服务端行为
 
-1. 校验组织成员/权限。
-2. 按 `idempotencyKey` 查询 `IdempotencyRecord`：
-   - 已存在 → 直接返回首次执行结果（`message: ok（幂等返回）`），不重复执行。
-   - 不存在 → 执行动作，成功后写入记录（`result` 存首次返回 data，24 小时有效）。
-3. 执行失败不写记录，下次重试可再次执行。
+1. 校验组织成员/权限；缺少 `idempotencyKey` 直接拒绝（财务提交/审批/结账/反结账等关键动作）。
+2. **原子认领（claim）**：按 `idempotencyKey` 查 `IdempotencyRecord`：
+   - `status=done` → 直接返回首次执行结果（`message: ok（幂等返回）`）。
+   - `status=processing` 且在认领窗口内（120s）→ 返回“操作正在处理中”，拒绝重复执行。
+   - 不存在 / 超时 / failed → 写入 `status=processing` + `claimId`，**读回确认 claimId 归属后获得执行权**。
+3. 执行成功 → 更新 `status=done` + `result`（首次返回 data，24h 有效）。
+4. 执行失败 → 更新 `status=failed`，下次重试可重新认领执行。
+
+> 说明：CloudDB 无事务性条件插入，本实现通过“认领 + claimId 归属确认 + 超时重领”将并发双执行窗口压缩到最小；若要求严格 Exactly-Once，需在 AGC 后端服务层引入分布式锁/唯一索引（Web 阶段可选增强）。
 
 ## 3.4 幂等键生成（客户端）
 

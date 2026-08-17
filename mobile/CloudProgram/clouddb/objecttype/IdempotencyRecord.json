@@ -55,6 +55,33 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "status",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "processing",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "claimId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "requestHash",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "createdAt",
       "fieldType": "Date",
       "isNeedEncrypt": false,
@@ -77,6 +104,14 @@
       "notNull": false,
       "isSensitive": false,
       "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
       "belongPrimaryKey": false
     }
   ],

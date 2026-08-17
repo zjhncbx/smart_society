@@ -383,6 +383,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
     final clientId = settings.dingTalkClientId(orgId) ?? '';
     final clientSecret = settings.dingTalkClientSecret(orgId) ?? '';
+    final userId = context.read<AuthProvider>().userId;
     if (clientId.isEmpty || clientSecret.isEmpty) {
       showToast(context, '请先保存 Client ID 与 Client Secret');
       return;
@@ -409,7 +410,7 @@ class _SettingsPageState extends State<SettingsPage> {
           orgId: orgId,
           clientId: clientId,
           clientSecret: clientSecret,
-          userId: context.read<AuthProvider>().userId,
+          userId: userId,
         );
         if (!mounted) return;
         final lastSelection = settings.dingTalkSelectedDeptIds(orgId);
@@ -442,6 +443,7 @@ class _SettingsPageState extends State<SettingsPage> {
         orgId: orgId,
         clientId: clientId,
         clientSecret: clientSecret,
+        userId: userId,
         roleId: defaultRole.id,
         roleLabel: roleLabel,
         deptIds: isFull ? null : picked.selected,

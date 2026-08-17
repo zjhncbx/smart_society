@@ -161,6 +161,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const orgId = params?.orgId as string;
     const clientId = params?.clientId as string;
     const clientSecret = params?.clientSecret as string;
+    const userId = String(params?.userId || '');
     const roleId = params?.roleId as string;
     const roleLabel = params?.roleLabel as string;
     const selectedDeptIds = Array.isArray(params?.deptIds)
@@ -177,6 +178,22 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const isSubsetSync = selectedDeptIds.length > 0;
     if (!orgId || !clientId || !clientSecret) {
       callback({ ret: { code: -1, message: '缺少 orgId/clientId/clientSecret 参数' } });
+      return;
+    }
+    if (!userId) {
+      callback({ ret: { code: -1, message: '缺少 userId 参数' } });
+      return;
+    }
+
+    const dbAuth = cloud.database({ zoneName: ZONE_NAME });
+    const uoCol: CloudDBCollection<UserOrganization> = dbAuth.collection(UserOrganization);
+    const mine = await uoCol.query().equalTo('id', `${orgId}_${userId}`).get();
+    if (mine.length === 0) {
+      callback({ ret: { code: -1, message: '您不是该组织成员' } });
+      return;
+    }
+    if (mine[0].role !== 'admin') {
+      callback({ ret: { code: -1, message: '仅组织管理员可执行钉钉同步' } });
       return;
     }
 

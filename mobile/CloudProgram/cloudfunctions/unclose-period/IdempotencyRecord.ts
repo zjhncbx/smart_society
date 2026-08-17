@@ -5,9 +5,13 @@ export class IdempotencyRecord {
   entityType: string = '';
   entityId: string = '';
   result: string = '{}';
+  status: string = 'processing';
+  claimId: string = '';
+  requestHash: string = '';
   createdAt: Date | null = null;
   expiresAt: Date | null = null;
   createdBy: string = '';
+  updatedAt: Date | null = null;
 
   getClassName(): string {
     return 'IdempotencyRecord';
@@ -21,9 +25,13 @@ export class IdempotencyRecord {
     map.set('entityType', 'String');
     map.set('entityId', 'String');
     map.set('result', 'String');
+    map.set('status', 'String');
+    map.set('claimId', 'String');
+    map.set('requestHash', 'String');
     map.set('createdAt', 'Date');
     map.set('expiresAt', 'Date');
     map.set('createdBy', 'String');
+    map.set('updatedAt', 'Date');
     return map;
   }
 
@@ -48,9 +56,13 @@ export class IdempotencyRecord {
       obj.entityType = data.entityType ?? '';
       obj.entityId = data.entityId ?? '';
       obj.result = data.result ?? '{}';
+      obj.status = data.status ?? 'processing';
+      obj.claimId = data.claimId ?? '';
+      obj.requestHash = data.requestHash ?? '';
       obj.createdAt = data.createdAt ? new Date(data.createdAt) : null;
       obj.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
       obj.createdBy = data.createdBy ?? '';
+      obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     }
     return obj;
   }

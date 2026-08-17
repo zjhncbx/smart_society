@@ -2,6 +2,7 @@ import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Role } from './Role';
 import { DataScope } from './DataScope';
 import { UserOrganization } from './UserOrganization';
+import { AppUser } from './AppUser';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -133,6 +134,14 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       return;
     }
     const membership = mine[0];
+
+    // 身份有效性：请求体 userId 必须是已注册的内部用户（网关认证绑定待 AGC 联调）
+    const userCol: CloudDBCollection<AppUser> = db.collection(AppUser);
+    const userRows = await userCol.query().equalTo('id', userId).get();
+    if (userRows.length === 0) {
+      callback({ ret: { code: -1, message: '用户身份无效' } });
+      return;
+    }
 
     // 角色解析：优先 roleId，回退旧二元 role
     let roleId = String(membership.roleId || '');

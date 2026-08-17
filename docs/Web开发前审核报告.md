@@ -79,6 +79,25 @@ Web 项目初始化
 |---|---|---|
 | 2026-08-17 | 基础工程 Go / 核心业务 No-Go | 首版门禁：5 项 P0 架构缺口待封口 |
 | 2026-08-17 | 基础工程 Go / 核心业务 条件 Go | P0-A~E 第一版全部封口（WorkItem/跨端userId/RBAC/统一业务API/幂等），待 AGC 部署验证后正式放行 |
+| 2026-08-17 | 基础工程 Go / 核心业务 条件 Go（加固中） | P0 验收加固 H1：幂等改原子认领+强制 key；WorkItem DataScope 服务端过滤；权限函数身份有效性校验；钉钉同步补 admin 校验；静态安全扫描 |
+
+---
+
+# 十、P0 验收加固记录
+
+## 10.1 H1 安全与一致性加固（已完成）
+
+| 项 | 加固内容 |
+|---|---|
+| 幂等（P0-E） | `IdempotencyRecord` 增加 status/claimId/requestHash/updatedAt；7 个关键动作函数改为“认领(processing+claimId)→执行→提交(done)/失败(failed)”，并发请求拒绝重复执行，超时允许重领；**关键动作缺失 idempotencyKey 直接拒绝** |
+| WorkItem DataScope（P0-A） | `get-work-items` 服务端解析数据范围（用户级 DataScope > 角色级 > 默认 org），`self` 时按 ownerId 在**查询前**过滤，total/openCount 均为过滤后口径 |
+| 身份有效性（P0-B） | `get-my-permissions` / `get-work-items` / `get-audit-logs` 校验请求体 userId 必须是已注册内部用户（AppUser 存在），拒绝伪造身份 |
+| 权限扫描（P0-C） | 56 个函数全量静态扫描：组织级接口成员校验全覆盖；钉钉同步补 admin 校验（与部门列表一致）；join-org/注册登录/用户级接口按设计豁免 |
+| 认证主体绑定 | 当前 apigw-client 网关未暴露调用者身份上下文，先以“内部 userId 有效性校验”兜底；**网关认证绑定（token→userId）列为 Web 阶段 AGC 联调项** |
+
+## 10.2 H2 事件关联链贯通（进行中）
+
+- 业务动作生成 correlationId → BusinessEvent / AuditLog / AutoTask / RiskAlert / WorkItem 全链写入（待完成）
 
 ---
 

@@ -30,42 +30,84 @@ const ZONE_NAME = 'default';
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
 
-async function readIdempotent(
-  col: CloudDBCollection<IdempotencyRecord>,
-  key: string,
-): Promise<any> {
-  if (!key) return null;
-  const rows = await col.query().equalTo('id', key).get();
-  if (rows.length === 0) return null;
-  try {
-    return JSON.parse(rows[0].result || '{}');
-  } catch {
-    return {};
-  }
-}
+const IDEM_TIMEOUT_MS = 120000;
 
-async function storeIdempotent(
+async function claimIdempotent(
   col: CloudDBCollection<IdempotencyRecord>,
-  orgId: string,
   key: string,
+  orgId: string,
   action: string,
   entityType: string,
   entityId: string,
-  result: any,
+  requestHash: string,
   actorId: string,
-): Promise<void> {
-  if (!key) return;
-  const now = new Date();
+): Promise<{ status: 'cached' | 'claimed' | 'processing'; result?: any }> {
+  const now = Date.now();
+  const rows = await col.query().equalTo('id', key).get();
+  if (rows.length > 0) {
+    const rec = rows[0];
+    if (rec.status === 'done') {
+      try {
+        return { status: 'cached', result: JSON.parse(rec.result || '{}') };
+      } catch {
+        return { status: 'cached', result: {} };
+      }
+    }
+    if (rec.status === 'processing') {
+      const created = rec.createdAt ? rec.createdAt.getTime() : now;
+      if (now - created < IDEM_TIMEOUT_MS) {
+        return { status: 'processing' };
+      }
+    }
+    // done 之外且超时（或 failed）→ 允许重新认领
+  }
+  const claimId = 'c' + Date.now() + Math.floor(Math.random() * 1000000);
   const rec = new IdempotencyRecord();
   rec.id = key;
   rec.orgId = orgId;
   rec.action = action;
   rec.entityType = entityType;
   rec.entityId = entityId || '';
-  rec.result = JSON.stringify(result || {});
-  rec.createdAt = now;
-  rec.expiresAt = new Date(now.getTime() + 24 * 3600 * 1000);
+  rec.result = '{}';
+  rec.status = 'processing';
+  rec.claimId = claimId;
+  rec.requestHash = requestHash;
+  rec.createdAt = new Date(now);
+  rec.expiresAt = new Date(now + IDEM_TIMEOUT_MS);
   rec.createdBy = actorId || '';
+  await col.upsert([rec]);
+  const confirm = await col.query().equalTo('id', key).get();
+  if (confirm.length > 0 && confirm[0].claimId === claimId) {
+    return { status: 'claimed' };
+  }
+  return { status: 'processing' };
+}
+
+async function completeIdempotent(
+  col: CloudDBCollection<IdempotencyRecord>,
+  key: string,
+  result: any,
+): Promise<void> {
+  if (!key) return;
+  const rows = await col.query().equalTo('id', key).get();
+  if (rows.length === 0) return;
+  const rec = rows[0];
+  rec.status = 'done';
+  rec.result = JSON.stringify(result || {});
+  rec.updatedAt = new Date();
+  await col.upsert([rec]);
+}
+
+async function failIdempotent(
+  col: CloudDBCollection<IdempotencyRecord>,
+  key: string,
+): Promise<void> {
+  if (!key || !col) return;
+  const rows = await col.query().equalTo('id', key).get();
+  if (rows.length === 0) return;
+  const rec = rows[0];
+  rec.status = 'failed';
+  rec.updatedAt = new Date();
   await col.upsert([rec]);
 }
 
@@ -300,6 +342,8 @@ async function advanceInstance(
 
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('submit-finance-record called');
+  let idempotencyKey = '';
+  let idemCol: CloudDBCollection<IdempotencyRecord> | null = null;
 
   try {
     const params = parseParams(event);
@@ -324,14 +368,23 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       return;
     }
 
-    const idempotencyKey = String(params?.idempotencyKey || '');
-    const idemCol: CloudDBCollection<IdempotencyRecord> = db.collection(IdempotencyRecord);
-    if (idempotencyKey) {
-      const cached = await readIdempotent(idemCol, idempotencyKey);
-      if (cached !== null) {
-        callback({ ret: { code: 0, message: 'ok（幂等返回）', data: cached } });
-        return;
-      }
+    idempotencyKey = String(params?.idempotencyKey || '');
+    if (!idempotencyKey) {
+      callback({ ret: { code: -1, message: '缺少 idempotencyKey：财务提交必须幂等' } });
+      return;
+    }
+    idemCol = db.collection(IdempotencyRecord);
+    const claim = await claimIdempotent(
+      idemCol, idempotencyKey, orgId, 'submit', 'finance', '',
+      String(JSON.stringify(p || {})).slice(0, 300), userId,
+    );
+    if (claim.status === 'cached') {
+      callback({ ret: { code: 0, message: 'ok（幂等返回）', data: claim.result } });
+      return;
+    }
+    if (claim.status === 'processing') {
+      callback({ ret: { code: -1, message: '该操作正在处理中，请勿重复提交' } });
+      return;
     }
 
     const now = new Date();
@@ -444,10 +497,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       userId, userName, null, record,
     );
 
-    await storeIdempotent(
-      idemCol, orgId, idempotencyKey, 'submit', 'finance', record.id,
+    await completeIdempotent(
+      idemCol, idempotencyKey,
       { recordId: record.id, instanceId: record.instanceId, status: record.status },
-      userId,
     );
 
     logger.info(`submit-finance-record done: id=${record.id}, status=${record.status}`);
@@ -464,6 +516,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     });
   } catch (err: any) {
     logger.error(`submit-finance-record error: ${err.message}`);
+    if (idemCol && idempotencyKey) {
+      await failIdempotent(idemCol, idempotencyKey);
+    }
     callback({ ret: { code: -1, message: err.message } });
   }
 };

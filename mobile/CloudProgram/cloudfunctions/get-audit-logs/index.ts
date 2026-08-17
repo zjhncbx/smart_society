@@ -1,6 +1,7 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { AuditLog } from './AuditLog';
 import { UserOrganization } from './UserOrganization';
+import { AppUser } from './AppUser';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -40,6 +41,12 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const mine = await uoCol.query().equalTo('id', `${orgId}_${userId}`).get();
     if (mine.length === 0) {
       callback({ ret: { code: -1, message: '您不是该组织成员' } });
+      return;
+    }
+    const userCol: CloudDBCollection<AppUser> = db.collection(AppUser);
+    const userRows = await userCol.query().equalTo('id', userId).get();
+    if (userRows.length === 0) {
+      callback({ ret: { code: -1, message: '用户身份无效' } });
       return;
     }
 
