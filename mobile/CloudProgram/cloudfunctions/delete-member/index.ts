@@ -1,5 +1,6 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Member } from './Member';
+import { UserOrganization } from './UserOrganization';
 import { BusinessEvent } from './BusinessEvent';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
@@ -69,8 +70,19 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       callback({ ret: { code: -1, message: '缺少 orgId 字段' } });
       return;
     }
+    const userId = String(params?.userId || '');
+    if (!userId) {
+      callback({ ret: { code: -1, message: '缺少 userId 参数' } });
+      return;
+    }
 
     const db = cloud.database({ zoneName: ZONE_NAME });
+    const uoCol: CloudDBCollection<UserOrganization> = db.collection(UserOrganization);
+    const mine = await uoCol.query().equalTo('id', `${orgId}_${userId}`).get();
+    if (mine.length === 0) {
+      callback({ ret: { code: -1, message: '您不是该组织成员' } });
+      return;
+    }
     const col: CloudDBCollection<Member> = db.collection(Member);
     const existing = await col.query().equalTo('id', id).get();
     const obj = new Member();

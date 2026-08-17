@@ -2,6 +2,7 @@ import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Member } from './Member';
 import { Project } from './Project';
 import { Notice } from './Notice';
+import { UserOrganization } from './UserOrganization';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -42,12 +43,23 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
   try {
     const params = parseParams(event);
     const orgId = params?.orgId as string;
+    const userId = String(params?.userId || '');
     if (!orgId) {
       callback({ ret: { code: -1, message: '缺少 orgId 参数' } });
       return;
     }
+    if (!userId) {
+      callback({ ret: { code: -1, message: '缺少 userId 参数' } });
+      return;
+    }
 
     const db = cloud.database({ zoneName: ZONE_NAME });
+    const uoCol: CloudDBCollection<UserOrganization> = db.collection(UserOrganization);
+    const mine = await uoCol.query().equalTo('id', `${orgId}_${userId}`).get();
+    if (mine.length === 0) {
+      callback({ ret: { code: -1, message: '您不是该组织成员' } });
+      return;
+    }
 
     const memberCol: CloudDBCollection<Member> = db.collection(Member);
     const projectCol: CloudDBCollection<Project> = db.collection(Project);

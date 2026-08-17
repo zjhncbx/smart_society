@@ -38,6 +38,7 @@ Future<void> mainApp() async {
   await roleConfigProvider.init();
 
   final syncProvider = SyncProvider.instance;
+  SyncProvider.setUserIdGetter(() => authProvider.user?.openId ?? '');
   await syncProvider.init();
 
   runApp(SmartSocietyApp(

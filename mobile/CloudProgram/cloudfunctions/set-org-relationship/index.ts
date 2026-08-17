@@ -1,6 +1,7 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Organization } from './Organization';
 import { OrganizationRelationship } from './OrganizationRelationship';
+import { UserOrganization } from './UserOrganization';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -43,8 +44,22 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       callback({ ret: { code: -1, message: '无效的关系类型' } });
       return;
     }
+    if (!userId) {
+      callback({ ret: { code: -1, message: '缺少 userId 参数' } });
+      return;
+    }
 
     const db = cloud.database({ zoneName: ZONE_NAME });
+    const uoCol: CloudDBCollection<UserOrganization> = db.collection(UserOrganization);
+    const mine = await uoCol.query().equalTo('id', `${orgId}_${userId}`).get();
+    if (mine.length === 0) {
+      callback({ ret: { code: -1, message: '您不是该组织成员' } });
+      return;
+    }
+    if (mine[0].role !== 'admin') {
+      callback({ ret: { code: -1, message: '仅组织管理员可设置组织关系' } });
+      return;
+    }
     const orgCol: CloudDBCollection<Organization> = db.collection(Organization);
 
     // 验证两个组织都存在

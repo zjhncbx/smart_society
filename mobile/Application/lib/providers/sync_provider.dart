@@ -50,6 +50,13 @@ class SyncProvider extends ChangeNotifier {
   /// 合法队列类型白名单（云函数 upsert-{type}/delete-{type} 必须存在）
   static const _allowedTypes = {'member', 'project', 'notice'};
 
+  /// 云端身份透传：同步队列推送与拉取时注入 userId，供云函数做成员校验。
+  static String Function()? _userIdGetter;
+
+  static void setUserIdGetter(String Function() getter) {
+    _userIdGetter = getter;
+  }
+
   SyncProvider._();
   static final SyncProvider instance = SyncProvider._();
 
@@ -67,6 +74,8 @@ class SyncProvider extends ChangeNotifier {
   int get pendingCount => _queue.length;
   bool get isSyncing => _syncing;
   DateTime? get lastSyncedAt => _lastSyncedAt;
+
+  String get _userId => _userIdGetter?.call() ?? '';
 
   Future<void> init() async {
     if (_initialized) return;
@@ -159,7 +168,10 @@ class SyncProvider extends ChangeNotifier {
     for (final entry in batch) {
       try {
         final fnName = '${entry.op.name}-${entry.type}';
-        await _cloud.callWithRetry(fnName, params: entry.data);
+        await _cloud.callWithRetry(fnName, params: {
+          ...entry.data,
+          'userId': _userId,
+        });
         _queue.remove(entry);
       } catch (e) {
         debugPrint('SYNC_FAIL: $e');
@@ -176,7 +188,10 @@ class SyncProvider extends ChangeNotifier {
   Future<void> _pullLatest(String orgId) async {
     try {
       final data = await _cloud
-          .callWithRetry('get-all-data', params: {'orgId': orgId});
+          .callWithRetry('get-all-data', params: {
+        'orgId': orgId,
+        'userId': _userId,
+      });
       if (data is! Map<String, dynamic>) return;
 
       final storage = StorageService.instance;

@@ -7,6 +7,7 @@ import '../../config/theme_config.dart';
 import '../../providers/organization_provider.dart';
 import '../../providers/role_config_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/dingtalk_api.dart';
 import '../../services/dingtalk_sync_service.dart';
 import '../../utils/date_format.dart';
@@ -408,6 +409,7 @@ class _SettingsPageState extends State<SettingsPage> {
           orgId: orgId,
           clientId: clientId,
           clientSecret: clientSecret,
+          userId: context.read<AuthProvider>().user?.openId ?? '',
         );
         if (!mounted) return;
         final lastSelection = settings.dingTalkSelectedDeptIds(orgId);

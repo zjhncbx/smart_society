@@ -45,6 +45,7 @@ class DingTalkApi {
     required String orgId,
     required String clientId,
     required String clientSecret,
+    required String userId,
   }) async {
     final data = await CloudFunctionService.instance.callChecked(
       'dingtalk-list-departments',
@@ -52,6 +53,7 @@ class DingTalkApi {
         'orgId': orgId,
         'clientId': clientId,
         'clientSecret': clientSecret,
+        'userId': userId,
       },
       timeout: const Duration(seconds: 30),
     );

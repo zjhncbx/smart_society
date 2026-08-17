@@ -1,4 +1,6 @@
 import * as https from 'https';
+import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
+import { UserOrganization } from './UserOrganization';
 
 // Compatible with multiple event shapes: event.body string/object, SDK 'data' wrapper.
 function parseParams(event: any): any {
@@ -20,6 +22,7 @@ function parseParams(event: any): any {
 
 const DINGTALK_HOST = 'oapi.dingtalk.com';
 const HTTP_TIMEOUT = 10000;
+const ZONE_NAME = 'default';
 
 function httpsGet(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -75,8 +78,25 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const orgId = params?.orgId as string;
     const clientId = params?.clientId as string;
     const clientSecret = params?.clientSecret as string;
+    const userId = String(params?.userId || '');
     if (!orgId || !clientId || !clientSecret) {
       callback({ ret: { code: -1, message: '缺少 orgId/clientId/clientSecret 参数' } });
+      return;
+    }
+    if (!userId) {
+      callback({ ret: { code: -1, message: '缺少 userId 参数' } });
+      return;
+    }
+
+    const db = cloud.database({ zoneName: ZONE_NAME });
+    const uoCol: CloudDBCollection<UserOrganization> = db.collection(UserOrganization);
+    const mine = await uoCol.query().equalTo('id', `${orgId}_${userId}`).get();
+    if (mine.length === 0) {
+      callback({ ret: { code: -1, message: '您不是该组织成员' } });
+      return;
+    }
+    if (mine[0].role !== 'admin') {
+      callback({ ret: { code: -1, message: '仅组织管理员可查看钉钉组织架构' } });
       return;
     }
 

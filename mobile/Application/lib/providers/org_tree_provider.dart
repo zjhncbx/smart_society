@@ -34,11 +34,17 @@ class OrgTreeProvider extends ChangeNotifier {
     return ids;
   }
 
-  Future<void> loadHierarchy(String orgId) async {
+  Future<void> loadHierarchy(String orgId, {String userId = ''}) async {
     _loading = true;
     notifyListeners();
     try {
-      _hierarchy = await _cloud.callChecked('get-org-hierarchy', params: {'orgId': orgId}) as Map<String, dynamic>?;
+      _hierarchy = await _cloud.callChecked(
+        'get-org-hierarchy',
+        params: {
+          'orgId': orgId,
+          if (userId.isNotEmpty) 'userId': userId,
+        },
+      ) as Map<String, dynamic>?;
     } catch (e) {
       debugPrint('LOAD_HIERARCHY_FAIL: $e');
     } finally {
@@ -65,6 +71,6 @@ class OrgTreeProvider extends ChangeNotifier {
       'shareNotices': shareNotices,
       'userId': userId,
     });
-    await loadHierarchy(orgId);
+    await loadHierarchy(orgId, userId: userId);
   }
 }
