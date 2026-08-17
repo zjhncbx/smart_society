@@ -71,6 +71,7 @@ function makeItem(
   sourceRuleId: string,
   sourceRuleName: string,
   createdAt: Date,
+  correlationId = '',
 ): WorkItem {
   const now = new Date();
   const item = new WorkItem();
@@ -96,6 +97,7 @@ function makeItem(
   item.version = 1;
   item.sourceType = 'system';
   item.sourceId = 'refresh-work-items';
+  item.correlationId = correlationId;
   item.isDeleted = false;
   item.createdAt = createdAt;
   item.createdBy = 'system';
@@ -168,6 +170,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         t.slaDeadline, t.slaDeadline, t.escalationLevel,
         '任务完成并通过来源规则校验', t.sourceRuleId, t.sourceRuleName,
         t.createdAt || now,
+        t.correlationId,
       ));
     }
 
@@ -180,6 +183,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         r.deadline, r.deadline, 0,
         '风险处置完成并经规则校验', r.sourceRuleId, r.sourceRuleName,
         r.createdAt || now,
+        r.correlationId,
       ));
     }
 

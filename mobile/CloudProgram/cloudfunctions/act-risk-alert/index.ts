@@ -164,6 +164,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       callback({ ret: { code: -1, message: '该操作正在处理中，请勿重复提交' } });
       return;
     }
+    const correlationId = 'c' + Date.now() + Math.floor(Math.random() * 1000000);
 
     const now = new Date();
     if (action === 'resolve') {
@@ -190,6 +191,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         risk.metadata = JSON.stringify({ lastNote: note, lastNoteBy: userName, lastNoteAt: now.toISOString() });
       }
     }
+    risk.correlationId = correlationId;
     risk.updatedAt = now;
     await col.upsert([risk]);
 
@@ -207,6 +209,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     ev.metadata = JSON.stringify({ action, note, sourceRuleId: risk.sourceRuleId });
     ev.sourceType = 'manual';
     ev.sourceId = '';
+    ev.correlationId = correlationId;
     ev.version = 1;
     ev.isDeleted = false;
     ev.occurredAt = now;

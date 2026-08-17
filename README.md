@@ -64,7 +64,7 @@
 - **组织数字画像（P1）**：管理健康度（数据质量/流程效率/风险状态/财务健康/项目执行加权评分）+ 组织规模、会员结构、项目执行、财务与流程、风险与数据维度钻取，每一分可追溯到真实业务模块；入口位于“我的”
 - **云端权限安全加固（Web 前置）**：upsert/delete（成员/项目/公告）、get-all-data、组织层级/关系、钉钉凭证接口统一增加云端成员校验，组织关系与钉钉凭证进一步要求管理员；同步队列与拉取自动注入 userId，杜绝按 id/orgId 越权读写
 - **审计日志（Web 前置）**：新增 AuditLog 对象（action/对象/操作人/改前改后/变更原因/关联ID），record/get-audit-log 云函数；成员/项目/公告增删改、财务提交/审批/驳回/结账/反结账等 10 个关键业务函数自动落审计，支持按对象/动作/操作人筛选分页
-- **事件关联链路（Web 前置）**：BusinessEvent 增加 correlationId，事件流支持“一次业务动作产生的一串事件”聚合追踪；云数据契约（统一字段/事件/工作项/新增对象规划）已冻结于 `docs/云数据契约.md`
+- **事件关联链路（Web 前置）**：correlationId 全链贯通——业务动作（财务提交/审批/结账/反结账、自动任务、风险处置、数据治理、工作项处理）生成关联键并写入 BusinessEvent 与 AuditLog；规则引擎生成的自动任务/风险、工作项物化视图携带同一关联键；事件详情页可查看关联ID；云数据契约冻结于 `docs/云数据契约.md`
 - **跨端统一身份（Web 前置）**：按身份规范新增 ExternalIdentity 对象与 ensure-user-identity 云函数（provider+providerSubject → 稳定内部 userId，幂等）；密码账号 AppUser.id 即内部 userId，华为账号 OpenID 不再直接充当业务主键
 - **统一业务 API 与服务端幂等（Web 前置）**：业务动作命名规范（submit/approve/reject/done/close/unclose/resolve/ack/reopen）与幂等契约冻结于 `docs/业务API契约.md`；财务提交/审批/结账/反结账、自动任务、风险处置、数据问题闭环共 7 个关键动作接入 IdempotencyRecord（同键重试返回首次结果，24h 有效），客户端自动生成幂等键
 - **统一工作项 WorkItem（P0-A）**：审批/自动任务/项目任务/风险整改/数据治理统一抽象为 WorkItem（对象含类型/来源/负责人/优先级/SLA/升级/完成条件）；refresh-work-items 从来源业务物化视图并自动关闭已消失项，get-work-items 统一查询，act-work-item 统一处理（自动任务/风险/数据治理同步来源，审批/项目任务跳转来源系统）；移动端新增统一工作项页，Web 直接消费同一接口

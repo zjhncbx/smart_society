@@ -179,6 +179,15 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "correlationId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "createdAt",
       "fieldType": "Date",
       "isNeedEncrypt": false,

@@ -30,7 +30,7 @@
 | ② 统一字段契约 | ❌ 未代码级冻结 | 21 张表中仅 1 张（AuditLog）满足 11 项统一字段；20 张存量表缺 `code/version/sourceType/sourceId` 等 |
 | ③ 云函数权限 | ✅ 组织级已加固 | 49 个函数全量 TS 编译通过；组织级写接口已成员校验，管理员操作已 admin 校验（结账/审批流/期初/组织设置/关系/钉钉凭证） |
 | ④ AuditLog | ✅ 云侧闭环 / ⚠️ 查询入口待建 | AuditLog 对象 + record/get-audit-logs + 10 个关键业务函数接入（成员/项目/公告增删改、财务提交/审批/驳回/结账/反结账）；Web 审计页与端侧页面待建设 |
-| ⑤ BusinessEvent / correlationId | ⚠️ 字段级完成，链路未贯通 | CloudDB 字段 + 17 个云函数模型 + record/get 透传 ✅；但各业务函数 recordEvent 写入 `correlationId=''`（未生成关联键），且 Flutter 模型未含该字段 |
+| ⑤ BusinessEvent / correlationId | ✅ 已全链贯通 | 业务动作生成关联键写入 BusinessEvent/AuditLog；规则引擎任务/风险与 WorkItem 携带同一关联键；Flutter 模型已同步 |
 | ⑥ 跨端 userId | ✅ 客户端已落地 | 华为登录自动换取内部 userId，原 19 处 openId 用法已替换；Person 对象已建 |
 | ⑦ User/Person/Membership | ✅ 第一版落地 | AppUser（User）+ Person + UserOrganization（OrganizationMembership，含 roleId/dataScope/status） |
 | ⑧ Role/Permission/DataScope | ✅ 第一版落地 | Role/Permission/DataScope 对象 + get-my-permissions 云端鉴权（内置矩阵+回退兼容）+ 管理配置接口 |
@@ -80,6 +80,7 @@ Web 项目初始化
 | 2026-08-17 | 基础工程 Go / 核心业务 No-Go | 首版门禁：5 项 P0 架构缺口待封口 |
 | 2026-08-17 | 基础工程 Go / 核心业务 条件 Go | P0-A~E 第一版全部封口（WorkItem/跨端userId/RBAC/统一业务API/幂等），待 AGC 部署验证后正式放行 |
 | 2026-08-17 | 基础工程 Go / 核心业务 条件 Go（加固中） | P0 验收加固 H1：幂等改原子认领+强制 key；WorkItem DataScope 服务端过滤；权限函数身份有效性校验；钉钉同步补 admin 校验；静态安全扫描 |
+| 2026-08-17 | 基础工程 Go / 核心业务 条件 Go（加固完成，待部署验证） | P0 验收加固 H2：correlationId 全链贯通（动作→事件→审计→规则→任务/风险→工作项）；56 函数全量编译通过 |
 
 ---
 
@@ -95,9 +96,9 @@ Web 项目初始化
 | 权限扫描（P0-C） | 56 个函数全量静态扫描：组织级接口成员校验全覆盖；钉钉同步补 admin 校验（与部门列表一致）；join-org/注册登录/用户级接口按设计豁免 |
 | 认证主体绑定 | 当前 apigw-client 网关未暴露调用者身份上下文，先以“内部 userId 有效性校验”兜底；**网关认证绑定（token→userId）列为 Web 阶段 AGC 联调项** |
 
-## 10.2 H2 事件关联链贯通（进行中）
+## 10.2 H2 事件关联链贯通（已完成）
 
-- 业务动作生成 correlationId → BusinessEvent / AuditLog / AutoTask / RiskAlert / WorkItem 全链写入（待完成）
+- ✅ 已完成：7 个业务动作函数 + act-work-item 生成 correlationId 并写入 BusinessEvent / AuditLog；AutoTask / RiskAlert 增加 correlationId，规则引擎生成时携带；refresh-work-items 物化 WorkItem 时从来源复制关联键；get-work-items / get-governance-center / get-business-events 返回关联键；Flutter 模型同步，事件详情页展示关联ID
 
 ---
 

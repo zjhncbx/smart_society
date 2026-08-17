@@ -13,6 +13,7 @@ class AutoTask {
     this.sourceEntityType = '',
     this.sourceEntityId = '',
     this.sourceEntityName = '',
+    this.correlationId = '',
     this.triggerEventId = '',
     this.assigneeId = '',
     this.assigneeName = '',
@@ -38,6 +39,7 @@ class AutoTask {
   final String sourceEntityType;
   final String sourceEntityId;
   final String sourceEntityName;
+  final String correlationId;
   final String triggerEventId;
   final String assigneeId;
   final String assigneeName;
@@ -67,6 +69,7 @@ class AutoTask {
         sourceEntityType: (json['sourceEntityType'] as String?) ?? '',
         sourceEntityId: (json['sourceEntityId'] as String?) ?? '',
         sourceEntityName: (json['sourceEntityName'] as String?) ?? '',
+        correlationId: (json['correlationId'] as String?) ?? '',
         triggerEventId: (json['triggerEventId'] as String?) ?? '',
         assigneeId: (json['assigneeId'] as String?) ?? '',
         assigneeName: (json['assigneeName'] as String?) ?? '',
@@ -106,6 +109,7 @@ class RiskAlert {
     this.resolvedBy = '',
     this.resolvedByName = '',
     this.metadata = const {},
+    this.correlationId = '',
     required this.createdAt,
     this.updatedAt,
   });
@@ -130,6 +134,7 @@ class RiskAlert {
   final String resolvedBy;
   final String resolvedByName;
   final Map<String, dynamic> metadata;
+  final String correlationId;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -160,6 +165,7 @@ class RiskAlert {
         resolvedBy: (json['resolvedBy'] as String?) ?? '',
         resolvedByName: (json['resolvedByName'] as String?) ?? '',
         metadata: _parseMap(json['metadata']),
+        correlationId: (json['correlationId'] as String?) ?? '',
         createdAt: _toDate(json['createdAt']) ?? DateTime.now(),
         updatedAt: _toDate(json['updatedAt']),
       );

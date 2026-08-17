@@ -18,6 +18,7 @@ class BusinessEvent {
     this.metadata = const {},
     this.sourceType = 'manual',
     this.sourceId = '',
+    this.correlationId = '',
     required this.occurredAt,
     this.createdAt,
   });
@@ -34,6 +35,7 @@ class BusinessEvent {
   final Map<String, dynamic> metadata;
   final String sourceType;
   final String sourceId;
+  final String correlationId;
   final DateTime occurredAt;
   final DateTime? createdAt;
 
@@ -52,6 +54,7 @@ class BusinessEvent {
         metadata: _parseMetadata(json['metadata']),
         sourceType: (json['sourceType'] as String?) ?? 'manual',
         sourceId: (json['sourceId'] as String?) ?? '',
+        correlationId: (json['correlationId'] as String?) ?? '',
         occurredAt: _toDate(json['occurredAt']) ?? DateTime.now(),
         createdAt: _toDate(json['createdAt']),
       );

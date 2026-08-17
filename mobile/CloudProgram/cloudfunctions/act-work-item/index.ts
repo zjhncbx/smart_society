@@ -36,6 +36,7 @@ async function recordEvent(
   actorId: string,
   actorName: string,
   metadata: any,
+  correlationId = '',
 ): Promise<void> {
   const now = new Date();
   const ev = new BusinessEvent();
@@ -51,7 +52,7 @@ async function recordEvent(
   ev.metadata = JSON.stringify(metadata || {});
   ev.sourceType = 'manual';
   ev.sourceId = '';
-  ev.correlationId = '';
+  ev.correlationId = correlationId || '';
   ev.version = 1;
   ev.isDeleted = false;
   ev.occurredAt = now;
@@ -100,6 +101,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     }
 
     const now = new Date();
+    const correlationId = 'c' + Date.now() + Math.floor(Math.random() * 1000000);
     const eventCol: CloudDBCollection<BusinessEvent> = db.collection(BusinessEvent);
     const eventType = action === 'done' ? 'completed' : action === 'cancel' ? 'withdrawn' : 'updated';
 
@@ -137,6 +139,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
           task.completedBy = '';
           task.completedByName = '';
         }
+        task.correlationId = correlationId;
         task.updatedAt = now;
         await taskCol.upsert([task]);
       }
@@ -157,6 +160,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
           risk.resolvedByName = '';
         }
         if (note) risk.metadata = JSON.stringify({ lastNote: note, lastNoteBy: userName, lastNoteAt: now.toISOString() });
+        risk.correlationId = correlationId;
         risk.updatedAt = now;
         await riskCol.upsert([risk]);
       }
@@ -189,6 +193,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     if (note) {
       item.description = `${item.description}\n[处理备注] ${note}`.trim();
     }
+    item.correlationId = correlationId;
     item.updatedAt = now;
     item.updatedBy = userId;
     await col.upsert([item]);
@@ -197,6 +202,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       eventCol, orgId, eventType, 'work_item', item.id, item.title,
       userId, userName,
       { action, note, workItemType: item.workItemType, originId: item.originId },
+      correlationId,
     );
 
     logger.info(`act-work-item done: id=${id}, action=${action}, type=${item.workItemType}`);

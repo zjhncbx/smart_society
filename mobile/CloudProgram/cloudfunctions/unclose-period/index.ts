@@ -119,6 +119,7 @@ async function recordAudit(
   before: any,
   after: any,
   changeReason = '',
+  correlationId = '',
 ): Promise<void> {
   const now = new Date();
   const log = new AuditLog();
@@ -134,7 +135,7 @@ async function recordAudit(
   log.before = before !== undefined && before !== null ? JSON.stringify(before) : 'null';
   log.after = after !== undefined && after !== null ? JSON.stringify(after) : 'null';
   log.changeReason = changeReason;
-  log.correlationId = '';
+  log.correlationId = correlationId || '';
   log.status = 'success';
   log.version = 1;
   log.sourceType = 'manual';
@@ -157,6 +158,7 @@ async function recordEvent(
   actorId: string,
   actorName: string,
   metadata: any,
+  correlationId = '',
 ): Promise<void> {
   const now = new Date();
   const ev = new BusinessEvent();
@@ -172,6 +174,7 @@ async function recordEvent(
   ev.metadata = JSON.stringify(metadata || {});
   ev.sourceType = 'manual';
   ev.sourceId = '';
+  ev.correlationId = correlationId || '';
   ev.version = 1;
   ev.isDeleted = false;
   ev.occurredAt = now;
@@ -235,6 +238,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       callback({ ret: { code: -1, message: '该操作正在处理中，请勿重复提交' } });
       return;
     }
+    const correlationId = 'c' + Date.now() + Math.floor(Math.random() * 1000000);
 
     const recordCol: CloudDBCollection<FinanceRecord> = db.collection(FinanceRecord);
     const rows = await queryAllByOrg(recordCol, orgId);
@@ -263,12 +267,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       eventCol, orgId, 'updated', 'finance', `unclose-${year}`, `${year} 年度反结账`,
       userId, userName,
       { year, removed: closing.length },
+      correlationId,
     );
 
     const auditCol: CloudDBCollection<AuditLog> = db.collection(AuditLog);
     await recordAudit(
       auditCol, orgId, 'unclose', 'finance', `unclose-${year}`, `${year} 年度反结账`,
-      userId, userName, closing, null,
+      userId, userName, closing, null, '', correlationId,
     );
 
     await completeIdempotent(

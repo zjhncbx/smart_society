@@ -21,6 +21,7 @@ export class WorkItem {
   version: number = 1;
   sourceType: string = 'manual';
   sourceId: string = '';
+  correlationId: string = '';
   isDeleted: boolean = false;
   createdAt: Date | null = null;
   createdBy: string = '';
@@ -55,6 +56,7 @@ export class WorkItem {
     map.set('version', 'Integer');
     map.set('sourceType', 'String');
     map.set('sourceId', 'String');
+    map.set('correlationId', 'String');
     map.set('isDeleted', 'Boolean');
     map.set('createdAt', 'Date');
     map.set('createdBy', 'String');
@@ -100,6 +102,7 @@ export class WorkItem {
       obj.version = data.version ?? 1;
       obj.sourceType = data.sourceType ?? 'manual';
       obj.sourceId = data.sourceId ?? '';
+      obj.correlationId = data.correlationId ?? '';
       obj.isDeleted = data.isDeleted === true;
       obj.createdAt = data.createdAt ? new Date(data.createdAt) : null;
       obj.createdBy = data.createdBy ?? '';

@@ -20,6 +20,7 @@ class WorkItem {
     this.completionCondition = '',
     this.sourceRuleId = '',
     this.sourceRuleName = '',
+    this.correlationId = '',
     required this.createdAt,
     this.updatedAt,
   });
@@ -43,6 +44,7 @@ class WorkItem {
   final String completionCondition;
   final String sourceRuleId;
   final String sourceRuleName;
+  final String correlationId;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -71,6 +73,7 @@ class WorkItem {
         completionCondition: (json['completionCondition'] as String?) ?? '',
         sourceRuleId: (json['sourceRuleId'] as String?) ?? '',
         sourceRuleName: (json['sourceRuleName'] as String?) ?? '',
+        correlationId: (json['correlationId'] as String?) ?? '',
         createdAt: _toDate(json['createdAt']) ?? DateTime.now(),
         updatedAt: _toDate(json['updatedAt']),
       );

@@ -50,6 +50,7 @@ function toJson(item: WorkItem): any {
     version: item.version,
     sourceType: item.sourceType,
     sourceId: item.sourceId,
+    correlationId: item.correlationId,
     createdAt: item.createdAt ? item.createdAt.toISOString() : '',
     createdBy: item.createdBy,
     updatedAt: item.updatedAt ? item.updatedAt.toISOString() : '',

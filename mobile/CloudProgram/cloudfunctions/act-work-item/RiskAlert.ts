@@ -19,6 +19,7 @@ export class RiskAlert {
   resolvedBy: string = '';
   resolvedByName: string = '';
   metadata: string = '{}';
+  correlationId: string = '';
   createdAt: Date | null = null;
   updatedAt: Date | null = null;
 
@@ -48,6 +49,7 @@ export class RiskAlert {
     map.set('resolvedBy', 'String');
     map.set('resolvedByName', 'String');
     map.set('metadata', 'String');
+    map.set('correlationId', 'String');
     map.set('createdAt', 'Date');
     map.set('updatedAt', 'Date');
     return map;
@@ -88,6 +90,7 @@ export class RiskAlert {
       obj.resolvedBy = data.resolvedBy ?? '';
       obj.resolvedByName = data.resolvedByName ?? '';
       obj.metadata = data.metadata ?? '{}';
+      obj.correlationId = data.correlationId ?? '';
       obj.createdAt = data.createdAt ? new Date(data.createdAt) : null;
       obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     }

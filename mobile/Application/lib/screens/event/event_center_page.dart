@@ -147,6 +147,8 @@ class _EventCenterPageState extends State<EventCenterPage> {
             _DetailRow(label: '时间', value: formatDateTime(event.occurredAt)),
             _DetailRow(label: '级别', value: eventLevelLabel(event.level)),
             _DetailRow(label: '来源', value: event.isSystem ? '系统自动' : '人工操作'),
+            if (event.correlationId.isNotEmpty)
+              _DetailRow(label: '关联ID', value: event.correlationId),
             if (event.metadata.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(

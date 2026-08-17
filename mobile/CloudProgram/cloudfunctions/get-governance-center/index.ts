@@ -36,6 +36,7 @@ function toTaskJson(t: AutoTask): any {
     sourceEntityType: t.sourceEntityType,
     sourceEntityId: t.sourceEntityId,
     sourceEntityName: t.sourceEntityName,
+    correlationId: t.correlationId,
     triggerEventId: t.triggerEventId,
     assigneeId: t.assigneeId,
     assigneeName: t.assigneeName,
@@ -74,6 +75,7 @@ function toRiskJson(r: RiskAlert): any {
     resolvedBy: r.resolvedBy,
     resolvedByName: r.resolvedByName,
     metadata: r.metadata,
+    correlationId: r.correlationId,
     createdAt: r.createdAt ? r.createdAt.toISOString() : '',
     updatedAt: r.updatedAt ? r.updatedAt.toISOString() : '',
   };

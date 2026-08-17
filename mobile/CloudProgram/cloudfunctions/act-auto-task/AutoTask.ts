@@ -4,6 +4,7 @@ export class AutoTask {
   title: string = '';
   description: string = '';
   sourceType: string = 'auto';
+  correlationId: string = '';
   sourceRuleId: string = '';
   sourceRuleName: string = '';
   sourceEntityType: string = '';
@@ -34,6 +35,7 @@ export class AutoTask {
     map.set('title', 'String');
     map.set('description', 'String');
     map.set('sourceType', 'String');
+    map.set('correlationId', 'String');
     map.set('sourceRuleId', 'String');
     map.set('sourceRuleName', 'String');
     map.set('sourceEntityType', 'String');
@@ -75,6 +77,7 @@ export class AutoTask {
       obj.title = data.title ?? '';
       obj.description = data.description ?? '';
       obj.sourceType = data.sourceType ?? 'auto';
+      obj.correlationId = data.correlationId ?? '';
       obj.sourceRuleId = data.sourceRuleId ?? '';
       obj.sourceRuleName = data.sourceRuleName ?? '';
       obj.sourceEntityType = data.sourceEntityType ?? '';

@@ -122,6 +122,7 @@ async function recordAudit(
   before: any,
   after: any,
   changeReason = '',
+  correlationId = '',
 ): Promise<void> {
   const now = new Date();
   const log = new AuditLog();
@@ -137,7 +138,7 @@ async function recordAudit(
   log.before = before !== undefined && before !== null ? JSON.stringify(before) : 'null';
   log.after = after !== undefined && after !== null ? JSON.stringify(after) : 'null';
   log.changeReason = changeReason;
-  log.correlationId = '';
+  log.correlationId = correlationId || '';
   log.status = 'success';
   log.version = 1;
   log.sourceType = 'manual';
@@ -161,6 +162,7 @@ async function recordEvent(
   actorName: string,
   level: string,
   metadata: any,
+  correlationId = '',
 ): Promise<void> {
   const now = new Date();
   const ev = new BusinessEvent();
@@ -176,6 +178,7 @@ async function recordEvent(
   ev.metadata = JSON.stringify(metadata || {});
   ev.sourceType = 'manual';
   ev.sourceId = '';
+  ev.correlationId = correlationId || '';
   ev.version = 1;
   ev.isDeleted = false;
   ev.occurredAt = now;
@@ -399,6 +402,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       callback({ ret: { code: -1, message: '该操作正在处理中，请勿重复提交' } });
       return;
     }
+    const correlationId = 'c' + Date.now() + Math.floor(Math.random() * 1000000);
 
     let snapshot: any = {};
     try {
@@ -454,12 +458,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         eventCol, orgId, 'rejected', 'approval', instance.id, instance.title,
         userId, userName, 'warning',
         { action, comment, bizId: instance.bizId },
+        correlationId,
       );
       const auditCol: CloudDBCollection<AuditLog> = db.collection(AuditLog);
       await recordAudit(
         auditCol, orgId, 'reject', 'approval', instance.id, instance.title,
         userId, userName, { status: 'running' }, { status: 'rejected', comment },
-        comment,
+        comment, correlationId,
       );
       await completeIdempotent(idemCol, idempotencyKey, { status: 'rejected' });
       callback({ ret: { code: 0, message: 'ok', data: { status: 'rejected' } } });
@@ -502,6 +507,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         status: finished ? 'approved' : 'approving',
         bizId: instance.bizId,
       },
+      correlationId,
     );
 
     const auditCol: CloudDBCollection<AuditLog> = db.collection(AuditLog);
@@ -511,7 +517,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       userId, userName,
       { status: 'running' },
       { status: finished ? 'approved' : 'approving', comment },
-      comment,
+      comment, correlationId,
     );
 
     await completeIdempotent(
