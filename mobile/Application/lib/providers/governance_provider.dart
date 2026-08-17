@@ -38,6 +38,10 @@ class GovernanceProvider extends ChangeNotifier {
   int get riskCount => _openRisks.where((r) => r.isRisk).length;
   int get warningCount => _openRisks.where((r) => r.isWarning).length;
 
+  /// 已升级任务（流程阻塞/需升级）
+  int get escalatedTaskCount =>
+      _openTasks.where((t) => t.escalationLevel > 0).length;
+
   /// 首页风险预警卡：风险优先，其次预警
   List<RiskAlert> get prioritizedRisks {
     final list = [..._openRisks];

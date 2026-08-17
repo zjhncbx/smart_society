@@ -5,13 +5,13 @@ import 'package:provider/provider.dart';
 import '../../config/finance_config.dart';
 import '../../config/org_config_provider.dart';
 import '../../models/business_event.dart';
+import '../../models/data_quality.dart';
 import '../../models/governance.dart';
 import '../../models/project.dart';
 import '../../providers/finance_provider.dart';
 import '../../providers/event_provider.dart';
 import '../../providers/data_quality_provider.dart';
 import '../../providers/governance_provider.dart';
-import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
 import '../../providers/organization_provider.dart';
 import '../../providers/project_provider.dart';
@@ -93,10 +93,8 @@ class _HomePageState extends State<HomePage> {
     final theme = Theme.of(context);
     final appTheme = context.appTheme;
     final org = context.watch<OrganizationProvider>().currentOrg;
-    final members = context.watch<MemberProvider>().totalCount;
     final projects = context.watch<ProjectProvider>().projects;
     final activeProjects = projects.where((p) => p.status == kProjectActive).toList();
-    final unread = context.watch<NoticeProvider>().unreadCount;
     final notices = context.watch<NoticeProvider>().sortedNotices.take(3).toList();
     final taskCount = context.watch<FinanceProvider>().taskCount;
     final finance = context.watch<FinanceProvider>();
@@ -149,55 +147,46 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(fontSize: 13, color: appTheme.textSecondary),
           ),
           const SizedBox(height: 16),
-          // 统计卡
-          Row(
-            children: [
-              _StatCard(
-                label: '成员总数',
-                value: '$members',
-                icon: Icons.people_outline,
-                color: const Color(0xFF3370FF),
-                onTap: () => context.go('/members'),
-              ),
-              const SizedBox(width: 12),
-              _StatCard(
-                label: '进行中项目',
-                value: '${activeProjects.length}',
-                icon: Icons.task_alt_outlined,
-                color: const Color(0xFF00B96B),
-                onTap: () => context.go('/projects'),
-              ),
-            ],
+          // 组织态势总览（APP-01）
+          _OrgPostureCard(
+            approvalTaskCount: taskCount,
+            autoTaskCount: gov.openTaskCount,
+            riskCount: gov.riskCount,
+            warningCount: gov.warningCount,
+            dqOpenCount: dq.openTotal,
+            dqScore: dq.snapshot.score,
+            topRisks: gov.prioritizedRisks.take(2).toList(),
+            topDqIssues: dq.sortedIssues
+                .where((i) => i.isOpen && i.severity == 'high')
+                .take(2)
+                .toList(),
+            onOpenApprovals: () => context.go('/finance/tasks'),
+            onOpenAutoTasks: () => context.go('/governance/tasks'),
+            onOpenRisks: () => context.go('/governance/risks'),
+            onOpenQuality: () => context.go('/quality'),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              _StatCard(
-                label: '未读通知',
-                value: '$unread',
-                icon: Icons.campaign_outlined,
-                color: const Color(0xFFFF8800),
-                onTap: () => context.go('/notices'),
-              ),
-              const SizedBox(width: 12),
-              _StatCard(
-                label: '我的待办',
-                value: '$taskCount',
-                icon: Icons.inbox_outlined,
-                color: const Color(0xFFF54A45),
-                onTap: () => context.go('/finance/tasks'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // 我的任务
-          _MyTasksCard(
+          // 必须处理
+          _MustHandleCard(
+            approvalCount: taskCount,
+            autoTaskCount: gov.openTaskCount,
             binding: binding,
             overdue: overdue,
             dueToday: dueToday,
             dueWeek: dueWeek,
-            onTap: () => context.go('/projects'),
+            onOpenApprovals: () => context.go('/finance/tasks'),
+            onOpenAutoTasks: () => context.go('/governance/tasks'),
+            onOpenProjects: () => context.go('/projects'),
           ),
+          if (gov.escalatedTaskCount > 0 || dq.highSeverityOpenCount > 0) ...[
+            const SizedBox(height: 12),
+            _FlowBlockCard(
+              escalatedCount: gov.escalatedTaskCount,
+              highDqCount: dq.highSeverityOpenCount,
+              onOpenAutoTasks: () => context.go('/governance/tasks'),
+              onOpenQuality: () => context.go('/quality'),
+            ),
+          ],
           const SizedBox(height: 12),
           // 财务概览
           _FinanceOverviewCard(stats: finance.stats),
@@ -209,20 +198,6 @@ class _HomePageState extends State<HomePage> {
               onTap: (id) => context.go('/projects/$id'),
             ),
           ],
-          const SizedBox(height: 12),
-          _DataQualityCard(
-            score: dq.snapshot.score,
-            openCount: dq.openTotal,
-            hasSnapshot: dq.snapshot.checkedAt != null,
-            onTap: () => context.go('/quality'),
-          ),
-          const SizedBox(height: 12),
-          _RiskOverviewCard(
-            riskCount: gov.riskCount,
-            warningCount: gov.warningCount,
-            topRisks: gov.prioritizedRisks.take(3).toList(),
-            onTap: () => context.go('/governance/risks'),
-          ),
           const SizedBox(height: 20),
           // 快捷入口
           AppCard(
@@ -490,59 +465,216 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({
+class _OrgPostureCard extends StatelessWidget {
+  const _OrgPostureCard({
+    required this.approvalTaskCount,
+    required this.autoTaskCount,
+    required this.riskCount,
+    required this.warningCount,
+    required this.dqOpenCount,
+    required this.dqScore,
+    required this.topRisks,
+    required this.topDqIssues,
+    required this.onOpenApprovals,
+    required this.onOpenAutoTasks,
+    required this.onOpenRisks,
+    required this.onOpenQuality,
+  });
+
+  final int approvalTaskCount;
+  final int autoTaskCount;
+  final int riskCount;
+  final int warningCount;
+  final int dqOpenCount;
+  final int dqScore;
+  final List<RiskAlert> topRisks;
+  final List<DataQualityIssue> topDqIssues;
+  final VoidCallback onOpenApprovals;
+  final VoidCallback onOpenAutoTasks;
+  final VoidCallback onOpenRisks;
+  final VoidCallback onOpenQuality;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appTheme = context.appTheme;
+    final pendingCount = approvalTaskCount + autoTaskCount;
+    final (String statusLabel, Color statusColor) = riskCount > 0
+        ? ('需介入', const Color(0xFFF54A45))
+        : (pendingCount > 0 || warningCount > 0 || dqOpenCount > 0)
+            ? ('关注', const Color(0xFFFF8800))
+            : ('正常', const Color(0xFF00B96B));
+    final concerns = <Widget>[
+      for (final risk in topRisks)
+        _ConcernRow(
+          color: risk.isRisk
+              ? const Color(0xFFF54A45)
+              : const Color(0xFFFF8800),
+          text: '${risk.isRisk ? '风险' : '预警'} · ${risk.title}',
+          onTap: onOpenRisks,
+        ),
+      for (final issue in topDqIssues)
+        _ConcernRow(
+          color: const Color(0xFFF54A45),
+          text: '数据 · ${issue.ruleName}：${issue.entityName}',
+          onTap: onOpenQuality,
+        ),
+    ];
+
+    return AppCard(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  '组织态势',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '组织运行：$statusLabel',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _PostureCount(
+                  label: '待处理',
+                  value: '$pendingCount',
+                  color: theme.colorScheme.primary,
+                  onTap: pendingCount > 0 ? onOpenApprovals : null,
+                ),
+                _PostureCount(
+                  label: '风险',
+                  value: '$riskCount',
+                  color: const Color(0xFFF54A45),
+                  onTap: riskCount > 0 ? onOpenRisks : null,
+                ),
+                _PostureCount(
+                  label: '预警',
+                  value: '$warningCount',
+                  color: const Color(0xFFFF8800),
+                  onTap: warningCount > 0 ? onOpenRisks : null,
+                ),
+                _PostureCount(
+                  label: '数据问题',
+                  value: '$dqOpenCount',
+                  color: const Color(0xFF7B61FF),
+                  onTap: dqOpenCount > 0 ? onOpenQuality : null,
+                ),
+              ],
+            ),
+            if (concerns.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+              Text(
+                '当前最值得关注',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: appTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              ...concerns,
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PostureCount extends StatelessWidget {
+  const _PostureCount({
     required this.label,
     required this.value,
-    required this.icon,
     required this.color,
     required this.onTap,
   });
 
   final String label;
   final String value;
-  final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(label, style: const TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConcernRow extends StatelessWidget {
+  const _ConcernRow({
+    required this.color,
+    required this.text,
+    required this.onTap,
+  });
+
+  final Color color;
+  final String text;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final appTheme = context.appTheme;
-    return Expanded(
-      child: AppCard(
-        margin: EdgeInsets.zero,
-        onTap: onTap,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 22, color: color),
+              width: 6,
+              height: 6,
+              decoration:
+                  BoxDecoration(color: color, shape: BoxShape.circle),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: appTheme.textSecondary,
-                    ),
-                  ),
-                ],
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13),
               ),
             ),
           ],
@@ -552,93 +684,188 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _MyTasksCard extends StatelessWidget {
-  const _MyTasksCard({
+class _MustHandleCard extends StatelessWidget {
+  const _MustHandleCard({
+    required this.approvalCount,
+    required this.autoTaskCount,
     required this.binding,
     required this.overdue,
     required this.dueToday,
     required this.dueWeek,
-    required this.onTap,
+    required this.onOpenApprovals,
+    required this.onOpenAutoTasks,
+    required this.onOpenProjects,
   });
 
+  final int approvalCount;
+  final int autoTaskCount;
   final ({String memberId, String memberName})? binding;
   final int overdue;
   final int dueToday;
   final int dueWeek;
-  final VoidCallback onTap;
+  final VoidCallback onOpenApprovals;
+  final VoidCallback onOpenAutoTasks;
+  final VoidCallback onOpenProjects;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final appTheme = context.appTheme;
+    final myTaskSummary = binding == null
+        ? '未绑定会员'
+        : overdue > 0
+            ? '$overdue 项逾期'
+            : '今日 $dueToday · 7 天内 $dueWeek';
     return AppCard(
       margin: EdgeInsets.zero,
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '我的任务${binding != null ? '（${binding!.memberName}）' : ''}',
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 10),
-          if (binding == null)
-            Text(
-              '尚未绑定会员，请先在「我的」中绑定身份',
-              style: TextStyle(fontSize: 13, color: appTheme.textSecondary),
-            )
-          else
-            Row(
-              children: [
-                _TaskStat(
-                  label: '已逾期',
-                  value: '$overdue',
-                  color: const Color(0xFFF54A45),
-                ),
-                _TaskStat(
-                  label: '今日到期',
-                  value: '$dueToday',
-                  color: const Color(0xFFFF8800),
-                ),
-                _TaskStat(
-                  label: '7 天内',
-                  value: '$dueWeek',
-                  color: theme.colorScheme.primary,
-                ),
-              ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                '必须处理',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
             ),
-        ],
+            _HandleRow(
+              icon: Icons.fact_check_outlined,
+              color: const Color(0xFF3370FF),
+              label: '审批待办',
+              value: '$approvalCount 项',
+              onTap: onOpenApprovals,
+            ),
+            const Divider(height: 1, indent: 54),
+            _HandleRow(
+              icon: Icons.auto_awesome_outlined,
+              color: const Color(0xFF7B61FF),
+              label: '自动任务',
+              value: '$autoTaskCount 项',
+              onTap: onOpenAutoTasks,
+            ),
+            const Divider(height: 1, indent: 54),
+            _HandleRow(
+              icon: Icons.task_alt_outlined,
+              color: overdue > 0
+                  ? const Color(0xFFF54A45)
+                  : const Color(0xFF00B96B),
+              label: '我的任务${binding != null ? '（${binding!.memberName}）' : ''}',
+              value: myTaskSummary,
+              onTap: onOpenProjects,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+              child: Text(
+                '审批与自动任务统一在这里处理，系统生成的每一项任务都可追溯触发原因',
+                style: TextStyle(fontSize: 12, color: appTheme.textSecondary),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _TaskStat extends StatelessWidget {
-  const _TaskStat({
+class _HandleRow extends StatelessWidget {
+  const _HandleRow({
+    required this.icon,
+    required this.color,
     required this.label,
     required this.value,
-    required this.color,
+    required this.onTap,
   });
 
+  final IconData icon;
+  final Color color;
   final String label;
   final String value;
-  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FlowBlockCard extends StatelessWidget {
+  const _FlowBlockCard({
+    required this.escalatedCount,
+    required this.highDqCount,
+    required this.onOpenAutoTasks,
+    required this.onOpenQuality,
+  });
+
+  final int escalatedCount;
+  final int highDqCount;
+  final VoidCallback onOpenAutoTasks;
+  final VoidCallback onOpenQuality;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      margin: EdgeInsets.zero,
       child: Column(
         children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: color,
+          if (escalatedCount > 0)
+            _HandleRow(
+              icon: Icons.rocket_launch_outlined,
+              color: const Color(0xFFF54A45),
+              label: '流程阻塞（已升级自动任务）',
+              value: '$escalatedCount 项',
+              onTap: onOpenAutoTasks,
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 12)),
+          if (escalatedCount > 0 && highDqCount > 0)
+            const Divider(height: 1, indent: 54),
+          if (highDqCount > 0)
+            _HandleRow(
+              icon: Icons.report_gmailerrorred_outlined,
+              color: const Color(0xFFFF8800),
+              label: '严重数据问题',
+              value: '$highDqCount 项',
+              onTap: onOpenQuality,
+            ),
         ],
       ),
     );
@@ -786,197 +1013,6 @@ class _BudgetWarningsCard extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _DataQualityCard extends StatelessWidget {
-  const _DataQualityCard({
-    required this.score,
-    required this.openCount,
-    required this.hasSnapshot,
-    required this.onTap,
-  });
-
-  final int score;
-  final int openCount;
-  final bool hasSnapshot;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final appTheme = context.appTheme;
-    final color = score >= 90
-        ? const Color(0xFF00B96B)
-        : score >= 70
-            ? const Color(0xFFFF8800)
-            : const Color(0xFFF54A45);
-    return AppCard(
-      margin: EdgeInsets.zero,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.verified_outlined, size: 22, color: color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '数据治理健康度',
-                    style: TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    hasSnapshot
-                        ? (openCount > 0
-                            ? '$score 分 · $openCount 项数据问题待处理'
-                            : '$score 分 · 数据质量良好')
-                        : '尚未运行数据质量检查',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, size: 18, color: appTheme.textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RiskOverviewCard extends StatelessWidget {
-  const _RiskOverviewCard({
-    required this.riskCount,
-    required this.warningCount,
-    required this.topRisks,
-    required this.onTap,
-  });
-
-  final int riskCount;
-  final int warningCount;
-  final List<RiskAlert> topRisks;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final appTheme = context.appTheme;
-    return AppCard(
-      margin: EdgeInsets.zero,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded,
-                    size: 18, color: Color(0xFFF54A45)),
-                const SizedBox(width: 6),
-                const Text(
-                  '风险预警',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                ),
-                const Spacer(),
-                if (riskCount > 0)
-                  _RiskCountBadge(
-                    label: '风险 $riskCount',
-                    color: const Color(0xFFF54A45),
-                  ),
-                if (warningCount > 0) ...[
-                  const SizedBox(width: 6),
-                  _RiskCountBadge(
-                    label: '预警 $warningCount',
-                    color: const Color(0xFFFF8800),
-                  ),
-                ],
-                if (riskCount == 0 && warningCount == 0)
-                  Text(
-                    '运行规则后自动识别',
-                    style:
-                        TextStyle(fontSize: 12, color: appTheme.textSecondary),
-                  ),
-              ],
-            ),
-            if (topRisks.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              for (final risk in topRisks)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: risk.isRisk
-                              ? const Color(0xFFF54A45)
-                              : const Color(0xFFFF8800),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          risk.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RiskCountBadge extends StatelessWidget {
-  const _RiskCountBadge({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }

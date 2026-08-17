@@ -43,6 +43,10 @@ class DataQualityProvider extends ChangeNotifier {
   String get category => _category;
   String get status => _status;
 
+  /// 严重（high）且待处理的问题数
+  int get highSeverityOpenCount =>
+      _issues.where((i) => i.isOpen && i.severity == 'high').length;
+
   /// 待处理问题（open 优先，其次按时间倒序）
   List<DataQualityIssue> get sortedIssues {
     final list = [..._issues];
