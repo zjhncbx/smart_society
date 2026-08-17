@@ -250,6 +250,40 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 12),
+          // 组织数字画像
+          AppCard(
+            onTap: () => context.push('/portrait'),
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Icon(Icons.dashboard_customize_outlined,
+                    color: cs.tertiary, size: 28),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '组织数字画像',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '管理健康度评分与规模/会员/项目/财务/流程/风险/数据钻取',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: cs.outline),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
           // Section: Dashboard
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),

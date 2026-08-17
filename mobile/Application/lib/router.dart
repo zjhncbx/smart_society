@@ -24,6 +24,7 @@ import 'screens/project/project_list_page.dart';
 import 'screens/project/project_board_page.dart';
 import 'screens/org/org_selector_page.dart';
 import 'screens/profile/profile_page.dart';
+import 'screens/profile/org_portrait_page.dart';
 import 'screens/settings/settings_page.dart';
 import 'screens/settings/setup_wizard_page.dart';
 import 'screens/event/event_center_page.dart';
@@ -233,6 +234,11 @@ final GoRouter appRouter = GoRouter(
       path: '/profile',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => const ProfilePage(),
+    ),
+    GoRoute(
+      path: '/portrait',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const OrgPortraitPage(),
     ),
     GoRoute(
       path: '/setup',
