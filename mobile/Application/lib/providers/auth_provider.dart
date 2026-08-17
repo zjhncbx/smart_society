@@ -32,6 +32,26 @@ class AuthProvider extends ChangeNotifier {
     }
     gate.isAuthenticated = _user != null;
     notifyListeners();
+    // 华为账号登录态与原生 AGC Auth 会话对齐：避免 Hive 残留造成“假已登录”，
+    // 也避免 AGC 已有会话时登录页重复 signIn 触发 1210005。
+    if (_user?.loginType == 'huawei') {
+      final native = await _authService.getCurrentUser();
+      if (native == null) {
+        if (_user != null) {
+          debugPrint('[AuthProvider] init: 原生会话不存在，清除本地残留登录态');
+          _user = null;
+          gate.isAuthenticated = false;
+          await box.delete(_userKey);
+          notifyListeners();
+        }
+      } else if (_user == null || _user!.openId != native.openId) {
+        debugPrint('[AuthProvider] init: 以原生 AGC 会话为准');
+        _user = native;
+        gate.isAuthenticated = true;
+        await box.put(_userKey, _user!.toJson());
+        notifyListeners();
+      }
+    }
   }
 
   Future<void> signIn() async {

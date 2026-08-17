@@ -4,7 +4,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { buffer } from '@kit.ArkTS';
 import { cloudCommon, cloudFunction } from '@kit.CloudFoundationKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import auth from '@hw-agconnect/auth';
+import auth, { AuthUser } from '@hw-agconnect/auth';
 import {
   FlutterAbility,
   FlutterEngine,
@@ -174,23 +174,48 @@ export default class EntryAbility extends FlutterAbility {
 
   private handleSignIn(result: MethodResult) {
     hilog.info(0x0000, AUTH_TAG, 'signIn: calling AGC auth signIn with hwid')
-    auth.signIn({
-      autoCreateUser: true,
-      credentialInfo: { kind: 'hwid' },
-    }).then((signInResult) => {
-      const user = signInResult.getUser()
-      const uid = user.getUid()
-      const displayName = user.getDisplayName()
-      const photoUrl = user.getPhotoUrl()
-      hilog.info(0x0000, AUTH_TAG, 'signIn success: uid=%{public}s displayName=%{public}s', uid, displayName)
-      const userInfo: Record<string, string> = { 'openId': uid }
-      if (displayName) userInfo['displayName'] = displayName
-      if (photoUrl) userInfo['avatarUri'] = photoUrl
-      result.success(JSON.stringify(userInfo))
+    // 幂等登录：AGC Auth 已有会话时直接复用，避免 1210005（already sign in）导致登录失败
+    auth.getCurrentUser().then((existing) => {
+      if (existing != null) {
+        hilog.info(0x0000, AUTH_TAG, 'signIn: already signed in, reuse uid=%{public}s', existing.getUid())
+        this.emitAuthUser(existing, result)
+        return
+      }
+      auth.signIn({
+        autoCreateUser: true,
+        credentialInfo: { kind: 'hwid' },
+      }).then((signInResult) => {
+        const user = signInResult.getUser()
+        const uid = user.getUid()
+        hilog.info(0x0000, AUTH_TAG, 'signIn success: uid=%{public}s displayName=%{public}s', uid, user.getDisplayName())
+        this.emitAuthUser(user, result)
+      }).catch((err: BusinessError) => {
+        hilog.error(0x0000, AUTH_TAG, 'signIn failed: code=%{public}d msg=%{public}s', err.code, err.message)
+        result.error(String(err.code), err.message, null)
+      })
     }).catch((err: BusinessError) => {
-      hilog.error(0x0000, AUTH_TAG, 'signIn failed: code=%{public}d msg=%{public}s', err.code, err.message)
-      result.error(String(err.code), err.message, null)
+      // getCurrentUser 异常时退回重新登录
+      hilog.warn(0x0000, AUTH_TAG, 'getCurrentUser failed: code=%{public}d msg=%{public}s, fallback signIn', err.code, err.message)
+      auth.signIn({
+        autoCreateUser: true,
+        credentialInfo: { kind: 'hwid' },
+      }).then((signInResult) => {
+        this.emitAuthUser(signInResult.getUser(), result)
+      }).catch((signErr: BusinessError) => {
+        hilog.error(0x0000, AUTH_TAG, 'signIn failed: code=%{public}d msg=%{public}s', signErr.code, signErr.message)
+        result.error(String(signErr.code), signErr.message, null)
+      })
     })
+  }
+
+  private emitAuthUser(user: AuthUser, result: MethodResult): void {
+    const uid = user.getUid()
+    const displayName = user.getDisplayName()
+    const photoUrl = user.getPhotoUrl()
+    const userInfo: Record<string, string> = { 'openId': uid }
+    if (displayName) userInfo['displayName'] = displayName
+    if (photoUrl) userInfo['avatarUri'] = photoUrl
+    result.success(JSON.stringify(userInfo))
   }
 
   private handleSignOut(result: MethodResult) {

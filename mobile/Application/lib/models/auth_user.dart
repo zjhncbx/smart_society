@@ -9,12 +9,16 @@ class AuthUser {
   final String? displayName;
   final String? avatarUri;
 
+  /// 登录方式：huawei = 华为账号（AGC Auth 原生会话），account = 手机号/邮箱密码（云函数账号）
+  final String loginType;
+
   const AuthUser({
     required this.id,
     required this.openId,
     this.unionId,
     this.displayName,
     this.avatarUri,
+    this.loginType = 'huawei',
   });
 
   String get displayNameOrId => displayName ?? '用户$openIdSuffix';
@@ -27,6 +31,7 @@ class AuthUser {
         if (unionId != null) 'unionId': unionId,
         if (displayName != null) 'displayName': displayName,
         if (avatarUri != null) 'avatarUri': avatarUri,
+        'loginType': loginType,
       };
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -39,6 +44,8 @@ class AuthUser {
       unionId: json['unionId'] as String?,
       displayName: json['displayName'] as String?,
       avatarUri: json['avatarUri'] as String?,
+      // 兼容旧会话：缺失时按华为账号处理
+      loginType: (json['loginType'] as String?) ?? 'huawei',
     );
   }
 }

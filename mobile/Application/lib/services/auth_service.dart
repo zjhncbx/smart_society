@@ -57,6 +57,7 @@ class AuthService {
         unionId: external.unionId,
         displayName: external.displayName,
         avatarUri: external.avatarUri,
+        loginType: 'huawei',
       );
     } on PlatformException catch (e) {
       _log('signIn: PlatformException code=${e.code} message=${e.message} details=${e.details}');
@@ -112,6 +113,37 @@ class AuthService {
       id: userId,
       openId: userId,
       displayName: (map['displayName'] as String?) ?? '用户',
+      loginType: 'account',
     );
+  }
+
+  /// 查询原生 AGC Auth 会话；未登录返回 null，通道不可用时返回 null（不阻断启动）。
+  Future<AuthUser?> getCurrentUser() async {
+    try {
+      final raw = await _channel
+          .invokeMethod<String>('getUserInfo')
+          .timeout(const Duration(seconds: 10));
+      if (raw == null || raw.isEmpty) return null;
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final openId = json['openId'] as String?;
+      if (openId == null || openId.isEmpty) return null;
+      return AuthUser(
+        id: openId,
+        openId: openId,
+        displayName: json['displayName'] as String?,
+        avatarUri: json['avatarUri'] as String?,
+        loginType: 'huawei',
+      );
+    } on PlatformException catch (e) {
+      if (e.code == 'NOT_LOGGED_IN') {
+        _log('getCurrentUser: 未登录');
+        return null;
+      }
+      _log('getCurrentUser: 通道异常 code=${e.code} msg=${e.message}');
+      return null;
+    } catch (e) {
+      _log('getCurrentUser: 异常 $e');
+      return null;
+    }
   }
 }
