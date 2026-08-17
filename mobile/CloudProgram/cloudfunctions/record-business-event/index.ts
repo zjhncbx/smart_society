@@ -72,6 +72,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     ev.metadata = JSON.stringify(params?.metadata || {});
     ev.sourceType = String(params?.sourceType || 'manual');
     ev.sourceId = String(params?.sourceId || '');
+    ev.correlationId = String(params?.correlationId || '');
     ev.version = 1;
     ev.isDeleted = false;
     ev.occurredAt = now;

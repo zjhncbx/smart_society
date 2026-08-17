@@ -70,6 +70,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       metadata: e.metadata,
       sourceType: e.sourceType,
       sourceId: e.sourceId,
+      correlationId: e.correlationId,
       version: e.version,
       isDeleted: e.isDeleted,
       occurredAt: e.occurredAt ? e.occurredAt.toISOString() : '',

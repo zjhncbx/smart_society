@@ -109,6 +109,15 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "correlationId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "version",
       "fieldType": "Integer",
       "isNeedEncrypt": false,
