@@ -2,7 +2,7 @@ export class UserOrganization {
   id: string = '';
   userId: string = '';
   orgId: string = '';
-  role: string = '';
+  role: string = 'admin';
   memberId: string = '';
   joinedAt: Date = new Date();
 
@@ -26,7 +26,7 @@ export class UserOrganization {
   }
 
   getIndexList(): string[] {
-    return ['id'];
+    return ['id', 'userId', 'memberId'];
   }
 
   getEncryptedFieldList(): string[] {
@@ -39,7 +39,7 @@ export class UserOrganization {
       obj.id = data.id ?? '';
       obj.userId = data.userId ?? '';
       obj.orgId = data.orgId ?? '';
-      obj.role = data.role ?? '';
+      obj.role = data.role ?? 'admin';
       obj.memberId = data.memberId ?? '';
       obj.joinedAt = data.joinedAt ? new Date(data.joinedAt) : new Date();
     }

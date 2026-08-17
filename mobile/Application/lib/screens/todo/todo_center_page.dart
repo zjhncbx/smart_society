@@ -95,6 +95,10 @@ class _TodoCenterPageState extends State<TodoCenterPage> {
                         ),
                       ),
                     ),
+                    TextButton(
+                      onPressed: () => context.go('/work-items'),
+                      child: const Text('统一工作项'),
+                    ),
                   ],
                 ),
               ),

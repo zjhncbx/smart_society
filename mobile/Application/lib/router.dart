@@ -35,6 +35,7 @@ import 'screens/governance/risk_detail_page.dart';
 import 'screens/search/global_search_page.dart';
 import 'screens/sync/sync_center_page.dart';
 import 'screens/todo/todo_center_page.dart';
+import 'screens/work_item/work_item_center_page.dart';
 import 'services/auth_gate.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -224,6 +225,11 @@ final GoRouter appRouter = GoRouter(
       path: '/todo',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => const TodoCenterPage(),
+    ),
+    GoRoute(
+      path: '/work-items',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const WorkItemCenterPage(),
     ),
     GoRoute(
       path: '/sync',

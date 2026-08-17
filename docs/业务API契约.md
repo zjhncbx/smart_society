@@ -28,6 +28,7 @@
 | done/cancel/reopen-auto-task | `act-auto-task` | 自动任务处理 |
 | resolve/ack/reopen-risk | `act-risk-alert` | 风险/预警处理 |
 | resolve/ignore/reopen-data-quality | `resolve-data-quality-issue` | 数据问题闭环 |
+| sync/get/act-work-item | `refresh-work-items` / `get-work-items` / `act-work-item` | 统一工作项物化/查询/处理 |
 | run-data-quality | `run-data-quality` | 数据质量检查 |
 | run-governance-rules | `run-governance-rules` | 规则引擎批量运行 |
 | record-event / record-audit | `record-business-event` / `record-audit-log` | 事件与审计写入 |

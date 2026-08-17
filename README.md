@@ -67,6 +67,7 @@
 - **事件关联链路（Web 前置）**：BusinessEvent 增加 correlationId，事件流支持“一次业务动作产生的一串事件”聚合追踪；云数据契约（统一字段/事件/工作项/新增对象规划）已冻结于 `docs/云数据契约.md`
 - **跨端统一身份（Web 前置）**：按身份规范新增 ExternalIdentity 对象与 ensure-user-identity 云函数（provider+providerSubject → 稳定内部 userId，幂等）；密码账号 AppUser.id 即内部 userId，华为账号 OpenID 不再直接充当业务主键
 - **统一业务 API 与服务端幂等（Web 前置）**：业务动作命名规范（submit/approve/reject/done/close/unclose/resolve/ack/reopen）与幂等契约冻结于 `docs/业务API契约.md`；财务提交/审批/结账/反结账、自动任务、风险处置、数据问题闭环共 7 个关键动作接入 IdempotencyRecord（同键重试返回首次结果，24h 有效），客户端自动生成幂等键
+- **统一工作项 WorkItem（P0-A）**：审批/自动任务/项目任务/风险整改/数据治理统一抽象为 WorkItem（对象含类型/来源/负责人/优先级/SLA/升级/完成条件）；refresh-work-items 从来源业务物化视图并自动关闭已消失项，get-work-items 统一查询，act-work-item 统一处理（自动任务/风险/数据治理同步来源，审批/项目任务跳转来源系统）；移动端新增统一工作项页，Web 直接消费同一接口
 - **成员数据管理**：支持 CSV 导出与粘贴导入（钉钉托管组织仅可导出）；财务支持反结账（撤销结转凭证，恢复年度录入）
 - **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
 
@@ -164,7 +165,7 @@ flutter run --debug -d <deviceId>
 
 ### 3. 云数据库
 
-22 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
+23 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
 
 | 对象类型 | 主键 | 说明 |
 |----------|------|------|
@@ -189,12 +190,13 @@ flutter run --debug -d <deviceId>
 | AuditLog | id | 审计日志（改前改后/操作人/变更原因/关联ID） |
 | ExternalIdentity | identityId | 外部身份映射（provider+providerSubject → 内部 userId） |
 | IdempotencyRecord | id=幂等键 | 业务动作幂等记录（action/entity/result/有效期） |
+| WorkItem | id | 统一工作项（类型/来源/负责人/SLA/完成条件） |
 
 权限配置：World/Authenticated 仅可读，Creator/Administrator 可读写删。端侧不直连云数据库，由云函数服务端 SDK 访问；`OrgSettings` 中的钉钉凭证由 `get-org-settings` 按角色裁剪，普通成员不可见。
 
 ### 4. 云函数
 
-49 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
+52 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
 
 **数据 CRUD（7 个，按 orgId 隔离）**：
 
@@ -323,7 +325,7 @@ flutter run --debug -d <deviceId>
 | 端云一体化工程结构 | ✅ | mobile/Application/ + mobile/CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
-| 云函数部署 + 真机联调 | ✅ | 49 个云函数 + 22 张表部署至 AGC |
+| 云函数部署 + 真机联调 | ✅ | 52 个云函数 + 23 张表部署至 AGC |
 | 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
 | **设置数据上云（V3.2）** | ✅ | 角色名/钉钉配置/主题/昵称云端存储，按组织隔离，凭证仅管理员可见 |
 | **事件中心（V4.1）** | ✅ | 统一业务事件模型 + 云函数自动落事件 + 组织事件流页 |

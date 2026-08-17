@@ -15,6 +15,7 @@ import 'providers/project_provider.dart';
 import 'providers/role_config_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/sync_provider.dart';
+import 'providers/work_item_provider.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/settings/setup_wizard_page.dart';
 import 'router.dart';
@@ -297,6 +298,13 @@ class SmartSocietyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => GovernanceProvider(
+            orgIdGetter: orgIdGetter(),
+            userIdGetter: () => authProvider.user?.openId ?? '',
+            userNameGetter: () => settingsProvider.nickname,
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => WorkItemProvider(
             orgIdGetter: orgIdGetter(),
             userIdGetter: () => authProvider.user?.openId ?? '',
             userNameGetter: () => settingsProvider.nickname,

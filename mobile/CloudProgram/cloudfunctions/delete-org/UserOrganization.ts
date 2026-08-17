@@ -3,6 +3,7 @@ export class UserOrganization {
   userId: string = '';
   orgId: string = '';
   role: string = 'admin';
+  memberId: string = '';
   joinedAt: Date = new Date();
 
   getClassName(): string {
@@ -15,6 +16,7 @@ export class UserOrganization {
     map.set('userId', 'String');
     map.set('orgId', 'String');
     map.set('role', 'String');
+    map.set('memberId', 'String');
     map.set('joinedAt', 'Date');
     return map;
   }
@@ -24,7 +26,7 @@ export class UserOrganization {
   }
 
   getIndexList(): string[] {
-    return ['id', 'userId'];
+    return ['id', 'userId', 'memberId'];
   }
 
   getEncryptedFieldList(): string[] {
@@ -38,6 +40,7 @@ export class UserOrganization {
       obj.userId = data.userId ?? '';
       obj.orgId = data.orgId ?? '';
       obj.role = data.role ?? 'admin';
+      obj.memberId = data.memberId ?? '';
       obj.joinedAt = data.joinedAt ? new Date(data.joinedAt) : new Date();
     }
     return obj;
