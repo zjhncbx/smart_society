@@ -77,7 +77,7 @@
 
 - 钉钉群消息、审批流（接口已预留）
 - 华为推送 Kit（公告推送）、扫码签到（PlatformView）
-- Web 管理后台：**基础工程可启动；核心业务页面受 Go/No-Go 门禁约束**（WorkItem、跨端 userId 客户端落地、RBAC、统一业务动作 API、服务端幂等 5 项 P0 封口后放行，详见 `docs/Web开发前审核报告.md` §〇）
+- Web 管理后台：**W0 工程底座已搭建**（React19+TS strict+Vite7+AntD5+TanStack Query+Zustand+统一 API Client+权限守卫+测试基建，见 `web/README.md`）；核心业务页面待 AGC 部署与集成验证后按 W1→W3 实施（门禁详见 `docs/Web开发前审核报告.md` §〇）
 
 ## 仓库结构
 

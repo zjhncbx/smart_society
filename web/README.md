@@ -386,3 +386,32 @@ DataTable、Form、WorkItem、Permission Guard、状态组件、Drawer/Modal。
 > **Web 核心业务：🟢 进入开发阶段。** AGC 部署、认证链、幂等并发、`correlationId` 全链路作为集成验收门禁；统一字段契约按模块并行迁移，不阻塞 Web 工程建设。
 >
 > Web 端不是重新设计一套业务系统，而是 SmartSociety 统一业务能力在大屏、键鼠和高数据密度场景下的管理工作台实现。
+
+## 14. 环境要求与 W0 状态
+
+### 环境要求
+
+| 工具 | 版本 | 说明 |
+|---|---|---|
+| Node.js | **>= 20.19.0** | Vite 7 / React Router 7 硬性要求（当前开发机为 18，需先升级；可用 nvm-windows 或官方安装包） |
+| pnpm | >= 9 | 可通过 `corepack enable` 启用；大陆网络可在 `web/.npmrc` 配置 `registry=https://registry.npmmirror.com` |
+
+### W0 工程底座（已完成 ✅）
+
+```text
+React 19 + TypeScript 5 (strict) + Vite 7 + Ant Design 5
+├─ Router / AppLayout（工作台 + 12 个一级导航占位）
+├─ 唯一 API Client（{ ret } 契约、requestId/correlationId/idempotencyKey、超时/错误映射）
+├─ TanStack Query + Zustand（会话/UI 状态，不镜像服务端数据）
+├─ Auth / Organization Context（W0 模拟登录，AGC 认证联调后替换）
+├─ Permission Guard（展示级，服务端仍为安全边界）
+├─ 测试基础设施（Vitest + RTL 5 用例 ✅；Playwright E2E 骨架）
+└─ ESLint + Prettier + TS strict（0 error）
+```
+
+本地验证：`pnpm typecheck`（通过）、`pnpm test`（5/5 通过）、`pnpm lint`（0 error）。  
+`pnpm build` 需在 Node >= 20.19 环境执行（当前 Node 18 下 Vite 7 会构建产物但以非零码退出）。
+
+### 下一步（W1）
+
+工作台真实化：我的 WorkItem、组织态势、全域检索、风险与预警、数据质量、自动化治理、AuditLog / 事件链查询——均通过统一 API Client 对接云端业务函数。
