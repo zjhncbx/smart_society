@@ -26,6 +26,7 @@ import 'screens/org/org_selector_page.dart';
 import 'screens/profile/profile_page.dart';
 import 'screens/settings/settings_page.dart';
 import 'screens/settings/setup_wizard_page.dart';
+import 'screens/event/event_center_page.dart';
 import 'services/auth_gate.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -180,6 +181,11 @@ final GoRouter appRouter = GoRouter(
       path: '/settings/roles',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: '/events',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const EventCenterPage(),
     ),
     GoRoute(
       path: '/profile',

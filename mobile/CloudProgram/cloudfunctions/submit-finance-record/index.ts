@@ -5,6 +5,7 @@ import { ApprovalInstance } from './ApprovalInstance';
 import { Notice } from './Notice';
 import { Member } from './Member';
 import { UserOrganization } from './UserOrganization';
+import { BusinessEvent } from './BusinessEvent';
 
 function parseParams(event: any): any {
   let body: any = event && event.body !== undefined ? event.body : event;
@@ -26,6 +27,39 @@ function parseParams(event: any): any {
 const ZONE_NAME = 'default';
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
+
+async function recordEvent(
+  col: CloudDBCollection<BusinessEvent>,
+  orgId: string,
+  eventType: string,
+  entityType: string,
+  entityId: string,
+  entityName: string,
+  actorId: string,
+  actorName: string,
+  level: string,
+  metadata: any,
+): Promise<void> {
+  const now = new Date();
+  const ev = new BusinessEvent();
+  ev.id = 'ev' + Date.now() + Math.floor(Math.random() * 100000);
+  ev.orgId = orgId;
+  ev.eventType = eventType;
+  ev.entityType = entityType;
+  ev.entityId = entityId;
+  ev.entityName = entityName || '';
+  ev.actorId = actorId || 'system';
+  ev.actorName = actorName || '系统';
+  ev.level = level || 'info';
+  ev.metadata = JSON.stringify(metadata || {});
+  ev.sourceType = 'manual';
+  ev.sourceId = '';
+  ev.version = 1;
+  ev.isDeleted = false;
+  ev.occurredAt = now;
+  ev.createdAt = now;
+  await col.upsert([ev]);
+}
 
 interface FlowNode {
   id: string;
@@ -297,6 +331,21 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     }
 
     await recordCol.upsert([record]);
+
+    const eventCol: CloudDBCollection<BusinessEvent> = db.collection(BusinessEvent);
+    await recordEvent(
+      eventCol, orgId, 'submitted', 'finance', record.id, record.summary,
+      userId, userName,
+      record.status === 'approved' ? 'info' : 'info',
+      {
+        type: record.type,
+        amount: record.amount,
+        categoryLabel: record.categoryLabel,
+        status: record.status,
+        instanceId: record.instanceId,
+        projectId: record.projectId,
+      },
+    );
 
     logger.info(`submit-finance-record done: id=${record.id}, status=${record.status}`);
     callback({

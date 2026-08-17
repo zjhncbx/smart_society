@@ -5,6 +5,7 @@ import { ApprovalInstance } from './ApprovalInstance';
 import { Notice } from './Notice';
 import { Member } from './Member';
 import { UserOrganization } from './UserOrganization';
+import { BusinessEvent } from './BusinessEvent';
 
 function parseParams(event: any): any {
   let body: any = event && event.body !== undefined ? event.body : event;
@@ -26,6 +27,39 @@ function parseParams(event: any): any {
 const ZONE_NAME = 'default';
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
+
+async function recordEvent(
+  col: CloudDBCollection<BusinessEvent>,
+  orgId: string,
+  eventType: string,
+  entityType: string,
+  entityId: string,
+  entityName: string,
+  actorId: string,
+  actorName: string,
+  level: string,
+  metadata: any,
+): Promise<void> {
+  const now = new Date();
+  const ev = new BusinessEvent();
+  ev.id = 'ev' + Date.now() + Math.floor(Math.random() * 100000);
+  ev.orgId = orgId;
+  ev.eventType = eventType;
+  ev.entityType = entityType;
+  ev.entityId = entityId;
+  ev.entityName = entityName || '';
+  ev.actorId = actorId || 'system';
+  ev.actorName = actorName || '系统';
+  ev.level = level || 'info';
+  ev.metadata = JSON.stringify(metadata || {});
+  ev.sourceType = 'manual';
+  ev.sourceId = '';
+  ev.version = 1;
+  ev.isDeleted = false;
+  ev.occurredAt = now;
+  ev.createdAt = now;
+  await col.upsert([ev]);
+}
 
 interface FlowNode {
   id: string;
@@ -272,6 +306,12 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         `流程「${instance.flowName}」已被驳回：${userName}（${comment || '未填写意见'}）`,
         true,
       );
+      const eventCol: CloudDBCollection<BusinessEvent> = db.collection(BusinessEvent);
+      await recordEvent(
+        eventCol, orgId, 'rejected', 'approval', instance.id, instance.title,
+        userId, userName, 'warning',
+        { action, comment, bizId: instance.bizId },
+      );
       callback({ ret: { code: 0, message: 'ok', data: { status: 'rejected' } } });
       return;
     }
@@ -298,6 +338,21 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         await recordCol.upsert([recs[0]]);
       }
     }
+
+    const eventCol: CloudDBCollection<BusinessEvent> = db.collection(BusinessEvent);
+    const eventType = action === 'done' ? 'completed' : 'approved';
+    await recordEvent(
+      eventCol, orgId, eventType, 'approval', instance.id, instance.title,
+      userId, userName, finished ? 'info' : 'info',
+      {
+        action,
+        comment,
+        nodeName: snapshot.nodeName || '',
+        final: finished,
+        status: finished ? 'approved' : 'approving',
+        bizId: instance.bizId,
+      },
+    );
 
     callback({
       ret: {

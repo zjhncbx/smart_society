@@ -2,6 +2,7 @@ import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { FinanceRecord } from './FinanceRecord';
 import { Notice } from './Notice';
 import { UserOrganization } from './UserOrganization';
+import { BusinessEvent } from './BusinessEvent';
 
 function parseParams(event: any): any {
   let body: any = event && event.body !== undefined ? event.body : event;
@@ -23,6 +24,38 @@ function parseParams(event: any): any {
 const ZONE_NAME = 'default';
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
+
+async function recordEvent(
+  col: CloudDBCollection<BusinessEvent>,
+  orgId: string,
+  eventType: string,
+  entityType: string,
+  entityId: string,
+  entityName: string,
+  actorId: string,
+  actorName: string,
+  metadata: any,
+): Promise<void> {
+  const now = new Date();
+  const ev = new BusinessEvent();
+  ev.id = 'ev' + Date.now() + Math.floor(Math.random() * 100000);
+  ev.orgId = orgId;
+  ev.eventType = eventType;
+  ev.entityType = entityType;
+  ev.entityId = entityId;
+  ev.entityName = entityName || '';
+  ev.actorId = actorId || 'system';
+  ev.actorName = actorName || '系统';
+  ev.level = 'warning';
+  ev.metadata = JSON.stringify(metadata || {});
+  ev.sourceType = 'manual';
+  ev.sourceId = '';
+  ev.version = 1;
+  ev.isDeleted = false;
+  ev.occurredAt = now;
+  ev.createdAt = now;
+  await col.upsert([ev]);
+}
 
 async function queryAllByOrg<T>(col: CloudDBCollection<T>, orgId: string): Promise<T[]> {
   const all: T[] = [];
@@ -81,6 +114,13 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     notice.isImportant = true;
     notice.updatedAt = new Date();
     await noticeCol.upsert([notice]);
+
+    const eventCol: CloudDBCollection<BusinessEvent> = db.collection(BusinessEvent);
+    await recordEvent(
+      eventCol, orgId, 'updated', 'finance', `unclose-${year}`, `${year} 年度反结账`,
+      userId, userName,
+      { year, removed: closing.length },
+    );
 
     logger.info(`unclose-period done: orgId=${orgId}, year=${year}, vouchers=${closing.length}`);
     callback({

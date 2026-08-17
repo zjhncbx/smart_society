@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 
 import '../../config/finance_config.dart';
 import '../../config/org_config_provider.dart';
+import '../../models/business_event.dart';
 import '../../models/project.dart';
 import '../../providers/finance_provider.dart';
+import '../../providers/event_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
 import '../../providers/organization_provider.dart';
@@ -64,6 +66,7 @@ class _HomePageState extends State<HomePage> {
     final finance = context.read<FinanceProvider>();
     finance.loadStats();
     finance.loadTasks();
+    context.read<EventProvider>().load();
     if (orgId != null && orgId.isNotEmpty) {
       await SyncProvider.instance.pullAndRefresh(orgId);
     }
@@ -92,6 +95,7 @@ class _HomePageState extends State<HomePage> {
     final notices = context.watch<NoticeProvider>().sortedNotices.take(3).toList();
     final taskCount = context.watch<FinanceProvider>().taskCount;
     final finance = context.watch<FinanceProvider>();
+    final events = context.watch<EventProvider>().recentEvents;
     final orgId = context.watch<OrganizationProvider>().currentOrgId ?? '';
     final binding = context.watch<SettingsProvider>().memberBinding(orgId);
     final myTasks = [
@@ -248,11 +252,11 @@ class _HomePageState extends State<HomePage> {
                       color: const Color(0xFF8A9099),
                       onTap: () => context.go('/settings'),
                     ),
-                    const _QuickAction(
-                      label: '',
-                      icon: Icons.circle,
-                      color: Colors.transparent,
-                      onTap: null,
+                    _QuickAction(
+                      label: '事件流',
+                      icon: Icons.timeline_outlined,
+                      color: const Color(0xFF13C2C2),
+                      onTap: () => context.go('/events'),
                     ),
                     const _QuickAction(
                       label: '',
@@ -266,6 +270,85 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(height: 20),
+          // 组织动态（事件流）
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '组织动态',
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              TextButton(
+                onPressed: () => context.go('/events'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('查看全部'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          if (events.isEmpty)
+            AppCard(
+              margin: EdgeInsets.zero,
+              child: Text(
+                '暂无事件，成员、项目、财务等业务动作将在这里形成组织事件流',
+                style: TextStyle(fontSize: 13, color: appTheme.textSecondary),
+              ),
+            )
+          else
+            for (final ev in events)
+              AppCard(
+                margin: const EdgeInsets.only(bottom: 8),
+                onTap: () => context.go('/events'),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: _eventColor(ev.entityType).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        _eventIcon(ev.entityType),
+                        size: 18,
+                        color: _eventColor(ev.entityType),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ev.entityName.isEmpty
+                                ? '${eventTypeLabel(ev.eventType)}${entityTypeLabel(ev.entityType)}'
+                                : '「${ev.entityName}」${eventTypeLabel(ev.eventType)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${ev.actorName.isEmpty ? '系统' : ev.actorName} · ${formatRelative(ev.occurredAt)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: appTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, size: 18),
+                  ],
+                ),
+              ),
+          const SizedBox(height: 12),
           // 最近动态
           Text(
             '进行中项目',
@@ -731,5 +814,47 @@ class _QuickAction extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+IconData _eventIcon(String entityType) {
+  switch (entityType) {
+    case 'member':
+      return Icons.people_outline;
+    case 'project':
+      return Icons.task_alt_outlined;
+    case 'task':
+      return Icons.check_circle_outline;
+    case 'notice':
+      return Icons.campaign_outlined;
+    case 'finance':
+      return Icons.account_balance_wallet_outlined;
+    case 'approval':
+      return Icons.fact_check_outlined;
+    case 'organization':
+      return Icons.business_outlined;
+    default:
+      return Icons.timeline_outlined;
+  }
+}
+
+Color _eventColor(String entityType) {
+  switch (entityType) {
+    case 'member':
+      return const Color(0xFF3370FF);
+    case 'project':
+      return const Color(0xFF00B96B);
+    case 'task':
+      return const Color(0xFF13C2C2);
+    case 'notice':
+      return const Color(0xFFFF8800);
+    case 'finance':
+      return const Color(0xFF7B61FF);
+    case 'approval':
+      return const Color(0xFFF54A45);
+    case 'organization':
+      return const Color(0xFF1F5FBF);
+    default:
+      return const Color(0xFF8A9099);
   }
 }

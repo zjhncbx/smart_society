@@ -1,5 +1,6 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Notice } from './Notice';
+import { BusinessEvent } from './BusinessEvent';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -21,6 +22,38 @@ function parseParams(event: any): any {
 
 const ZONE_NAME = 'default';
 
+async function recordEvent(
+  col: CloudDBCollection<BusinessEvent>,
+  orgId: string,
+  eventType: string,
+  entityType: string,
+  entityId: string,
+  entityName: string,
+  actorId: string,
+  actorName: string,
+  metadata: any,
+): Promise<void> {
+  const now = new Date();
+  const ev = new BusinessEvent();
+  ev.id = 'ev' + Date.now() + Math.floor(Math.random() * 100000);
+  ev.orgId = orgId;
+  ev.eventType = eventType;
+  ev.entityType = entityType;
+  ev.entityId = entityId;
+  ev.entityName = entityName || '';
+  ev.actorId = actorId || 'system';
+  ev.actorName = actorName || '系统';
+  ev.level = 'info';
+  ev.metadata = JSON.stringify(metadata || {});
+  ev.sourceType = 'manual';
+  ev.sourceId = '';
+  ev.version = 1;
+  ev.isDeleted = false;
+  ev.occurredAt = now;
+  ev.createdAt = now;
+  await col.upsert([ev]);
+}
+
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('upsert-notice called');
 
@@ -37,11 +70,21 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
 
     const db = cloud.database({ zoneName: ZONE_NAME });
     const col: CloudDBCollection<Notice> = db.collection(Notice);
+    const existing = await col.query().equalTo('id', record.id).get();
     const obj = Notice.parseFrom(record);
     obj.updatedAt = new Date();
     await col.upsert([obj]);
 
-    logger.info(`upsert-notice done: id=${record.id}`);
+    const eventCol: CloudDBCollection<BusinessEvent> = db.collection(BusinessEvent);
+    const eventType = existing.length === 0 ? 'created' : 'updated';
+    await recordEvent(
+      eventCol, record.orgId, eventType, 'notice', obj.id, obj.title,
+      String(record.actorId || 'system'),
+      String(record.actorName || '系统'),
+      { important: obj.isImportant === true },
+    );
+
+    logger.info(`upsert-notice done: id=${record.id}, event=${eventType}`);
     callback({ ret: { code: 0, message: 'ok' } });
   } catch (err: any) {
     logger.error(`upsert-notice error: ${err.message}`);

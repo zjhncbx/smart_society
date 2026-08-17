@@ -1,0 +1,158 @@
+{
+  "objectTypeName": "BusinessEvent",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": true
+    },
+    {
+      "fieldName": "orgId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "eventType",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "created",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "entityType",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "entityId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "entityName",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "actorId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "actorName",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "level",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "info",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "metadata",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "{}",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "sourceType",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "manual",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "sourceId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "version",
+      "fieldType": "Integer",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "1",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "isDeleted",
+      "fieldType": "Boolean",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "false",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "occurredAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    }
+  ],
+  "indexes": [
+    {
+      "indexName": "business_event_id",
+      "indexList": [{ "fieldName": "id", "sortType": "ASC" }]
+    }
+  ],
+  "permissions": [
+    { "role": "World", "rights": ["Read"] },
+    { "role": "Authenticated", "rights": ["Read"] },
+    { "role": "Creator", "rights": ["Read", "Upsert", "Delete"] },
+    { "role": "Administrator", "rights": ["Read", "Upsert", "Delete"] }
+  ]
+}
