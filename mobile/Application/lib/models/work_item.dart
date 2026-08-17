@@ -99,6 +99,8 @@ const Map<String, String> kWorkItemTypeLabels = {
   'data_quality': '数据治理',
   'compliance': '合规事项',
   'resolution': '决议执行',
+  'license': '证照',
+  'term': '任期',
 };
 
 String workItemTypeLabel(String type) => kWorkItemTypeLabels[type] ?? type;

@@ -7,6 +7,9 @@ import { DataQualityIssue } from './DataQualityIssue';
 import { Member } from './Member';
 import { Project } from './Project';
 import { Resolution } from './Resolution';
+import { License } from './License';
+import { ComplianceItem } from './ComplianceItem';
+import { Term } from './Term';
 import { UserOrganization } from './UserOrganization';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
@@ -134,6 +137,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const memberCol: CloudDBCollection<Member> = db.collection(Member);
     const projectCol: CloudDBCollection<Project> = db.collection(Project);
     const resolutionCol: CloudDBCollection<Resolution> = db.collection(Resolution);
+    const licenseCol: CloudDBCollection<License> = db.collection(License);
+    const complianceCol: CloudDBCollection<ComplianceItem> = db.collection(ComplianceItem);
+    const termCol: CloudDBCollection<Term> = db.collection(Term);
     const itemCol: CloudDBCollection<WorkItem> = db.collection(WorkItem);
 
     const approvals = (await queryAllByOrg(approvalCol, orgId)).filter((a) => a.status === 'running');
@@ -143,6 +149,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const members = await queryAllByOrg(memberCol, orgId);
     const projects = await queryAllByOrg(projectCol, orgId);
     const resolutions = await queryAllByOrg(resolutionCol, orgId);
+    const licenses = await queryAllByOrg(licenseCol, orgId);
+    const complianceItems = await queryAllByOrg(complianceCol, orgId);
+    const terms = await queryAllByOrg(termCol, orgId);
 
     const memberName = new Map<string, string>();
     for (const m of members) memberName.set(m.id, m.name);
@@ -239,6 +248,49 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         '决议执行完成并汇报治理机构', r.sourceRuleId || 'resolution', '决议执行',
         r.createdAt || now,
         r.correlationId,
+      ));
+    }
+
+    for (const l of licenses) {
+      if (l.status === 'expired' || l.isDeleted) continue;
+      const key = `wi_${orgId}_license_${sanitize(l.id)}`;
+      hitKeys.add(key);
+      items.push(makeItem(
+        orgId, 'license', 'license', l.id, `证照：${l.name}`,
+        `证照管理：${l.licenseNo || ''}${l.expireAt ? `，到期 ${l.expireAt.toISOString().slice(0, 10)}` : ''}`,
+        l.ownerId, l.ownerName,
+        l.expireAt && l.expireAt.getTime() < Date.now() + 30 * DAY_MS ? 'high' : 'medium',
+        l.expireAt, l.expireAt, 0,
+        '证照有效并在到期前完成续期', 'GR-10', '证照到期提醒',
+        l.createdAt || now, l.correlationId,
+      ));
+    }
+    for (const c of complianceItems) {
+      if (c.status === 'done' || c.isDeleted) continue;
+      const key = `wi_${orgId}_compliance_${sanitize(c.id)}`;
+      hitKeys.add(key);
+      items.push(makeItem(
+        orgId, 'compliance', 'compliance', c.id, `合规事项：${c.name}`,
+        `类型：${c.itemType}${c.deadline ? `，截止 ${c.deadline.toISOString().slice(0, 10)}` : ''}`,
+        c.responsibleMemberId, c.responsibleName,
+        c.deadline && c.deadline.getTime() < Date.now() ? 'high' : 'medium',
+        c.deadline, c.deadline, 0,
+        '合规事项完成并归档', 'GR-12', '合规事项逾期',
+        c.createdAt || now, c.correlationId,
+      ));
+    }
+    for (const t of terms) {
+      if (t.status === 'archived' || t.isDeleted) continue;
+      const key = `wi_${orgId}_term_${sanitize(t.id)}`;
+      hitKeys.add(key);
+      items.push(makeItem(
+        orgId, 'term', 'term', t.id, `任期：${t.title}`,
+        `治理机构：${t.governanceBody || '—'}${t.endDate ? `，届满 ${t.endDate.toISOString().slice(0, 10)}` : ''}`,
+        '', '治理机构',
+        t.endDate && t.endDate.getTime() < Date.now() + 90 * DAY_MS ? 'high' : 'medium',
+        t.endDate, t.endDate, 0,
+        '任期届满前完成换届准备', 'GR-11', '任期届满提醒',
+        t.createdAt || now, t.correlationId,
       ));
     }
 

@@ -29,7 +29,9 @@ export type WorkItemType =
   | 'risk'
   | 'data_quality'
   | 'compliance'
-  | 'resolution';
+  | 'resolution'
+  | 'license'
+  | 'term';
 
 export interface WorkItem {
   id: string;

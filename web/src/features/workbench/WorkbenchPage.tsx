@@ -27,6 +27,8 @@ const typeColor: Record<string, string> = {
   project_task: 'green',
   risk: 'red',
   data_quality: 'orange',
+  license: 'gold',
+  term: 'cyan',
 };
 
 export function WorkbenchPage(): React.JSX.Element {

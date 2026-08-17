@@ -34,6 +34,8 @@ export const workItemSchema = z.object({
     'data_quality',
     'compliance',
     'resolution',
+    'license',
+    'term',
   ]),
   originType: z.string(),
   originId: z.string(),

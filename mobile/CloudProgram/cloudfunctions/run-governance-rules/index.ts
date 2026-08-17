@@ -8,6 +8,9 @@ import { FinanceRecord } from './FinanceRecord';
 import { ApprovalInstance } from './ApprovalInstance';
 import { Organization } from './Organization';
 import { Resolution } from './Resolution';
+import { License } from './License';
+import { ComplianceItem } from './ComplianceItem';
+import { Term } from './Term';
 import { DataQualityIssue } from './DataQualityIssue';
 import { UserOrganization } from './UserOrganization';
 import { BusinessEvent } from './BusinessEvent';
@@ -122,6 +125,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const approvalCol: CloudDBCollection<ApprovalInstance> = db.collection(ApprovalInstance);
     const orgCol: CloudDBCollection<Organization> = db.collection(Organization);
     const resolutionCol: CloudDBCollection<Resolution> = db.collection(Resolution);
+    const licenseCol: CloudDBCollection<License> = db.collection(License);
+    const complianceCol: CloudDBCollection<ComplianceItem> = db.collection(ComplianceItem);
+    const termCol: CloudDBCollection<Term> = db.collection(Term);
     const dqCol: CloudDBCollection<DataQualityIssue> = db.collection(DataQualityIssue);
     const taskCol: CloudDBCollection<AutoTask> = db.collection(AutoTask);
     const riskCol: CloudDBCollection<RiskAlert> = db.collection(RiskAlert);
@@ -133,6 +139,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const orgs = await orgCol.query().equalTo('orgId', orgId).get();
     const org = orgs.length > 0 ? orgs[0] : null;
     const resolutions = await queryAllByOrg(resolutionCol, orgId);
+    const licenses = await queryAllByOrg(licenseCol, orgId);
+    const complianceItems = await queryAllByOrg(complianceCol, orgId);
+    const terms = await queryAllByOrg(termCol, orgId);
     const dqIssues = (await queryAllByOrg(dqCol, orgId)).filter((i) => i.status === 'open');
     const existingTasks = await queryAllByOrg(taskCol, orgId);
     const existingRisks = await queryAllByOrg(riskCol, orgId);
@@ -267,6 +276,104 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         description: `决议「${r.title}」已逾期 ${overdueDays} 天，请更新执行情况或发起变更。`,
         entityType: 'resolution', entityId: r.id, entityName: r.title,
         assigneeId: r.responsibleMemberId, assigneeName: r.responsibleName || '',
+        priority: 'high', slaDays: 5, escalationLevel: 0,
+      });
+    }
+
+    // ---- GR-10 证照到期提醒 ----
+    for (const l of licenses) {
+      if (l.status === 'expired' || l.isDeleted || !l.expireAt) continue;
+      const daysLeft = Math.ceil((l.expireAt.getTime() - today.getTime()) / DAY_MS);
+      if (daysLeft < 0) {
+        riskHits.push({
+          kind: 'risk', ruleId: 'GR-10', ruleName: '证照到期提醒',
+          title: `证照已过期：${l.name}`,
+          description: `证照「${l.name}」已于 ${l.expireAt.toISOString().slice(0, 10)} 过期，请尽快续期。`,
+          entityType: 'license', entityId: l.id, entityName: l.name,
+          severity: 'high', ownerId: l.ownerId, ownerName: l.ownerName || '证照管理员',
+          deadlineDays: 7,
+        });
+      } else if (daysLeft <= 30) {
+        riskHits.push({
+          kind: 'warning', ruleId: 'GR-10', ruleName: '证照到期提醒',
+          title: `证照即将到期：${l.name}`,
+          description: `证照「${l.name}」剩余 ${daysLeft} 天到期，请安排续期。`,
+          entityType: 'license', entityId: l.id, entityName: l.name,
+          severity: 'medium', ownerId: l.ownerId, ownerName: l.ownerName || '证照管理员',
+          deadlineDays: 7,
+        });
+        taskHits.push({
+          ruleId: 'GR-10', ruleName: '证照到期提醒',
+          title: `办理证照续期：${l.name}`,
+          description: `证照「${l.name}」剩余 ${daysLeft} 天到期，请准备续期材料。`,
+          entityType: 'license', entityId: l.id, entityName: l.name,
+          assigneeId: l.ownerId, assigneeName: l.ownerName || '',
+          priority: 'high', slaDays: Math.max(3, daysLeft - 3), escalationLevel: 0,
+        });
+      } else if (daysLeft <= 90) {
+        riskHits.push({
+          kind: 'warning', ruleId: 'GR-10', ruleName: '证照到期提醒',
+          title: `证照 90 天内到期：${l.name}`,
+          description: `证照「${l.name}」剩余 ${daysLeft} 天到期，请关注续期计划。`,
+          entityType: 'license', entityId: l.id, entityName: l.name,
+          severity: 'low', ownerId: l.ownerId, ownerName: l.ownerName || '证照管理员',
+          deadlineDays: 14,
+        });
+      }
+    }
+
+    // ---- GR-11 任期届满提醒 ----
+    for (const t of terms) {
+      if (t.status === 'archived' || t.isDeleted || !t.endDate) continue;
+      const daysLeft = Math.ceil((t.endDate.getTime() - today.getTime()) / DAY_MS);
+      if (daysLeft < 0) {
+        riskHits.push({
+          kind: 'warning', ruleId: 'GR-11', ruleName: '任期届满提醒',
+          title: `任期已届满：${t.title}`,
+          description: `任期「${t.title}」已于 ${t.endDate.toISOString().slice(0, 10)} 结束，请启动换届。`,
+          entityType: 'term', entityId: t.id, entityName: t.title,
+          severity: 'medium', ownerId: '', ownerName: '治理机构',
+          deadlineDays: 7,
+        });
+      } else if (daysLeft <= 30 || daysLeft <= 90 || daysLeft <= 180) {
+        riskHits.push({
+          kind: 'warning', ruleId: 'GR-11', ruleName: '任期届满提醒',
+          title: `任期将届满：${t.title}`,
+          description: `任期「${t.title}」剩余 ${daysLeft} 天，请准备换届（180/90/30 天提醒）。`,
+          entityType: 'term', entityId: t.id, entityName: t.title,
+          severity: daysLeft <= 30 ? 'medium' : 'low', ownerId: '', ownerName: '治理机构',
+          deadlineDays: Math.max(7, daysLeft - 3),
+        });
+        taskHits.push({
+          ruleId: 'GR-11', ruleName: '任期届满提醒',
+          title: `启动换届准备：${t.title}`,
+          description: `任期「${t.title}」剩余 ${daysLeft} 天，请启动换届准备（会议/选举/任命）。`,
+          entityType: 'term', entityId: t.id, entityName: t.title,
+          assigneeId: '', assigneeName: '治理机构',
+          priority: daysLeft <= 30 ? 'high' : 'medium', slaDays: Math.max(7, daysLeft - 3), escalationLevel: 0,
+        });
+      }
+    }
+
+    // ---- GR-12 合规事项逾期 ----
+    for (const c of complianceItems) {
+      if (c.status === 'done' || c.isDeleted || !c.deadline) continue;
+      if (c.deadline.getTime() >= today.getTime()) continue;
+      const overdueDays = Math.floor((today.getTime() - startOfDay(c.deadline).getTime()) / DAY_MS);
+      riskHits.push({
+        kind: 'warning', ruleId: 'GR-12', ruleName: '合规事项逾期',
+        title: `合规事项逾期：${c.name}`,
+        description: `合规事项「${c.name}」（${c.itemType}）已逾期 ${overdueDays} 天，请尽快完成。`,
+        entityType: 'compliance', entityId: c.id, entityName: c.name,
+        severity: 'medium', ownerId: c.responsibleMemberId, ownerName: c.responsibleName || '责任人',
+        deadlineDays: 7,
+      });
+      taskHits.push({
+        ruleId: 'GR-12', ruleName: '合规事项逾期',
+        title: `完成合规事项：${c.name}`,
+        description: `合规事项「${c.name}」已逾期 ${overdueDays} 天，请完成并归档。`,
+        entityType: 'compliance', entityId: c.id, entityName: c.name,
+        assigneeId: c.responsibleMemberId, assigneeName: c.responsibleName || '',
         priority: 'high', slaDays: 5, escalationLevel: 0,
       });
     }
