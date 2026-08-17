@@ -277,6 +277,22 @@ production
 
 API Base URL、认证配置、静态资源地址全部通过环境变量注入，不写死生产地址。SPA 路由需要静态托管侧配置 fallback 到 `index.html`。
 
+### 真实 AGC 网关对接（联调项）
+
+`agconnect-services.json`（gitignore，不入库）提供 AGC 项目信息供参考：
+
+| 字段 | 含义 | 用途 |
+|---|---|---|
+| `region` / `agcgw.CN` | 中国区 AGC 网关（connect-drcn.dbankcloud.cn） | AGC SDK 通道参考 |
+| `service.cloudstorage.storage_url` | AGC 云存储域名（agc-storage-drcn.platform.dbankcloud.cn） | 后续文件上传下载 |
+| `client.project_id / app_id` | 项目与应用标识 | 网关/控制台定位 |
+
+Web 真实接入步骤：
+1. AGC 控制台「云开发 > 云函数」为云函数配置 HTTP 触发器，获取访问域名。
+2. 将访问域名填入 `VITE_API_BASE_URL`（见 `.env.production.example`），无需在 Web 端使用 client_secret（避免暴露凭据）。
+3. 认证链：Web 获取 Access Token → `ensure-user-identity` 映射内部 userId → `get-my-permissions` 写入会话。
+4. 替换 Mock：`mock/dev-api.ts` 仅 dev 生效（`apply: 'serve'`），生产构建不包含。
+
 ## 9. 性能要求
 
 - 路由级懒加载

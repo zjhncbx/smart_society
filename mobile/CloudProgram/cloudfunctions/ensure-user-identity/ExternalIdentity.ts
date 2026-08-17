@@ -3,6 +3,7 @@ export class ExternalIdentity {
   userId: string = '';
   provider: string = '';
   providerSubject: string = '';
+  code: string = '';
   status: string = 'active';
   displayName: string = '';
   version: number = 1;
@@ -24,6 +25,7 @@ export class ExternalIdentity {
     map.set('userId', 'String');
     map.set('provider', 'String');
     map.set('providerSubject', 'String');
+    map.set('code', 'String');
     map.set('status', 'String');
     map.set('displayName', 'String');
     map.set('version', 'Integer');
@@ -56,6 +58,7 @@ export class ExternalIdentity {
       obj.userId = data.userId ?? '';
       obj.provider = data.provider ?? '';
       obj.providerSubject = data.providerSubject ?? '';
+      obj.code = data.code ?? '';
       obj.status = data.status ?? 'active';
       obj.displayName = data.displayName ?? '';
       obj.version = data.version ?? 1;

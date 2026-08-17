@@ -82,6 +82,51 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "code",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "updatedBy",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "version",
+      "fieldType": "Integer",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "1",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "sourceType",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "manual",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "sourceId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "createdAt",
       "fieldType": "Date",
       "isNeedEncrypt": false,

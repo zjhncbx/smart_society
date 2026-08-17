@@ -12,6 +12,11 @@ export class BusinessEvent {
   sourceType: string = 'manual';
   sourceId: string = '';
   correlationId: string = '';
+  code: string = '';
+  status: string = 'active';
+  createdBy: string = '';
+  updatedAt: Date | null = null;
+  updatedBy: string = '';
   version: number = 1;
   isDeleted: boolean = false;
   occurredAt: Date = new Date();
@@ -36,6 +41,11 @@ export class BusinessEvent {
     map.set('sourceType', 'String');
     map.set('sourceId', 'String');
     map.set('correlationId', 'String');
+    map.set('code', 'String');
+    map.set('status', 'String');
+    map.set('createdBy', 'String');
+    map.set('updatedAt', 'Date');
+    map.set('updatedBy', 'String');
     map.set('version', 'Integer');
     map.set('isDeleted', 'Boolean');
     map.set('occurredAt', 'Date');
@@ -71,6 +81,11 @@ export class BusinessEvent {
       obj.sourceType = data.sourceType ?? 'manual';
       obj.sourceId = data.sourceId ?? '';
       obj.correlationId = data.correlationId ?? '';
+      obj.code = data.code ?? '';
+      obj.status = data.status ?? 'active';
+      obj.createdBy = data.createdBy ?? '';
+      obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
+      obj.updatedBy = data.updatedBy ?? '';
       obj.version = data.version ?? 1;
       obj.isDeleted = data.isDeleted === true;
       obj.occurredAt = data.occurredAt ? new Date(data.occurredAt) : new Date();

@@ -6,6 +6,10 @@ export class DataScope {
   scopeType: string = 'org';
   dataTypes: string = '[]';
   status: string = 'active';
+  code: string = '';
+  version: number = 1;
+  sourceType: string = 'manual';
+  sourceId: string = '';
   createdAt: Date | null = null;
   createdBy: string = '';
   updatedAt: Date | null = null;
@@ -24,6 +28,10 @@ export class DataScope {
     map.set('scopeType', 'String');
     map.set('dataTypes', 'String');
     map.set('status', 'String');
+    map.set('code', 'String');
+    map.set('version', 'Integer');
+    map.set('sourceType', 'String');
+    map.set('sourceId', 'String');
     map.set('createdAt', 'Date');
     map.set('createdBy', 'String');
     map.set('updatedAt', 'Date');
@@ -53,6 +61,10 @@ export class DataScope {
       obj.scopeType = data.scopeType ?? 'org';
       obj.dataTypes = data.dataTypes ?? '[]';
       obj.status = data.status ?? 'active';
+      obj.code = data.code ?? '';
+      obj.version = data.version ?? 1;
+      obj.sourceType = data.sourceType ?? 'manual';
+      obj.sourceId = data.sourceId ?? '';
       obj.createdAt = data.createdAt ? new Date(data.createdAt) : null;
       obj.createdBy = data.createdBy ?? '';
       obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;

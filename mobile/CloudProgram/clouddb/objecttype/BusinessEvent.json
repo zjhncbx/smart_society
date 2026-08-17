@@ -118,6 +118,50 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "code",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "active",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createdBy",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "updatedBy",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "version",
       "fieldType": "Integer",
       "isNeedEncrypt": false,

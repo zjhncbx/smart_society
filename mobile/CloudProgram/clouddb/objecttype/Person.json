@@ -19,6 +19,15 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "code",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "name",
       "fieldType": "String",
       "isNeedEncrypt": false,

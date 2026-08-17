@@ -8,6 +8,11 @@ export class IdempotencyRecord {
   status: string = 'processing';
   claimId: string = '';
   requestHash: string = '';
+  code: string = '';
+  updatedBy: string = '';
+  version: number = 1;
+  sourceType: string = 'manual';
+  sourceId: string = '';
   createdAt: Date | null = null;
   expiresAt: Date | null = null;
   createdBy: string = '';
@@ -28,6 +33,11 @@ export class IdempotencyRecord {
     map.set('status', 'String');
     map.set('claimId', 'String');
     map.set('requestHash', 'String');
+    map.set('code', 'String');
+    map.set('updatedBy', 'String');
+    map.set('version', 'Integer');
+    map.set('sourceType', 'String');
+    map.set('sourceId', 'String');
     map.set('createdAt', 'Date');
     map.set('expiresAt', 'Date');
     map.set('createdBy', 'String');
@@ -59,6 +69,11 @@ export class IdempotencyRecord {
       obj.status = data.status ?? 'processing';
       obj.claimId = data.claimId ?? '';
       obj.requestHash = data.requestHash ?? '';
+      obj.code = data.code ?? '';
+      obj.updatedBy = data.updatedBy ?? '';
+      obj.version = data.version ?? 1;
+      obj.sourceType = data.sourceType ?? 'manual';
+      obj.sourceId = data.sourceId ?? '';
       obj.createdAt = data.createdAt ? new Date(data.createdAt) : null;
       obj.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
       obj.createdBy = data.createdBy ?? '';

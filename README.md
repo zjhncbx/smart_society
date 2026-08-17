@@ -72,6 +72,7 @@
 - **RBAC 第一版（P0-C）**：新增 Role（内置角色矩阵+自定义权限 JSON）/ Permission（权限目录）/ DataScope（数据范围）对象；UserOrganization 增强为组织成员关系（roleId/dataScope/status）；get-my-permissions 云端计算角色/权限/数据范围（回退兼容旧 admin/member），get-roles/save-role/save-data-scope 供管理员配置；客户端权限框架已接入（我的页管理操作按权限码门禁）
 - **决议执行中心（GOV-02）**：新增 Resolution 对象（统一字段+标题/内容/状态/责任人/期限/会议关联/关联ID）；save-resolution / get-resolutions / act-resolution 云函数（幂等、事件、审计）；规则引擎新增 GR-09 决议逾期未执行（自动生成预警与推进任务）；统一工作项物化纳入“决议执行”类型
 - **核心表统一字段迁移**：Member / Project / Notice 三张核心主数据表补齐统一字段（code/status/createdAt/createdBy/updatedBy/version/sourceType/sourceId），云函数模型与 Flutter 模型同步，upsert 时自动生成编码与版本号
+- **Web 管理端（W0~W3）**：React19+TS strict+Vite7+AntD5+TanStack Query+Zustand 单页应用，统一 API Client（{ ret } 契约、idempotencyKey/correlationId、Zod 校验）；已实现核心工作台（WorkItem/组织态势/全域检索/风险/数据质量/自动化/审计事件链）、组织业务（组织治理/成员档案/项目/审批决议/财务）、高级治理（规则管理/报表 ECharts/CSV 导出/全域感知）；开发态 Mock 可完整跑通，接 AGC 网关后替换（详见 `web/README.md`）
 - **成员数据管理**：支持 CSV 导出与粘贴导入（钉钉托管组织仅可导出）；财务支持反结账（撤销结转凭证，恢复年度录入）
 - **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
 
@@ -79,7 +80,6 @@
 
 - 钉钉群消息、审批流（接口已预留）
 - 华为推送 Kit（公告推送）、扫码签到（PlatformView）
-- Web 管理后台：**W0 工程底座已搭建**（React19+TS strict+Vite7+AntD5+TanStack Query+Zustand+统一 API Client+权限守卫+测试基建，见 `web/README.md`）；核心业务页面待 AGC 部署与集成验证后按 W1→W3 实施（门禁详见 `docs/Web开发前审核报告.md` §〇）
 
 ## 仓库结构
 
@@ -119,8 +119,11 @@ smart_society/                     # 仓库根目录
 │       │   ├── objecttype/         # 28 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化/审计/身份/幂等/工作项/权限/决议等）
 │       │   └── dataentry/          # 种子数据
 │       └── cloudfunctions/         # 59 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计、身份、权限、决议等）
-└── web/                            # 网页端（规划中）
-    └── README.md
+└── web/                            # 网页端（W0~W3 已实现，见 web/README.md）
+    ├── src/                        # React + TS strict + AntD5 + 统一 API Client
+    ├── mock/                       # 开发态 Mock API（{ ret } 契约）
+    ├── scripts/                    # dev-smoke（Mock 冒烟断言）
+    └── tests/                      # Vitest + RTL + Playwright
 ```
 
 > **注意**：`mobile/Application/ohos/` 是 NTFS Junction（目录联结），指向 `mobile/Application/` 自身，供 Flutter 工具链（`flutter build/run`）与 `flutter-hvigor-plugin` 解析 `ohos/local.properties`。**DevEco Studio 请打开 `mobile/` 目录**（工程根仅含 `Application/` 与 `CloudProgram/` 两个目录，不含其他文件）；仓库根目录按模块拆分，不直接作为 DevEco 工程根。

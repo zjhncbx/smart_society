@@ -1,6 +1,7 @@
 export class Person {
   personId: string = '';
   userId: string = '';
+  code: string = '';
   name: string = '';
   phone: string = '';
   email: string = '';
@@ -22,6 +23,7 @@ export class Person {
     const map = new Map<string, string>();
     map.set('personId', 'String');
     map.set('userId', 'String');
+    map.set('code', 'String');
     map.set('name', 'String');
     map.set('phone', 'String');
     map.set('email', 'String');
@@ -54,6 +56,7 @@ export class Person {
     if (data) {
       obj.personId = data.personId ?? '';
       obj.userId = data.userId ?? '';
+      obj.code = data.code ?? '';
       obj.name = data.name ?? '';
       obj.phone = data.phone ?? '';
       obj.email = data.email ?? '';

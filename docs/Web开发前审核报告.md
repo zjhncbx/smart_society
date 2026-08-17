@@ -27,7 +27,7 @@
 | 核验项 | 结论 | 证据 |
 |---|---|---|
 | ① Cloud DB 对象（28 张表） | ✅ 基础可用 | 28 张表 JSON 可解析；新增对象自建即满足统一字段 |
-| ② 统一字段契约 | ⚠️ 并行迁移项（不阻塞 Web） | 新增对象满足 11 项统一字段；**Member/Project/Notice 核心表已补齐**，其余存量表（FinanceRecord/ApprovalInstance 等）继续按模块迁移 |
+| ② 统一字段契约 | ✅ 已补齐（用户级豁免） | 28 张表统一字段全部补齐（AppUser/UserSettings 用户级豁免；Organization/OrgSettings/OrganizationRelationship/ExternalIdentity/Person 以各自主键映射，其余字段齐全） |
 | ③ 云函数权限 | ✅ 组织级已加固 | 56 个函数全量 TS 编译通过；组织级写接口已成员校验，管理员操作已 admin 校验（结账/审批流/期初/组织设置/关系/钉钉凭证/钉钉同步） |
 | ④ AuditLog | ✅ 云侧闭环 / ⚠️ 查询入口待建 | AuditLog 对象 + record/get-audit-logs + 10 个关键业务函数接入（成员/项目/公告增删改、财务提交/审批/驳回/结账/反结账）；Web 审计页与端侧页面待建设 |
 | ⑤ BusinessEvent / correlationId | ✅ 已全链贯通 | 业务动作生成关联键写入 BusinessEvent/AuditLog；规则引擎任务/风险与 WorkItem 携带同一关联键；Flutter 模型已同步 |
