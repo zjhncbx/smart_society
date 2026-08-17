@@ -140,7 +140,7 @@
       "indexList": [{ "fieldName": "identityId", "sortType": "ASC" }]
     },
     {
-      "indexName": "external_identity_provider_subject",
+      "indexName": "ext_identity_provider_subject",
       "indexList": [
         { "fieldName": "provider", "sortType": "ASC" },
         { "fieldName": "providerSubject", "sortType": "ASC" }
