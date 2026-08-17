@@ -7,6 +7,14 @@ export class Notice {
   isRead: boolean = false;
   isImportant: boolean = false;
   orgId: string = '';
+  code: string = '';
+  status: string = 'active';
+  createdAt: Date | null = null;
+  createdBy: string = '';
+  updatedBy: string = '';
+  version: number = 1;
+  sourceType: string = 'manual';
+  sourceId: string = '';
   updatedAt: Date | null = null;
 
   getClassName(): string {
@@ -23,6 +31,14 @@ export class Notice {
     map.set('isRead', 'Boolean');
     map.set('isImportant', 'Boolean');
     map.set('orgId', 'String');
+    map.set('code', 'String');
+    map.set('status', 'String');
+    map.set('createdAt', 'Date');
+    map.set('createdBy', 'String');
+    map.set('updatedBy', 'String');
+    map.set('version', 'Integer');
+    map.set('sourceType', 'String');
+    map.set('sourceId', 'String');
     map.set('updatedAt', 'Date');
     return map;
   }
@@ -50,6 +66,14 @@ export class Notice {
       obj.isRead = data.isRead ?? false;
       obj.isImportant = data.isImportant ?? false;
       obj.orgId = data.orgId ?? '';
+      obj.code = data.code ?? '';
+      obj.status = data.status ?? 'active';
+      obj.createdAt = data.createdAt ? new Date(data.createdAt) : null;
+      obj.createdBy = data.createdBy ?? '';
+      obj.updatedBy = data.updatedBy ?? '';
+      obj.version = data.version ?? 1;
+      obj.sourceType = data.sourceType ?? 'manual';
+      obj.sourceId = data.sourceId ?? '';
       obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     }
     return obj;

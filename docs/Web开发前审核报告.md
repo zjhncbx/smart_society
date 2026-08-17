@@ -11,7 +11,7 @@
 
 1. **§〇 是本报告的当前权威结论**（2026-08-17 第二轮代码级核验 + H1/H2 加固）：Web 基础工程 GO；Web 核心业务 **AGC 部署与集成验证通过后 GO**（P0-A~P0-E 代码实现完成）。
 2. **§一～§九 为第一轮历史审计记录**，其中描述“当前状态”的语句已在本轮同步修正为第二轮口径；若与 §〇 冲突，**一律以 §〇 为准**。
-3. 本轮统一口径：**云函数 56 个、CloudDB 对象 27 张；新增对象（AuditLog/WorkItem/IdempotencyRecord/Role/Permission/DataScope/Person/ExternalIdentity）自建即满足统一字段契约，存量表按业务模块并行迁移；AuditLog 云侧已闭环；correlationId 全链贯通（待 AGC 部署后真实链路验收）**。
+3. 本轮统一口径：**云函数 59 个、CloudDB 对象 28 张；新增对象自建即满足统一字段契约，Member/Project/Notice 核心表已补齐，其余存量表按业务模块并行迁移；AuditLog 云侧已闭环；correlationId 全链贯通（待 AGC 部署后真实链路验收）**。
 
 ---
 
@@ -26,8 +26,8 @@
 
 | 核验项 | 结论 | 证据 |
 |---|---|---|
-| ① Cloud DB 对象（27 张表） | ✅ 基础可用 | 27 张表 JSON 可解析；新增对象自建即满足统一字段 |
-| ② 统一字段契约 | ⚠️ 并行迁移项（不阻塞 Web） | 新增对象（AuditLog/WorkItem/IdempotencyRecord/Role/Permission/DataScope/Person/ExternalIdentity）满足 11 项统一字段；存量表按业务模块分批补齐 `code/version/sourceType/sourceId` 等 |
+| ① Cloud DB 对象（28 张表） | ✅ 基础可用 | 28 张表 JSON 可解析；新增对象自建即满足统一字段 |
+| ② 统一字段契约 | ⚠️ 并行迁移项（不阻塞 Web） | 新增对象满足 11 项统一字段；**Member/Project/Notice 核心表已补齐**，其余存量表（FinanceRecord/ApprovalInstance 等）继续按模块迁移 |
 | ③ 云函数权限 | ✅ 组织级已加固 | 56 个函数全量 TS 编译通过；组织级写接口已成员校验，管理员操作已 admin 校验（结账/审批流/期初/组织设置/关系/钉钉凭证/钉钉同步） |
 | ④ AuditLog | ✅ 云侧闭环 / ⚠️ 查询入口待建 | AuditLog 对象 + record/get-audit-logs + 10 个关键业务函数接入（成员/项目/公告增删改、财务提交/审批/驳回/结账/反结账）；Web 审计页与端侧页面待建设 |
 | ⑤ BusinessEvent / correlationId | ✅ 已全链贯通 | 业务动作生成关联键写入 BusinessEvent/AuditLog；规则引擎任务/风险与 WorkItem 携带同一关联键；Flutter 模型已同步 |

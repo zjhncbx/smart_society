@@ -11,6 +11,12 @@ export class Project {
   tasks: string = '[]';
   milestones: string = '[]';
   createdAt: Date = new Date();
+  code: string = '';
+  createdBy: string = '';
+  updatedBy: string = '';
+  version: number = 1;
+  sourceType: string = 'manual';
+  sourceId: string = '';
   orgId: string = '';
   updatedAt: Date | null = null;
 
@@ -32,6 +38,12 @@ export class Project {
     map.set('tasks', 'String');
     map.set('milestones', 'String');
     map.set('createdAt', 'Date');
+    map.set('code', 'String');
+    map.set('createdBy', 'String');
+    map.set('updatedBy', 'String');
+    map.set('version', 'Integer');
+    map.set('sourceType', 'String');
+    map.set('sourceId', 'String');
     map.set('orgId', 'String');
     map.set('updatedAt', 'Date');
     return map;
@@ -71,6 +83,12 @@ export class Project {
       obj.tasks = Project.toJsonString(data.tasks);
       obj.milestones = Project.toJsonString(data.milestones);
       obj.createdAt = data.createdAt ? new Date(data.createdAt) : new Date();
+      obj.code = data.code ?? '';
+      obj.createdBy = data.createdBy ?? '';
+      obj.updatedBy = data.updatedBy ?? '';
+      obj.version = data.version ?? 1;
+      obj.sourceType = data.sourceType ?? 'manual';
+      obj.sourceId = data.sourceId ?? '';
       obj.orgId = data.orgId ?? '';
       obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     }

@@ -125,7 +125,17 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const col: CloudDBCollection<Member> = db.collection(Member);
     const existing = await col.query().equalTo('id', record.id).get();
     const obj = Member.parseFrom(record);
-    obj.updatedAt = new Date();
+    const now = new Date();
+    const isNew = existing.length === 0;
+    obj.createdAt = obj.createdAt || now;
+    obj.createdBy = obj.createdBy || userId;
+    obj.updatedBy = userId;
+    obj.version = (obj.version || 1) + (isNew ? 0 : 1);
+    obj.status = obj.status || 'active';
+    obj.sourceType = obj.sourceType || 'manual';
+    obj.sourceId = obj.sourceId || '';
+    obj.code = obj.code || `M-${now.getFullYear()}-${String(now.getTime()).slice(-4)}`;
+    obj.updatedAt = now;
     await col.upsert([obj]);
 
     const eventCol: CloudDBCollection<BusinessEvent> = db.collection(BusinessEvent);

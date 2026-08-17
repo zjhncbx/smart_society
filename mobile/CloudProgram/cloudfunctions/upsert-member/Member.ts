@@ -13,6 +13,14 @@ export class Member {
   syncStatus: string = '';
   lastSyncedAt: Date | null = null;
   orgId: string = '';
+  code: string = '';
+  status: string = 'active';
+  createdAt: Date | null = null;
+  createdBy: string = '';
+  updatedBy: string = '';
+  version: number = 1;
+  sourceType: string = 'manual';
+  sourceId: string = '';
   updatedAt: Date | null = null;
 
   getClassName(): string {
@@ -35,6 +43,14 @@ export class Member {
     map.set('syncStatus', 'String');
     map.set('lastSyncedAt', 'Date');
     map.set('orgId', 'String');
+    map.set('code', 'String');
+    map.set('status', 'String');
+    map.set('createdAt', 'Date');
+    map.set('createdBy', 'String');
+    map.set('updatedBy', 'String');
+    map.set('version', 'Integer');
+    map.set('sourceType', 'String');
+    map.set('sourceId', 'String');
     map.set('updatedAt', 'Date');
     return map;
   }
@@ -68,6 +84,14 @@ export class Member {
       obj.syncStatus = data.syncStatus ?? '';
       obj.lastSyncedAt = data.lastSyncedAt ? new Date(data.lastSyncedAt) : null;
       obj.orgId = data.orgId ?? '';
+      obj.code = data.code ?? '';
+      obj.status = data.status ?? 'active';
+      obj.createdAt = data.createdAt ? new Date(data.createdAt) : null;
+      obj.createdBy = data.createdBy ?? '';
+      obj.updatedBy = data.updatedBy ?? '';
+      obj.version = data.version ?? 1;
+      obj.sourceType = data.sourceType ?? 'manual';
+      obj.sourceId = data.sourceId ?? '';
       obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     }
     return obj;

@@ -9,6 +9,14 @@ class Notice {
     this.isRead = false,
     this.isImportant = false,
     this.orgId = '',
+    this.code = '',
+    this.status = 'active',
+    this.createdAt,
+    this.createdBy = '',
+    this.updatedBy = '',
+    this.version = 1,
+    this.sourceType = 'manual',
+    this.sourceId = '',
     this.updatedAt,
   });
 
@@ -20,6 +28,14 @@ class Notice {
   bool isRead;
   final bool isImportant;
   String orgId;
+  final String code;
+  final String status;
+  final DateTime? createdAt;
+  final String createdBy;
+  final String updatedBy;
+  final int version;
+  final String sourceType;
+  final String sourceId;
   final DateTime? updatedAt;
 
   Map<String, dynamic> toJson() => {
@@ -31,6 +47,14 @@ class Notice {
         'isRead': isRead,
         'isImportant': isImportant,
         'orgId': orgId,
+        'code': code,
+        'status': status,
+        if (createdAt != null) 'createdAt': createdAt!.millisecondsSinceEpoch,
+        'createdBy': createdBy,
+        'updatedBy': updatedBy,
+        'version': version,
+        'sourceType': sourceType,
+        'sourceId': sourceId,
         if (updatedAt != null) 'updatedAt': updatedAt!.millisecondsSinceEpoch,
       };
 
@@ -43,6 +67,14 @@ class Notice {
         isRead: (json['isRead'] as bool?) ?? false,
         isImportant: (json['isImportant'] as bool?) ?? false,
         orgId: (json['orgId'] as String?) ?? '',
+        code: (json['code'] as String?) ?? '',
+        status: (json['status'] as String?) ?? 'active',
+        createdAt: _toDate(json['createdAt']),
+        createdBy: (json['createdBy'] as String?) ?? '',
+        updatedBy: (json['updatedBy'] as String?) ?? '',
+        version: (json['version'] as num?)?.toInt() ?? 1,
+        sourceType: (json['sourceType'] as String?) ?? 'manual',
+        sourceId: (json['sourceId'] as String?) ?? '',
         updatedAt: _toDate(json['updatedAt']),
       );
 }

@@ -7,6 +7,7 @@ import { Project } from './Project';
 import { FinanceRecord } from './FinanceRecord';
 import { ApprovalInstance } from './ApprovalInstance';
 import { Organization } from './Organization';
+import { Resolution } from './Resolution';
 import { DataQualityIssue } from './DataQualityIssue';
 import { UserOrganization } from './UserOrganization';
 import { BusinessEvent } from './BusinessEvent';
@@ -120,6 +121,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const financeCol: CloudDBCollection<FinanceRecord> = db.collection(FinanceRecord);
     const approvalCol: CloudDBCollection<ApprovalInstance> = db.collection(ApprovalInstance);
     const orgCol: CloudDBCollection<Organization> = db.collection(Organization);
+    const resolutionCol: CloudDBCollection<Resolution> = db.collection(Resolution);
     const dqCol: CloudDBCollection<DataQualityIssue> = db.collection(DataQualityIssue);
     const taskCol: CloudDBCollection<AutoTask> = db.collection(AutoTask);
     const riskCol: CloudDBCollection<RiskAlert> = db.collection(RiskAlert);
@@ -130,6 +132,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const approvals = (await queryAllByOrg(approvalCol, orgId)).filter((a) => a.status === 'running');
     const orgs = await orgCol.query().equalTo('orgId', orgId).get();
     const org = orgs.length > 0 ? orgs[0] : null;
+    const resolutions = await queryAllByOrg(resolutionCol, orgId);
     const dqIssues = (await queryAllByOrg(dqCol, orgId)).filter((i) => i.status === 'open');
     const existingTasks = await queryAllByOrg(taskCol, orgId);
     const existingRisks = await queryAllByOrg(riskCol, orgId);
@@ -242,6 +245,29 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         entityType: 'project', entityId: p.id, entityName: p.name,
         assigneeId: managerId, assigneeName: managerName,
         priority: 'medium', slaDays: 5, escalationLevel: 0,
+      });
+    }
+
+    // ---- GR-09 决议逾期未执行 ----
+    for (const r of resolutions) {
+      if (r.status === 'done' || r.isDeleted) continue;
+      if (!r.deadline || r.deadline.getTime() >= today.getTime()) continue;
+      const overdueDays = Math.floor((today.getTime() - startOfDay(r.deadline).getTime()) / DAY_MS);
+      riskHits.push({
+        kind: 'warning', ruleId: 'GR-09', ruleName: '决议逾期未执行',
+        title: `决议逾期：${r.title}`,
+        description: `决议「${r.title}」已逾期 ${overdueDays} 天，请推进执行或汇报治理机构。`,
+        entityType: 'resolution', entityId: r.id, entityName: r.title,
+        severity: 'medium', ownerId: r.responsibleMemberId, ownerName: r.responsibleName || '责任事项负责人',
+        deadlineDays: 7,
+      });
+      taskHits.push({
+        ruleId: 'GR-09', ruleName: '决议逾期未执行',
+        title: `推进决议执行：${r.title}`,
+        description: `决议「${r.title}」已逾期 ${overdueDays} 天，请更新执行情况或发起变更。`,
+        entityType: 'resolution', entityId: r.id, entityName: r.title,
+        assigneeId: r.responsibleMemberId, assigneeName: r.responsibleName || '',
+        priority: 'high', slaDays: 5, escalationLevel: 0,
       });
     }
 

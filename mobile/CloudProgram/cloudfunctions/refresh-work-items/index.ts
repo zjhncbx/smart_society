@@ -6,6 +6,7 @@ import { RiskAlert } from './RiskAlert';
 import { DataQualityIssue } from './DataQualityIssue';
 import { Member } from './Member';
 import { Project } from './Project';
+import { Resolution } from './Resolution';
 import { UserOrganization } from './UserOrganization';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
@@ -132,6 +133,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const dqCol: CloudDBCollection<DataQualityIssue> = db.collection(DataQualityIssue);
     const memberCol: CloudDBCollection<Member> = db.collection(Member);
     const projectCol: CloudDBCollection<Project> = db.collection(Project);
+    const resolutionCol: CloudDBCollection<Resolution> = db.collection(Resolution);
     const itemCol: CloudDBCollection<WorkItem> = db.collection(WorkItem);
 
     const approvals = (await queryAllByOrg(approvalCol, orgId)).filter((a) => a.status === 'running');
@@ -140,6 +142,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const dqIssues = (await queryAllByOrg(dqCol, orgId)).filter((i) => i.status === 'open' && i.severity !== 'low');
     const members = await queryAllByOrg(memberCol, orgId);
     const projects = await queryAllByOrg(projectCol, orgId);
+    const resolutions = await queryAllByOrg(resolutionCol, orgId);
 
     const memberName = new Map<string, string>();
     for (const m of members) memberName.set(m.id, m.name);
@@ -221,6 +224,22 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
           p.createdAt || now,
         ));
       }
+    }
+
+    for (const r of resolutions) {
+      if (r.status === 'done' || r.isDeleted) continue;
+      const key = `wi_${orgId}_resolution_${sanitize(r.id)}`;
+      hitKeys.add(key);
+      items.push(makeItem(
+        orgId, 'resolution', 'resolution', r.id, r.title,
+        `决议执行事项：${r.content || '责任事项'}`,
+        r.responsibleMemberId, r.responsibleName,
+        r.deadline && r.deadline.getTime() < Date.now() ? 'high' : 'medium',
+        r.deadline, r.deadline, 0,
+        '决议执行完成并汇报治理机构', r.sourceRuleId || 'resolution', '决议执行',
+        r.createdAt || now,
+        r.correlationId,
+      ));
     }
 
     if (items.length > 0) await itemCol.upsert(items);

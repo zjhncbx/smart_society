@@ -99,6 +99,12 @@ class Project {
     List<ProjectMilestone>? milestones,
     required this.createdAt,
     this.orgId = '',
+    this.code = '',
+    this.createdBy = '',
+    this.updatedBy = '',
+    this.version = 1,
+    this.sourceType = 'manual',
+    this.sourceId = '',
     this.updatedAt,
   })  : tasks = tasks ?? [],
         milestones = milestones ?? [];
@@ -116,6 +122,12 @@ class Project {
   final List<ProjectMilestone> milestones;
   final DateTime createdAt;
   String orgId;
+  final String code;
+  final String createdBy;
+  final String updatedBy;
+  final int version;
+  final String sourceType;
+  final String sourceId;
   DateTime? updatedAt;
 
   int get taskCount => tasks.length;
@@ -149,6 +161,12 @@ class Project {
         'milestones': jsonEncode(milestones.map((m) => m.toJson()).toList()),
         'createdAt': createdAt.millisecondsSinceEpoch,
         'orgId': orgId,
+        'code': code,
+        'createdBy': createdBy,
+        'updatedBy': updatedBy,
+        'version': version,
+        'sourceType': sourceType,
+        'sourceId': sourceId,
         if (updatedAt != null) 'updatedAt': updatedAt!.millisecondsSinceEpoch,
       };
 
@@ -166,6 +184,12 @@ class Project {
         milestones: _parseMilestones(json['milestones']),
         createdAt: _toDate(json['createdAt']) ?? DateTime.now(),
         orgId: (json['orgId'] as String?) ?? '',
+        code: (json['code'] as String?) ?? '',
+        createdBy: (json['createdBy'] as String?) ?? '',
+        updatedBy: (json['updatedBy'] as String?) ?? '',
+        version: (json['version'] as num?)?.toInt() ?? 1,
+        sourceType: (json['sourceType'] as String?) ?? 'manual',
+        sourceId: (json['sourceId'] as String?) ?? '',
         updatedAt: _toDate(json['updatedAt']),
       );
 

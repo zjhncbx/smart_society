@@ -70,6 +70,8 @@
 - **统一工作项 WorkItem（P0-A）**：审批/自动任务/项目任务/风险整改/数据治理统一抽象为 WorkItem（对象含类型/来源/负责人/优先级/SLA/升级/完成条件）；refresh-work-items 从来源业务物化视图并自动关闭已消失项，get-work-items 统一查询，act-work-item 统一处理（自动任务/风险/数据治理同步来源，审批/项目任务跳转来源系统）；移动端新增统一工作项页，Web 直接消费同一接口
 - **跨端统一身份客户端落地（P0-B）**：华为登录后自动调用 ensure-user-identity 换取内部 userId，客户端全部业务调用改为使用内部 userId（原 19 处 openId 用法已替换，openId 仅保留为外部身份映射）；新增 Person 对象（personId+userId 主档），AppUser 增加 personId 字段，形成 ExternalIdentity → userId → Person 链路
 - **RBAC 第一版（P0-C）**：新增 Role（内置角色矩阵+自定义权限 JSON）/ Permission（权限目录）/ DataScope（数据范围）对象；UserOrganization 增强为组织成员关系（roleId/dataScope/status）；get-my-permissions 云端计算角色/权限/数据范围（回退兼容旧 admin/member），get-roles/save-role/save-data-scope 供管理员配置；客户端权限框架已接入（我的页管理操作按权限码门禁）
+- **决议执行中心（GOV-02）**：新增 Resolution 对象（统一字段+标题/内容/状态/责任人/期限/会议关联/关联ID）；save-resolution / get-resolutions / act-resolution 云函数（幂等、事件、审计）；规则引擎新增 GR-09 决议逾期未执行（自动生成预警与推进任务）；统一工作项物化纳入“决议执行”类型
+- **核心表统一字段迁移**：Member / Project / Notice 三张核心主数据表补齐统一字段（code/status/createdAt/createdBy/updatedBy/version/sourceType/sourceId），云函数模型与 Flutter 模型同步，upsert 时自动生成编码与版本号
 - **成员数据管理**：支持 CSV 导出与粘贴导入（钉钉托管组织仅可导出）；财务支持反结账（撤销结转凭证，恢复年度录入）
 - **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
 
@@ -114,9 +116,9 @@ smart_society/                     # 仓库根目录
 │       ├── cloud-config.json
 │       ├── clouddb/
 │       │   ├── db-config.json
-│       │   ├── objecttype/         # 27 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化/审计/身份/幂等/工作项/权限等）
+│       │   ├── objecttype/         # 28 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化/审计/身份/幂等/工作项/权限/决议等）
 │       │   └── dataentry/          # 种子数据
-│       └── cloudfunctions/         # 56 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计、身份、权限等）
+│       └── cloudfunctions/         # 59 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计、身份、权限、决议等）
 └── web/                            # 网页端（规划中）
     └── README.md
 ```
@@ -167,7 +169,7 @@ flutter run --debug -d <deviceId>
 
 ### 3. 云数据库
 
-27 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
+28 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
 
 | 对象类型 | 主键 | 说明 |
 |----------|------|------|
@@ -197,12 +199,13 @@ flutter run --debug -d <deviceId>
 | Role | id | 组织角色（内置矩阵+自定义权限 JSON/数据范围） |
 | Permission | id | 权限目录（code/name/category） |
 | DataScope | id | 数据范围（角色级/用户级覆盖） |
+| Resolution | id | 决议（统一字段+状态/责任人/期限/会议关联/关联ID） |
 
 权限配置：World/Authenticated 仅可读，Creator/Administrator 可读写删。端侧不直连云数据库，由云函数服务端 SDK 访问；`OrgSettings` 中的钉钉凭证由 `get-org-settings` 按角色裁剪，普通成员不可见。
 
 ### 4. 云函数
 
-56 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
+59 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
 
 **数据 CRUD（7 个，按 orgId 隔离）**：
 
@@ -331,7 +334,7 @@ flutter run --debug -d <deviceId>
 | 端云一体化工程结构 | ✅ | mobile/Application/ + mobile/CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
-| 云函数部署 + 真机联调 | ✅ | 56 个云函数 + 27 张表部署至 AGC |
+| 云函数部署 + 真机联调 | ✅ | 59 个云函数 + 28 张表部署至 AGC |
 | 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
 | **设置数据上云（V3.2）** | ✅ | 角色名/钉钉配置/主题/昵称云端存储，按组织隔离，凭证仅管理员可见 |
 | **事件中心（V4.1）** | ✅ | 统一业务事件模型 + 云函数自动落事件 + 组织事件流页 |
