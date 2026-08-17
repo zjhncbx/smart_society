@@ -6,6 +6,7 @@ import { Member } from './Member';
 import { Project } from './Project';
 import { FinanceRecord } from './FinanceRecord';
 import { ApprovalInstance } from './ApprovalInstance';
+import { Organization } from './Organization';
 import { DataQualityIssue } from './DataQualityIssue';
 import { UserOrganization } from './UserOrganization';
 import { BusinessEvent } from './BusinessEvent';
@@ -118,6 +119,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const projectCol: CloudDBCollection<Project> = db.collection(Project);
     const financeCol: CloudDBCollection<FinanceRecord> = db.collection(FinanceRecord);
     const approvalCol: CloudDBCollection<ApprovalInstance> = db.collection(ApprovalInstance);
+    const orgCol: CloudDBCollection<Organization> = db.collection(Organization);
     const dqCol: CloudDBCollection<DataQualityIssue> = db.collection(DataQualityIssue);
     const taskCol: CloudDBCollection<AutoTask> = db.collection(AutoTask);
     const riskCol: CloudDBCollection<RiskAlert> = db.collection(RiskAlert);
@@ -126,6 +128,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const projects = await queryAllByOrg(projectCol, orgId);
     const finances = await queryAllByOrg(financeCol, orgId);
     const approvals = (await queryAllByOrg(approvalCol, orgId)).filter((a) => a.status === 'running');
+    const orgs = await orgCol.query().equalTo('orgId', orgId).get();
+    const org = orgs.length > 0 ? orgs[0] : null;
     const dqIssues = (await queryAllByOrg(dqCol, orgId)).filter((i) => i.status === 'open');
     const existingTasks = await queryAllByOrg(taskCol, orgId);
     const existingRisks = await queryAllByOrg(riskCol, orgId);
@@ -141,6 +145,105 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const riskHits: RiskHit[] = [];
     const now = new Date();
     const today = startOfDay(now);
+
+    // ---- GR-06 关键治理职位空缺 ----
+    const keyRoles: Record<string, string[]> = {
+      schoolClub: ['president'],
+      volunteerTeam: ['leader'],
+      socialOrg: ['chairman', 'secretary_general', 'chief_supervisor'],
+    };
+    const roleLabels: Record<string, Record<string, string>> = {
+      schoolClub: { president: '社长' },
+      volunteerTeam: { leader: '队长' },
+      socialOrg: {
+        chairman: '会长',
+        secretary_general: '秘书长',
+        chief_supervisor: '监事长',
+      },
+    };
+    const orgType = org ? String(org.orgType || '') : '';
+    const keyRoleIds = keyRoles[orgType] || [];
+    if (keyRoleIds.length > 0) {
+      const present = new Set(members.filter((m) => m.roleId).map((m) => m.roleId));
+      for (const roleId of keyRoleIds) {
+        if (present.has(roleId)) continue;
+        const label = (roleLabels[orgType] || {})[roleId] || roleId;
+        riskHits.push({
+          kind: 'risk', ruleId: 'GR-06', ruleName: '关键治理职位空缺',
+          title: `关键职位空缺：${label}`,
+          description: `组织「${org ? org.name : ''}」当前没有在职的${label}，请尽快完成任职安排。`,
+          entityType: 'organization', entityId: orgId, entityName: org ? org.name : '',
+          severity: 'high', ownerId: '', ownerName: '组织管理员',
+          deadlineDays: 7,
+        });
+        taskHits.push({
+          ruleId: 'GR-06', ruleName: '关键治理职位空缺',
+          title: `安排${label}任职`,
+          description: `组织缺少${label}，请启动任职变更或换届流程。`,
+          entityType: 'organization', entityId: orgId, entityName: org ? org.name : '',
+          assigneeId: '', assigneeName: '组织管理员',
+          priority: 'high', slaDays: 7, escalationLevel: 0,
+        });
+      }
+    }
+
+    // ---- GR-07 审批驳回次数异常 ----
+    for (const a of approvals) {
+      let rejectCount = 0;
+      try {
+        const history = JSON.parse(a.history || '[]');
+        if (Array.isArray(history)) {
+          rejectCount = history.filter((h: any) => h && h.action === 'reject').length;
+        }
+      } catch {
+        rejectCount = 0;
+      }
+      if (rejectCount < 2) continue;
+      const title = String(a.title || a.flowName || '审批');
+      riskHits.push({
+        kind: 'warning', ruleId: 'GR-07', ruleName: '审批驳回异常',
+        title: `审批多次驳回：${title}`,
+        description: `流程「${a.flowName || ''}」已被驳回 ${rejectCount} 次，可能存在提交材料或流程配置问题。`,
+        entityType: 'approval', entityId: a.id, entityName: title,
+        severity: 'medium', ownerId: '', ownerName: '发起人',
+        deadlineDays: 5,
+      });
+      taskHits.push({
+        ruleId: 'GR-07', ruleName: '审批驳回异常',
+        title: `处理多次驳回审批：${title}`,
+        description: `该审批已驳回 ${rejectCount} 次，请核对驳回意见并完善后重新提交。`,
+        entityType: 'approval', entityId: a.id, entityName: title,
+        assigneeId: a.createdBy, assigneeName: a.createdByName || '发起人',
+        priority: 'high', slaDays: 3, escalationLevel: 0,
+      });
+    }
+
+    // ---- GR-08 项目长时间未更新 ----
+    const staleDays = 60 * DAY_MS;
+    for (const p of projects) {
+      if (p.status === 3) continue;
+      const lastUpdate = p.updatedAt ? p.updatedAt.getTime() : p.createdAt.getTime();
+      if (now.getTime() - lastUpdate < staleDays) continue;
+      const managerId = String(p.managerId || '');
+      const managerName = memberName(managerId);
+      const days = Math.floor((now.getTime() - lastUpdate) / DAY_MS);
+      riskHits.push({
+        kind: 'warning', ruleId: 'GR-08', ruleName: '项目长时间未更新',
+        title: `项目「${p.name}」长期未更新`,
+        description: `项目已 ${days} 天没有更新进度，请确认是否仍在推进。`,
+        entityType: 'project', entityId: p.id, entityName: p.name,
+        severity: 'medium', ownerId: managerId, ownerName: managerName,
+        deadlineDays: 7,
+      });
+      taskHits.push({
+        ruleId: 'GR-08', ruleName: '项目长时间未更新',
+        title: `更新项目进度：${p.name}`,
+        description: `项目已 ${days} 天未更新，请补充最新进度或调整状态。`,
+        entityType: 'project', entityId: p.id, entityName: p.name,
+        assigneeId: managerId, assigneeName: managerName,
+        priority: 'medium', slaDays: 5, escalationLevel: 0,
+      });
+    }
 
     // ---- GR-01 任务逾期自动升级 ----
     for (const p of projects) {
