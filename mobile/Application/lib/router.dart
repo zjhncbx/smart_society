@@ -28,6 +28,8 @@ import 'screens/settings/settings_page.dart';
 import 'screens/settings/setup_wizard_page.dart';
 import 'screens/event/event_center_page.dart';
 import 'screens/data_quality/data_quality_center_page.dart';
+import 'screens/governance/auto_task_center_page.dart';
+import 'screens/governance/risk_center_page.dart';
 import 'services/auth_gate.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -192,6 +194,16 @@ final GoRouter appRouter = GoRouter(
       path: '/quality',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => const DataQualityCenterPage(),
+    ),
+    GoRoute(
+      path: '/governance/tasks',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const AutoTaskCenterPage(),
+    ),
+    GoRoute(
+      path: '/governance/risks',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const RiskCenterPage(),
     ),
     GoRoute(
       path: '/profile',

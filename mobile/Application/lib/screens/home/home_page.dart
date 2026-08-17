@@ -5,10 +5,12 @@ import 'package:provider/provider.dart';
 import '../../config/finance_config.dart';
 import '../../config/org_config_provider.dart';
 import '../../models/business_event.dart';
+import '../../models/governance.dart';
 import '../../models/project.dart';
 import '../../providers/finance_provider.dart';
 import '../../providers/event_provider.dart';
 import '../../providers/data_quality_provider.dart';
+import '../../providers/governance_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
 import '../../providers/organization_provider.dart';
@@ -69,6 +71,7 @@ class _HomePageState extends State<HomePage> {
     finance.loadTasks();
     context.read<EventProvider>().load();
     context.read<DataQualityProvider>().load();
+    context.read<GovernanceProvider>().load();
     if (orgId != null && orgId.isNotEmpty) {
       await SyncProvider.instance.pullAndRefresh(orgId);
     }
@@ -99,6 +102,7 @@ class _HomePageState extends State<HomePage> {
     final finance = context.watch<FinanceProvider>();
     final events = context.watch<EventProvider>().recentEvents;
     final dq = context.watch<DataQualityProvider>();
+    final gov = context.watch<GovernanceProvider>();
     final orgId = context.watch<OrganizationProvider>().currentOrgId ?? '';
     final binding = context.watch<SettingsProvider>().memberBinding(orgId);
     final myTasks = [
@@ -212,6 +216,13 @@ class _HomePageState extends State<HomePage> {
             hasSnapshot: dq.snapshot.checkedAt != null,
             onTap: () => context.go('/quality'),
           ),
+          const SizedBox(height: 12),
+          _RiskOverviewCard(
+            riskCount: gov.riskCount,
+            warningCount: gov.warningCount,
+            topRisks: gov.prioritizedRisks.take(3).toList(),
+            onTap: () => context.go('/governance/risks'),
+          ),
           const SizedBox(height: 20),
           // 快捷入口
           AppCard(
@@ -268,11 +279,11 @@ class _HomePageState extends State<HomePage> {
                       color: const Color(0xFF13C2C2),
                       onTap: () => context.go('/events'),
                     ),
-                    const _QuickAction(
-                      label: '',
-                      icon: Icons.circle,
-                      color: Colors.transparent,
-                      onTap: null,
+                    _QuickAction(
+                      label: '自动任务',
+                      icon: Icons.auto_awesome_outlined,
+                      color: const Color(0xFF7B61FF),
+                      onTap: () => context.go('/governance/tasks'),
                     ),
                   ],
                 ),
@@ -844,6 +855,127 @@ class _DataQualityCard extends StatelessWidget {
             ),
             Icon(Icons.chevron_right, size: 18, color: appTheme.textSecondary),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RiskOverviewCard extends StatelessWidget {
+  const _RiskOverviewCard({
+    required this.riskCount,
+    required this.warningCount,
+    required this.topRisks,
+    required this.onTap,
+  });
+
+  final int riskCount;
+  final int warningCount;
+  final List<RiskAlert> topRisks;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appTheme = context.appTheme;
+    return AppCard(
+      margin: EdgeInsets.zero,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded,
+                    size: 18, color: Color(0xFFF54A45)),
+                const SizedBox(width: 6),
+                const Text(
+                  '风险预警',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                const Spacer(),
+                if (riskCount > 0)
+                  _RiskCountBadge(
+                    label: '风险 $riskCount',
+                    color: const Color(0xFFF54A45),
+                  ),
+                if (warningCount > 0) ...[
+                  const SizedBox(width: 6),
+                  _RiskCountBadge(
+                    label: '预警 $warningCount',
+                    color: const Color(0xFFFF8800),
+                  ),
+                ],
+                if (riskCount == 0 && warningCount == 0)
+                  Text(
+                    '运行规则后自动识别',
+                    style:
+                        TextStyle(fontSize: 12, color: appTheme.textSecondary),
+                  ),
+              ],
+            ),
+            if (topRisks.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              for (final risk in topRisks)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: risk.isRisk
+                              ? const Color(0xFFF54A45)
+                              : const Color(0xFFFF8800),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          risk.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RiskCountBadge extends StatelessWidget {
+  const _RiskCountBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: color,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
