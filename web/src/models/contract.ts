@@ -146,3 +146,105 @@ export interface OrgPosture {
   escalatedCount: number;
   topConcerns: Array<{ level: 'risk' | 'warning' | 'data'; text: string }>;
 }
+
+export interface OrganizationProfile {
+  orgId: string;
+  name: string;
+  orgType: 'schoolClub' | 'volunteerTeam' | 'socialOrg';
+  creditCode: string;
+  description: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface OrganizationRelationship {
+  relId: string;
+  orgId: string;
+  relatedOrgId: string;
+  relatedName?: string;
+  relType: 'child' | 'partner';
+  shareMembers: boolean;
+  shareActivities: boolean;
+  shareNotices: boolean;
+}
+
+export interface Member {
+  id: string;
+  orgId: string;
+  name: string;
+  studentNo: string;
+  department: string;
+  roleId: string;
+  roleLabel: string;
+  phone: string;
+  email: string;
+  joinedAt: string;
+  status: string;
+  syncStatus: string;
+}
+
+export interface Project {
+  id: string;
+  orgId: string;
+  name: string;
+  description: string;
+  managerId: string;
+  managerName: string;
+  status: number;
+  statusLabel: string;
+  progress: number;
+  budget: number;
+  startDate: string;
+  endDate: string;
+  taskCount: number;
+  doneTaskCount: number;
+  createdAt: string;
+}
+
+export interface ApprovalInstance {
+  id: string;
+  orgId: string;
+  flowName: string;
+  title: string;
+  bizType: string;
+  bizId: string;
+  status: 'running' | 'approved' | 'rejected';
+  currentNode: string;
+  nodeName: string;
+  createdByName: string;
+  createdAt: string;
+  canAct: boolean;
+}
+
+export interface Resolution {
+  id: string;
+  orgId: string;
+  title: string;
+  content: string;
+  status: 'pending' | 'executing' | 'done' | 'overdue';
+  responsibleName: string;
+  deadline: string;
+  correlationId: string;
+  createdAt: string;
+}
+
+export interface FinanceRecord {
+  id: string;
+  orgId: string;
+  type: 'income' | 'expense' | 'voucher';
+  amount: number;
+  categoryLabel: string;
+  summary: string;
+  counterparty: string;
+  projectId: string;
+  status: string;
+  createdByName: string;
+  date: string;
+  createdAt: string;
+}
+
+export interface FinanceStats {
+  income: number;
+  expense: number;
+  balance: number;
+}

@@ -26,6 +26,21 @@ const AuditLogPage = lazy(() =>
 const SearchPage = lazy(() =>
   import('@/features/search/SearchPage').then((m) => ({ default: m.SearchPage })),
 );
+const OrganizationPage = lazy(() =>
+  import('@/features/organization/OrganizationPage').then((m) => ({ default: m.OrganizationPage })),
+);
+const MembershipPage = lazy(() =>
+  import('@/features/membership/MembershipPage').then((m) => ({ default: m.MembershipPage })),
+);
+const ProjectPage = lazy(() =>
+  import('@/features/project/ProjectPage').then((m) => ({ default: m.ProjectPage })),
+);
+const ApprovalPage = lazy(() =>
+  import('@/features/approval/ApprovalPage').then((m) => ({ default: m.ApprovalPage })),
+);
+const FinancePage = lazy(() =>
+  import('@/features/finance/FinancePage').then((m) => ({ default: m.FinancePage })),
+);
 
 function RequireAuth({ children }: { children: ReactNode }): ReactNode {
   const userId = useSession((s) => s.userId);
@@ -37,11 +52,6 @@ function SuspensePage({ children }: { children: ReactNode }): ReactNode {
 }
 
 const placeholderRoutes = [
-  ['organization', '组织治理'],
-  ['membership', '成员与档案'],
-  ['project', '项目与任务'],
-  ['approval', '审批与决议'],
-  ['finance', '财务管理'],
   ['sensing', '全域感知'],
   ['reports', '报表与分析'],
   ['settings', '系统设置'],
@@ -73,6 +83,46 @@ export const router = createBrowserRouter([
         path,
         element: <PlaceholderPage title={title} />,
       })),
+      {
+        path: 'organization',
+        element: (
+          <SuspensePage>
+            <OrganizationPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'membership',
+        element: (
+          <SuspensePage>
+            <MembershipPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'project',
+        element: (
+          <SuspensePage>
+            <ProjectPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'approval',
+        element: (
+          <SuspensePage>
+            <ApprovalPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'finance',
+        element: (
+          <SuspensePage>
+            <FinancePage />
+          </SuspensePage>
+        ),
+      },
       {
         path: 'risk',
         element: (

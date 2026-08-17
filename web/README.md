@@ -428,6 +428,20 @@ W1 页面全部通过统一 API Client 对接云端业务函数；开发态由 `
 
 本地验证：`pnpm smoke`（Mock 9 项断言 ✅）、`pnpm typecheck` ✅、`pnpm lint`（0 error）✅、`pnpm test`（5/5）✅、`pnpm build` ✅。
 
-### 下一步（W2）
+### W2 组织业务（已完成 ✅）
 
-组织治理、成员与档案、项目、审批、决议、财务——接入真实 AGC 网关（`VITE_API_BASE_URL`）后替换 Mock。
+```text
+组织治理          ✅ /organization：组织档案编辑 + 组织关系（子组织/合作 + 数据共享开关）
+成员与档案        ✅ /membership：搜索/职务筛选 + 增删改（Modal 表单）
+项目              ✅ /project：列表 + 创建/编辑 + 状态迁移（启动/暂停/恢复/完成，走业务动作）
+审批与决议        ✅ /approval：审批待办（通过/驳回/办理）+ 决议管理（创建/开始执行/完成/重开）
+财务              ✅ /finance：收支结余统计 + 单据列表 + 提交单据（进入审批）
+```
+
+所有写操作经统一 API Client 并携带 `idempotencyKey`/`correlationId`；项目状态迁移与审批动作不允许 CRUD 绕过。
+
+本地验证：`pnpm smoke`（W1/W2 共 18 项断言 ✅）、`pnpm typecheck` ✅、`pnpm lint`（0 error）✅、`pnpm test`（5/5）✅、`pnpm build` ✅。
+
+### 下一步（W3）
+
+规则管理、自动化管理、数据质量规则、风险规则、报表中心、数据导出、高级全域感知；接入真实 AGC 网关（`VITE_API_BASE_URL`）后替换 Mock。

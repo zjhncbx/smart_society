@@ -405,6 +405,253 @@ const events = [
   },
 ];
 
+const orgProfile = {
+  orgId: 'org_demo',
+  name: '示例社会团体',
+  orgType: 'socialOrg',
+  creditCode: '91510000XXXXXXXXXX',
+  description: '用于 Web W2 开发验证的示例组织',
+  status: 'active',
+  createdAt: iso(-90 * 86400000),
+};
+
+const relationships = [
+  {
+    relId: 'org_demo_org_child_1',
+    orgId: 'org_demo',
+    relatedOrgId: 'org_child_1',
+    relatedName: '示例子组织',
+    relType: 'child',
+    shareMembers: true,
+    shareActivities: false,
+    shareNotices: true,
+  },
+  {
+    relId: 'org_demo_org_partner_1',
+    orgId: 'org_demo',
+    relatedOrgId: 'org_partner_1',
+    relatedName: '示例合作组织',
+    relType: 'partner',
+    shareMembers: false,
+    shareActivities: true,
+    shareNotices: false,
+  },
+];
+
+const members = [
+  {
+    id: 'm_demo_1',
+    orgId: 'org_demo',
+    name: '张三',
+    studentNo: 'M-2026-0001',
+    department: '秘书处',
+    roleId: 'chairman',
+    roleLabel: '会长',
+    phone: '13800000001',
+    email: 'zhangsan@example.com',
+    joinedAt: '2024-03-01',
+    status: 'active',
+    syncStatus: 'manual',
+  },
+  {
+    id: 'm_demo_2',
+    orgId: 'org_demo',
+    name: '李四',
+    studentNo: 'M-2026-0002',
+    department: '秘书处',
+    roleId: 'secretary_general',
+    roleLabel: '秘书长',
+    phone: '13800000002',
+    email: 'lisi@example.com',
+    joinedAt: '2024-03-05',
+    status: 'active',
+    syncStatus: 'manual',
+  },
+  {
+    id: 'm_demo_3',
+    orgId: 'org_demo',
+    name: '王五',
+    studentNo: 'M-2026-0003',
+    department: '财务部',
+    roleId: 'finance_lead',
+    roleLabel: '财务负责人',
+    phone: '13800000003',
+    email: '',
+    joinedAt: '2024-04-12',
+    status: 'active',
+    syncStatus: 'manual',
+  },
+  {
+    id: 'm_demo_4',
+    orgId: 'org_demo',
+    name: '赵六',
+    studentNo: 'M-2026-0004',
+    department: '会员部',
+    roleId: 'member',
+    roleLabel: '会员',
+    phone: '',
+    email: 'zhaoliu@example.com',
+    joinedAt: '2025-01-20',
+    status: 'active',
+    syncStatus: 'manual',
+  },
+];
+
+const projects = [
+  {
+    id: 'p_demo_1',
+    orgId: 'org_demo',
+    name: '会员数据治理',
+    description: '清理重复与缺失会员档案',
+    managerId: 'm_demo_2',
+    managerName: '李四',
+    status: 1,
+    statusLabel: '进行中',
+    progress: 40,
+    budget: 50000,
+    startDate: '2026-06-01',
+    endDate: '2026-12-31',
+    taskCount: 6,
+    doneTaskCount: 2,
+    createdAt: iso(-60 * 86400000),
+  },
+  {
+    id: 'p_demo_2',
+    orgId: 'org_demo',
+    name: '组织数字画像',
+    description: '建设组织管理健康度模型',
+    managerId: 'm_demo_1',
+    managerName: '张三',
+    status: 1,
+    statusLabel: '进行中',
+    progress: 35,
+    budget: 80000,
+    startDate: '2026-05-01',
+    endDate: '2026-11-30',
+    taskCount: 8,
+    doneTaskCount: 3,
+    createdAt: iso(-70 * 86400000),
+  },
+  {
+    id: 'p_demo_3',
+    orgId: 'org_demo',
+    name: '年度会员大会',
+    description: '筹备年度会员大会与换届',
+    managerId: 'm_demo_1',
+    managerName: '张三',
+    status: 0,
+    statusLabel: '筹备中',
+    progress: 0,
+    budget: 30000,
+    startDate: '2026-09-01',
+    endDate: '2026-10-31',
+    taskCount: 4,
+    doneTaskCount: 0,
+    createdAt: iso(-30 * 86400000),
+  },
+];
+
+const approvals = [
+  {
+    id: 'ai_demo_1',
+    orgId: 'org_demo',
+    flowName: '费用报销',
+    title: '购置办公设备费用报销',
+    bizType: 'finance',
+    bizId: 'f_demo_1',
+    status: 'running',
+    currentNode: 'approve',
+    nodeName: '财务负责人审批',
+    createdByName: '张三',
+    createdAt: iso(-4 * 86400000),
+    canAct: true,
+  },
+  {
+    id: 'ai_demo_2',
+    orgId: 'org_demo',
+    flowName: '付款申请',
+    title: '会员数据治理项目付款',
+    bizType: 'finance',
+    bizId: 'f_demo_2',
+    status: 'running',
+    currentNode: 'done',
+    nodeName: '办理付款',
+    createdByName: '李四',
+    createdAt: iso(-2 * 86400000),
+    canAct: true,
+  },
+];
+
+const resolutions = [
+  {
+    id: 'res_demo_1',
+    orgId: 'org_demo',
+    title: '关于开展会员数据治理的决议',
+    content: '同意启动会员数据治理项目，由秘书处牵头，2026 年底前完成。',
+    status: 'executing',
+    responsibleName: '李四',
+    deadline: '2026-12-31',
+    correlationId: 'c_demo_res_1',
+    createdAt: iso(-60 * 86400000),
+  },
+  {
+    id: 'res_demo_2',
+    orgId: 'org_demo',
+    title: '关于筹备年度会员大会的决议',
+    content: '同意于 2026 年 10 月召开年度会员大会。',
+    status: 'pending',
+    responsibleName: '张三',
+    deadline: '2026-10-31',
+    correlationId: 'c_demo_res_2',
+    createdAt: iso(-30 * 86400000),
+  },
+];
+
+const financeRecords = [
+  {
+    id: 'f_demo_1',
+    orgId: 'org_demo',
+    type: 'expense',
+    amount: 12800,
+    categoryLabel: '办公费',
+    summary: '购置办公设备费用报销',
+    counterparty: '示例供应商',
+    projectId: '',
+    status: 'approving',
+    createdByName: '张三',
+    date: '2026-08-12',
+    createdAt: iso(-4 * 86400000),
+  },
+  {
+    id: 'f_demo_2',
+    orgId: 'org_demo',
+    type: 'expense',
+    amount: 20000,
+    categoryLabel: '项目支出',
+    summary: '会员数据治理项目付款',
+    counterparty: '示例服务商',
+    projectId: 'p_demo_1',
+    status: 'approving',
+    createdByName: '李四',
+    date: '2026-08-13',
+    createdAt: iso(-2 * 86400000),
+  },
+  {
+    id: 'f_demo_3',
+    orgId: 'org_demo',
+    type: 'income',
+    amount: 100000,
+    categoryLabel: '会费收入',
+    summary: '2026 年度会费',
+    counterparty: '',
+    projectId: '',
+    status: 'approved',
+    createdByName: '财务',
+    date: '2026-08-01',
+    createdAt: iso(-16 * 86400000),
+  },
+];
+
 function json(res: ServerResponse, data: unknown, code = 0, message = 'ok'): void {
   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify({ ret: { code, message, data } }));
@@ -640,6 +887,210 @@ export async function handleApi(
   }
   if (path === '/search') {
     json(res, search(String(body.query ?? '')));
+    return;
+  }
+  if (path === '/organization') {
+    json(res, { profile: orgProfile, relationships });
+    return;
+  }
+  if (path === '/organization/save') {
+    orgProfile.name = String(body.name ?? orgProfile.name);
+    orgProfile.description = String(body.description ?? orgProfile.description);
+    json(res, orgProfile);
+    return;
+  }
+  if (path === '/organization/relationship/set') {
+    const relId = `${orgProfile.orgId}_${body.relatedOrgId ?? ''}`;
+    relationships.unshift({
+      relId,
+      orgId: orgProfile.orgId,
+      relatedOrgId: String(body.relatedOrgId ?? ''),
+      relatedName: String(body.relatedName ?? body.relatedOrgId ?? ''),
+      relType: body.relType === 'partner' ? 'partner' : 'child',
+      shareMembers: body.shareMembers === true,
+      shareActivities: body.shareActivities === true,
+      shareNotices: body.shareNotices === true,
+    });
+    json(res, { ok: true });
+    return;
+  }
+  if (path === '/members') {
+    const keyword = String(body.keyword ?? '').toLowerCase();
+    const filtered = members.filter(
+      (m) =>
+        (!body.roleId || m.roleId === body.roleId) &&
+        (!keyword ||
+          m.name.toLowerCase().includes(keyword) ||
+          m.studentNo.toLowerCase().includes(keyword) ||
+          m.department.toLowerCase().includes(keyword)),
+    );
+    const list = filtered.slice(page * pageSize, (page + 1) * pageSize);
+    json(res, { members: list, total: filtered.length, hasMore: (page + 1) * pageSize < filtered.length });
+    return;
+  }
+  if (path === '/members/save') {
+    const existing = members.find((m) => m.id === body.id);
+    const record = {
+      id: existing?.id ?? 'm_' + Date.now(),
+      orgId: orgProfile.orgId,
+      name: String(body.name ?? ''),
+      studentNo: String(body.studentNo ?? ''),
+      department: String(body.department ?? ''),
+      roleId: String(body.roleId ?? 'member'),
+      roleLabel: String(body.roleLabel ?? '会员'),
+      phone: String(body.phone ?? ''),
+      email: String(body.email ?? ''),
+      joinedAt: String(body.joinedAt ?? new Date().toISOString().slice(0, 10)),
+      status: 'active',
+      syncStatus: 'manual',
+    };
+    if (existing) {
+      Object.assign(existing, record);
+    } else {
+      members.unshift(record);
+    }
+    json(res, record);
+    return;
+  }
+  if (path === '/members/delete') {
+    const index = members.findIndex((m) => m.id === body.id);
+    if (index >= 0) members.splice(index, 1);
+    json(res, { ok: true });
+    return;
+  }
+  if (path === '/projects') {
+    const filtered = projects.filter((p) => (!body.status || p.status === Number(body.status)));
+    const list = filtered.slice(page * pageSize, (page + 1) * pageSize);
+    json(res, { projects: list, total: filtered.length, hasMore: (page + 1) * pageSize < filtered.length });
+    return;
+  }
+  if (path === '/projects/save') {
+    const existing = projects.find((p) => p.id === body.id);
+    const record = {
+      id: existing?.id ?? 'p_' + Date.now(),
+      orgId: orgProfile.orgId,
+      name: String(body.name ?? ''),
+      description: String(body.description ?? ''),
+      managerId: String(body.managerId ?? ''),
+      managerName: String(body.managerName ?? ''),
+      status: existing?.status ?? 0,
+      statusLabel: existing?.statusLabel ?? '筹备中',
+      progress: existing?.progress ?? 0,
+      budget: Number(body.budget ?? 0),
+      startDate: String(body.startDate ?? new Date().toISOString().slice(0, 10)),
+      endDate: String(body.endDate ?? new Date().toISOString().slice(0, 10)),
+      taskCount: existing?.taskCount ?? 0,
+      doneTaskCount: existing?.doneTaskCount ?? 0,
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
+    };
+    if (existing) Object.assign(existing, record);
+    else projects.unshift(record);
+    json(res, record);
+    return;
+  }
+  if (path === '/projects/transition') {
+    const project = projects.find((p) => p.id === body.id);
+    if (!project) {
+      json(res, null, -1, '项目不存在');
+      return;
+    }
+    const map: Record<string, { status: number; label: string }> = {
+      start: { status: 1, label: '进行中' },
+      pause: { status: 2, label: '已暂停' },
+      resume: { status: 1, label: '进行中' },
+      complete: { status: 3, label: '已完成' },
+    };
+    const next = map[String(body.action ?? '')];
+    if (!next) {
+      json(res, null, -1, '无效的状态动作');
+      return;
+    }
+    project.status = next.status;
+    project.statusLabel = next.label;
+    json(res, { id: project.id, status: project.status, statusLabel: project.statusLabel });
+    return;
+  }
+  if (path === '/approvals') {
+    json(res, { approvals });
+    return;
+  }
+  if (path === '/approvals/act') {
+    const approval = approvals.find((a) => a.id === body.id);
+    if (!approval) {
+      json(res, null, -1, '审批实例不存在');
+      return;
+    }
+    approval.status =
+      body.action === 'approve' ? 'approved' : body.action === 'reject' ? 'rejected' : 'approved';
+    json(res, { status: approval.status });
+    return;
+  }
+  if (path === '/resolutions') {
+    json(res, { resolutions });
+    return;
+  }
+  if (path === '/resolutions/save') {
+    const record = {
+      id: 'res_' + Date.now(),
+      orgId: orgProfile.orgId,
+      title: String(body.title ?? ''),
+      content: String(body.content ?? ''),
+      status: 'pending',
+      responsibleName: String(body.responsibleName ?? ''),
+      deadline: String(body.deadline ?? ''),
+      correlationId: 'c_demo_res_' + Date.now(),
+      createdAt: new Date().toISOString(),
+    };
+    resolutions.unshift(record);
+    json(res, record);
+    return;
+  }
+  if (path === '/resolutions/act') {
+    const resolution = resolutions.find((r) => r.id === body.id);
+    if (!resolution) {
+      json(res, null, -1, '决议不存在');
+      return;
+    }
+    resolution.status =
+      body.action === 'start' ? 'executing' : body.action === 'done' ? 'done' : 'pending';
+    json(res, { id: resolution.id, status: resolution.status });
+    return;
+  }
+  if (path === '/finance/records') {
+    const filtered = financeRecords.filter(
+      (r) => (!body.type || r.type === body.type) && (!body.status || r.status === body.status),
+    );
+    const list = filtered.slice(page * pageSize, (page + 1) * pageSize);
+    json(res, { records: list, total: filtered.length, hasMore: (page + 1) * pageSize < filtered.length });
+    return;
+  }
+  if (path === '/finance/stats') {
+    const income = financeRecords
+      .filter((r) => r.type === 'income' && r.status === 'approved')
+      .reduce((s, r) => s + r.amount, 0);
+    const expense = financeRecords
+      .filter((r) => r.type === 'expense' && r.status === 'approved')
+      .reduce((s, r) => s + r.amount, 0);
+    json(res, { income, expense, balance: income - expense });
+    return;
+  }
+  if (path === '/finance/submit') {
+    const record = {
+      id: 'f_' + Date.now(),
+      orgId: orgProfile.orgId,
+      type: body.type === 'income' ? 'income' : body.type === 'voucher' ? 'voucher' : 'expense',
+      amount: Number(body.amount ?? 0),
+      categoryLabel: String(body.categoryLabel ?? ''),
+      summary: String(body.summary ?? ''),
+      counterparty: String(body.counterparty ?? ''),
+      projectId: String(body.projectId ?? ''),
+      status: 'approving',
+      createdByName: '管理员',
+      date: String(body.date ?? new Date().toISOString().slice(0, 10)),
+      createdAt: new Date().toISOString(),
+    };
+    financeRecords.unshift(record);
+    json(res, { recordId: record.id, status: record.status });
     return;
   }
   json(res, null, -1, `Mock 未实现：${path}`);

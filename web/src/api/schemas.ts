@@ -145,3 +145,105 @@ export const auditLogSchema = z.object({
   correlationId: z.string().optional(),
   createdAt: z.string(),
 });
+
+export const organizationProfileSchema = z.object({
+  orgId: z.string(),
+  name: z.string(),
+  orgType: z.enum(['schoolClub', 'volunteerTeam', 'socialOrg']),
+  creditCode: z.string(),
+  description: z.string(),
+  status: z.string(),
+  createdAt: z.string(),
+});
+
+export const organizationRelationshipSchema = z.object({
+  relId: z.string(),
+  orgId: z.string(),
+  relatedOrgId: z.string(),
+  relatedName: z.string().optional(),
+  relType: z.enum(['child', 'partner']),
+  shareMembers: z.boolean(),
+  shareActivities: z.boolean(),
+  shareNotices: z.boolean(),
+});
+
+export const memberSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  name: z.string(),
+  studentNo: z.string(),
+  department: z.string(),
+  roleId: z.string(),
+  roleLabel: z.string(),
+  phone: z.string(),
+  email: z.string(),
+  joinedAt: z.string(),
+  status: z.string(),
+  syncStatus: z.string(),
+});
+
+export const projectSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  managerId: z.string(),
+  managerName: z.string(),
+  status: z.number(),
+  statusLabel: z.string(),
+  progress: z.number(),
+  budget: z.number(),
+  startDate: z.string(),
+  endDate: z.string(),
+  taskCount: z.number(),
+  doneTaskCount: z.number(),
+  createdAt: z.string(),
+});
+
+export const approvalInstanceSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  flowName: z.string(),
+  title: z.string(),
+  bizType: z.string(),
+  bizId: z.string(),
+  status: z.enum(['running', 'approved', 'rejected']),
+  currentNode: z.string(),
+  nodeName: z.string(),
+  createdByName: z.string(),
+  createdAt: z.string(),
+  canAct: z.boolean(),
+});
+
+export const resolutionSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  title: z.string(),
+  content: z.string(),
+  status: z.enum(['pending', 'executing', 'done', 'overdue']),
+  responsibleName: z.string(),
+  deadline: z.string(),
+  correlationId: z.string(),
+  createdAt: z.string(),
+});
+
+export const financeRecordSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  type: z.enum(['income', 'expense', 'voucher']),
+  amount: z.number(),
+  categoryLabel: z.string(),
+  summary: z.string(),
+  counterparty: z.string(),
+  projectId: z.string(),
+  status: z.string(),
+  createdByName: z.string(),
+  date: z.string(),
+  createdAt: z.string(),
+});
+
+export const financeStatsSchema = z.object({
+  income: z.number(),
+  expense: z.number(),
+  balance: z.number(),
+});

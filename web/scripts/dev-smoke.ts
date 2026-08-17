@@ -42,7 +42,7 @@ const server = createServer((req, res) => {
 
 server.listen(PORT, async () => {
   try {
-    console.log('W1 Mock smoke 开始');
+    console.log('W1/W2 Mock smoke 开始');
     const perm = await post<{ roleId: string; permissions: string[] }>('/permissions/mine', {});
     assert(perm.roleId === 'org_admin' && perm.permissions.includes('*'), '权限：org_admin 全量');
 
@@ -84,7 +84,48 @@ server.listen(PORT, async () => {
     const search = await post<unknown[]>('/search', { query: '逾期' });
     assert(search.length > 0, '检索：命中');
 
-    console.log('W1 Mock smoke 全部通过');
+    const org = await post<{ profile: { name: string }; relationships: unknown[] }>('/organization', {});
+    assert(org.profile.name.length > 0 && org.relationships.length > 0, '组织：档案与关系');
+
+    const members = await post<{ members: unknown[]; total: number }>('/members', { pageSize: 10 });
+    assert(members.members.length > 0, '成员：列表');
+
+    const projects = await post<{ projects: Array<{ id: string; status: number }> }>('/projects', {});
+    assert(projects.projects.length > 0, '项目：列表');
+    const trans = await post<{ status: number; statusLabel: string }>('/projects/transition', {
+      id: projects.projects[0].id,
+      action: 'start',
+    });
+    assert(trans.status === 1 && trans.statusLabel === '进行中', '项目：状态迁移走业务动作');
+
+    const approvals = await post<{ approvals: Array<{ id: string; canAct: boolean }> }>('/approvals', {});
+    assert(approvals.approvals.some((a) => a.canAct), '审批：待办存在');
+    const actApproval = await post<{ status: string }>('/approvals/act', {
+      id: approvals.approvals[0].id,
+      action: 'approve',
+    });
+    assert(actApproval.status === 'approved', '审批：通过动作');
+
+    const res = await post<{ status: string }>('/resolutions/save', {
+      title: '冒烟决议',
+      content: '用于验证',
+      responsibleName: '张三',
+      deadline: '2026-12-31',
+    });
+    assert(res.status === 'pending', '决议：创建');
+
+    const stats = await post<{ income: number; expense: number; balance: number }>('/finance/stats', {});
+    assert(stats.income > 0 && stats.balance >= 0, '财务：统计');
+    const submitted = await post<{ recordId: string; status: string }>('/finance/submit', {
+      type: 'expense',
+      amount: 100,
+      categoryLabel: '办公费',
+      summary: '冒烟单据',
+      date: '2026-08-17',
+    });
+    assert(submitted.recordId.length > 0 && submitted.status === 'approving', '财务：提交进入审批');
+
+    console.log('W1/W2 Mock smoke 全部通过');
     server.close();
     process.exit(0);
   } catch (error) {
