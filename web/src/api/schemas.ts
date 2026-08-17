@@ -247,3 +247,39 @@ export const financeStatsSchema = z.object({
   expense: z.number(),
   balance: z.number(),
 });
+
+export const ruleSchema = z.object({
+  id: z.string(),
+  ruleId: z.string(),
+  ruleName: z.string(),
+  category: z.enum([
+    'project',
+    'approval',
+    'finance',
+    'governance',
+    'data-quality',
+    'member',
+    'org',
+  ]),
+  enabled: z.boolean(),
+  trigger: z.string(),
+  condition: z.string(),
+  action: z.string(),
+  description: z.string().optional(),
+});
+
+export const reportDataSchema = z.object({
+  financeTrend: z.array(
+    z.object({ month: z.string(), income: z.number(), expense: z.number() }),
+  ),
+  riskDistribution: z.array(z.object({ name: z.string(), value: z.number() })),
+  dqDimensions: z.array(z.object({ name: z.string(), value: z.number() })),
+  projectStatus: z.array(z.object({ name: z.string(), value: z.number() })),
+  totals: z.object({
+    members: z.number(),
+    projects: z.number(),
+    pendingWorkItems: z.number(),
+    dqScore: z.number(),
+    successRate: z.number(),
+  }),
+});

@@ -41,6 +41,12 @@ const ApprovalPage = lazy(() =>
 const FinancePage = lazy(() =>
   import('@/features/finance/FinancePage').then((m) => ({ default: m.FinancePage })),
 );
+const ReportsPage = lazy(() =>
+  import('@/features/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
+);
+const SensingPage = lazy(() =>
+  import('@/features/sensing/SensingPage').then((m) => ({ default: m.SensingPage })),
+);
 
 function RequireAuth({ children }: { children: ReactNode }): ReactNode {
   const userId = useSession((s) => s.userId);
@@ -52,8 +58,6 @@ function SuspensePage({ children }: { children: ReactNode }): ReactNode {
 }
 
 const placeholderRoutes = [
-  ['sensing', '全域感知'],
-  ['reports', '报表与分析'],
   ['settings', '系统设置'],
 ] as const;
 
@@ -120,6 +124,22 @@ export const router = createBrowserRouter([
         element: (
           <SuspensePage>
             <FinancePage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'reports',
+        element: (
+          <SuspensePage>
+            <ReportsPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'sensing',
+        element: (
+          <SuspensePage>
+            <SensingPage />
           </SuspensePage>
         ),
       },

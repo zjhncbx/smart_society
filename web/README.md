@@ -442,6 +442,22 @@ W1 页面全部通过统一 API Client 对接云端业务函数；开发态由 `
 
 本地验证：`pnpm smoke`（W1/W2 共 18 项断言 ✅）、`pnpm typecheck` ✅、`pnpm lint`（0 error）✅、`pnpm test`（5/5）✅、`pnpm build` ✅。
 
-### 下一步（W3）
+### W3 高级治理（已完成 ✅）
 
-规则管理、自动化管理、数据质量规则、风险规则、报表中心、数据导出、高级全域感知；接入真实 AGC 网关（`VITE_API_BASE_URL`）后替换 Mock。
+```text
+规则管理          ✅ /automation 规则管理 Tab：规则列表（WHEN/IF/THEN）+ 启用/停用 + 详情 Drawer
+自动化管理        ✅ 运行监控（执行统计/成功率/失败/重试/卡住）+ 导出运行记录 CSV
+数据质量规则      ✅ DQ 规则（成员必填/任务逾期/预算异常）纳入规则管理
+风险规则          ✅ GR 规则（逾期升级/进度偏差/审批SLA/预算超支/职位空缺）纳入规则管理
+报表中心          ✅ /reports：收支趋势/风险分布/数据质量维度/项目状态（ECharts 按需引入）+ 导出报表 CSV
+数据导出          ✅ utils/exportCsv（BOM+转义）+ 自动化记录/治理报表导出
+高级全域感知      ✅ /sensing：态势指标 + 风险分布图 + 数据质量维度 + 近期事件流
+```
+
+ECharts 采用 `echarts/core` 按需引入（Line/Bar/Pie + Grid/Tooltip/Legend + Canvas），报表分包约 554KB（gzip 190KB）。
+
+本地验证：`pnpm smoke`（W1/W2/W3 共 21 项断言 ✅）、`pnpm typecheck` ✅、`pnpm lint`（0 error）✅、`pnpm test`（6/6）✅、`pnpm build` ✅（exit 0，无告警）。
+
+### 下一步
+
+接入真实 AGC 网关（`VITE_API_BASE_URL`）替换 Mock，并按 `docs/业务API契约.md` / `docs/云数据契约.md` 对齐真实接口；Web 与移动端/云端联调后完成三端验收。

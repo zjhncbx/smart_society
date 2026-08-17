@@ -652,6 +652,100 @@ const financeRecords = [
   },
 ];
 
+const rules = [
+  {
+    id: 'rule_GR-01',
+    ruleId: 'GR-01',
+    ruleName: '任务逾期自动升级',
+    category: 'project',
+    enabled: true,
+    trigger: '任务逾期',
+    condition: '逾期 >= 7 天升级，>= 14 天进入风险',
+    action: '升级自动任务并生成风险',
+    description: '按逾期天数自动升级并通知负责人。',
+  },
+  {
+    id: 'rule_GR-02',
+    ruleId: 'GR-02',
+    ruleName: '项目进度偏差',
+    category: 'project',
+    enabled: true,
+    trigger: '项目进度更新',
+    condition: '执行时间占比 > 60% 且完成率 < 40%',
+    action: '生成进度落后预警',
+  },
+  {
+    id: 'rule_GR-03',
+    ruleId: 'GR-03',
+    ruleName: '审批SLA超时',
+    category: 'approval',
+    enabled: true,
+    trigger: '审批停留',
+    condition: '停留 >= 3 天预警，>= 7 天风险',
+    action: '生成审批阻塞预警/风险',
+  },
+  {
+    id: 'rule_GR-04',
+    ruleId: 'GR-04',
+    ruleName: '数据质量自动任务',
+    category: 'data-quality',
+    enabled: true,
+    trigger: '数据质量检查',
+    condition: '存在 open 的中/高严重度问题',
+    action: '自动生成修复任务',
+  },
+  {
+    id: 'rule_GR-05',
+    ruleId: 'GR-05',
+    ruleName: '预算执行异常',
+    category: 'finance',
+    enabled: true,
+    trigger: '财务记录更新',
+    condition: '项目支出 > 预算',
+    action: '生成预算超支预警',
+  },
+  {
+    id: 'rule_GR-06',
+    ruleId: 'GR-06',
+    ruleName: '关键治理职位空缺',
+    category: 'governance',
+    enabled: true,
+    trigger: '成员任职变化',
+    condition: '关键职位（会长/秘书长/监事长）无在职',
+    action: '生成职位空缺风险',
+  },
+  {
+    id: 'rule_DQ-001',
+    ruleId: 'DQ-001',
+    ruleName: '成员必填缺失',
+    category: 'data-quality',
+    enabled: true,
+    trigger: '数据质量检查',
+    condition: '姓名/联系方式缺失',
+    action: '登记数据问题',
+  },
+  {
+    id: 'rule_DQ-007',
+    ruleId: 'DQ-007',
+    ruleName: '任务逾期未完成',
+    category: 'project',
+    enabled: true,
+    trigger: '数据质量检查',
+    condition: '任务逾期且未完成',
+    action: '登记数据问题',
+  },
+  {
+    id: 'rule_DQ-010',
+    ruleId: 'DQ-010',
+    ruleName: '预算执行异常',
+    category: 'finance',
+    enabled: true,
+    trigger: '数据质量检查',
+    condition: '项目支出超过预算',
+    action: '登记财务异常问题',
+  },
+];
+
 function json(res: ServerResponse, data: unknown, code = 0, message = 'ok'): void {
   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify({ ret: { code, message, data } }));
@@ -1091,6 +1185,63 @@ export async function handleApi(
     };
     financeRecords.unshift(record);
     json(res, { recordId: record.id, status: record.status });
+    return;
+  }
+  if (path === '/rules') {
+    json(res, { rules });
+    return;
+  }
+  if (path === '/rules/toggle') {
+    const rule = rules.find((r) => r.id === body.id);
+    if (!rule) {
+      json(res, null, -1, '规则不存在');
+      return;
+    }
+    rule.enabled = body.enabled === true;
+    json(res, { id: rule.id, enabled: rule.enabled });
+    return;
+  }
+  if (path === '/reports') {
+    const byMonth = new Map<string, { income: number; expense: number }>();
+    for (const r of financeRecords) {
+      const month = r.date.slice(0, 7);
+      const cur = byMonth.get(month) ?? { income: 0, expense: 0 };
+      if (r.type === 'income' && r.status === 'approved') cur.income += r.amount;
+      if (r.type === 'expense' && r.status === 'approved') cur.expense += r.amount;
+      byMonth.set(month, cur);
+    }
+    const financeTrend = Array.from(byMonth.entries()).map(([month, v]) => ({
+      month,
+      income: v.income,
+      expense: v.expense,
+    }));
+    const openRisks = risks.filter((r) => r.status === 'open');
+    const riskDistribution = [
+      { name: '风险', value: openRisks.filter((r) => r.kind === 'risk').length },
+      { name: '预警', value: openRisks.filter((r) => r.kind === 'warning').length },
+    ];
+    const dqDimensions = Object.entries(snapshot.dimensions).map(([name, value]) => ({
+      name,
+      value,
+    }));
+    const statusCount = new Map<string, number>();
+    for (const p of projects) {
+      statusCount.set(p.statusLabel, (statusCount.get(p.statusLabel) ?? 0) + 1);
+    }
+    const projectStatus = Array.from(statusCount.entries()).map(([name, value]) => ({ name, value }));
+    json(res, {
+      financeTrend,
+      riskDistribution,
+      dqDimensions,
+      projectStatus,
+      totals: {
+        members: members.length,
+        projects: projects.length,
+        pendingWorkItems: workItems.filter((w) => w.status === 'open').length,
+        dqScore: snapshot.score,
+        successRate: 98,
+      },
+    });
     return;
   }
   json(res, null, -1, `Mock 未实现：${path}`);

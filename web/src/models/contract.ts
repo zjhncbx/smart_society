@@ -248,3 +248,29 @@ export interface FinanceStats {
   expense: number;
   balance: number;
 }
+
+export interface Rule {
+  id: string;
+  ruleId: string;
+  ruleName: string;
+  category: 'project' | 'approval' | 'finance' | 'governance' | 'data-quality' | 'member' | 'org';
+  enabled: boolean;
+  trigger: string;
+  condition: string;
+  action: string;
+  description?: string;
+}
+
+export interface ReportData {
+  financeTrend: Array<{ month: string; income: number; expense: number }>;
+  riskDistribution: Array<{ name: string; value: number }>;
+  dqDimensions: Array<{ name: string; value: number }>;
+  projectStatus: Array<{ name: string; value: number }>;
+  totals: {
+    members: number;
+    projects: number;
+    pendingWorkItems: number;
+    dqScore: number;
+    successRate: number;
+  };
+}

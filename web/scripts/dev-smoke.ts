@@ -125,7 +125,30 @@ server.listen(PORT, async () => {
     });
     assert(submitted.recordId.length > 0 && submitted.status === 'approving', '财务：提交进入审批');
 
-    console.log('W1/W2 Mock smoke 全部通过');
+    const rules = await post<{ rules: Array<{ id: string; enabled: boolean }> }>('/rules', {});
+    assert(rules.rules.length > 0, '规则：列表');
+    const toggled = await post<{ enabled: boolean }>('/rules/toggle', {
+      id: rules.rules[0].id,
+      enabled: false,
+    });
+    assert(toggled.enabled === false, '规则：启停');
+
+    const report = await post<{
+      financeTrend: unknown[];
+      riskDistribution: unknown[];
+      dqDimensions: unknown[];
+      projectStatus: unknown[];
+      totals: { members: number; dqScore: number };
+    }>('/reports', {});
+    assert(
+      report.financeTrend.length > 0 &&
+        report.riskDistribution.length > 0 &&
+        report.dqDimensions.length > 0 &&
+        report.totals.members > 0,
+      '报表：聚合数据',
+    );
+
+    console.log('W1/W2/W3 Mock smoke 全部通过');
     server.close();
     process.exit(0);
   } catch (error) {
