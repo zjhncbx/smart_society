@@ -21,6 +21,11 @@ class HomeShell extends StatelessWidget {
       appBar: AppBar(
         title: Text(org?.name ?? labels.appTitle),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: '全域检索',
+            onPressed: () => context.push('/search'),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: InkWell(

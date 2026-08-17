@@ -160,7 +160,7 @@ class _HomePageState extends State<HomePage> {
                 .where((i) => i.isOpen && i.severity == 'high')
                 .take(2)
                 .toList(),
-            onOpenApprovals: () => context.go('/finance/tasks'),
+            onOpenTodo: () => context.go('/todo'),
             onOpenAutoTasks: () => context.go('/governance/tasks'),
             onOpenRisks: () => context.go('/governance/risks'),
             onOpenQuality: () => context.go('/quality'),
@@ -174,6 +174,7 @@ class _HomePageState extends State<HomePage> {
             overdue: overdue,
             dueToday: dueToday,
             dueWeek: dueWeek,
+            onOpenTodo: () => context.go('/todo'),
             onOpenApprovals: () => context.go('/finance/tasks'),
             onOpenAutoTasks: () => context.go('/governance/tasks'),
             onOpenProjects: () => context.go('/projects'),
@@ -475,7 +476,7 @@ class _OrgPostureCard extends StatelessWidget {
     required this.dqScore,
     required this.topRisks,
     required this.topDqIssues,
-    required this.onOpenApprovals,
+    required this.onOpenTodo,
     required this.onOpenAutoTasks,
     required this.onOpenRisks,
     required this.onOpenQuality,
@@ -489,7 +490,7 @@ class _OrgPostureCard extends StatelessWidget {
   final int dqScore;
   final List<RiskAlert> topRisks;
   final List<DataQualityIssue> topDqIssues;
-  final VoidCallback onOpenApprovals;
+  final VoidCallback onOpenTodo;
   final VoidCallback onOpenAutoTasks;
   final VoidCallback onOpenRisks;
   final VoidCallback onOpenQuality;
@@ -560,7 +561,7 @@ class _OrgPostureCard extends StatelessWidget {
                   label: '待处理',
                   value: '$pendingCount',
                   color: theme.colorScheme.primary,
-                  onTap: pendingCount > 0 ? onOpenApprovals : null,
+                  onTap: pendingCount > 0 ? onOpenTodo : null,
                 ),
                 _PostureCount(
                   label: '风险',
@@ -692,6 +693,7 @@ class _MustHandleCard extends StatelessWidget {
     required this.overdue,
     required this.dueToday,
     required this.dueWeek,
+    required this.onOpenTodo,
     required this.onOpenApprovals,
     required this.onOpenAutoTasks,
     required this.onOpenProjects,
@@ -703,6 +705,7 @@ class _MustHandleCard extends StatelessWidget {
   final int overdue;
   final int dueToday;
   final int dueWeek;
+  final VoidCallback onOpenTodo;
   final VoidCallback onOpenApprovals;
   final VoidCallback onOpenAutoTasks;
   final VoidCallback onOpenProjects;
@@ -722,14 +725,28 @@ class _MustHandleCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                '必须处理',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700),
+            InkWell(
+              onTap: onOpenTodo,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: Row(
+                  children: [
+                    Text(
+                      '必须处理',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: appTheme.textSecondary,
+                    ),
+                  ],
+                ),
               ),
             ),
             _HandleRow(

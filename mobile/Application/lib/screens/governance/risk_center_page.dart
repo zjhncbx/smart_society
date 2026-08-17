@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/governance.dart';
@@ -112,6 +113,7 @@ class _RiskCenterPageState extends State<RiskCenterPage> {
                 _RiskCard(
                   risk: risk,
                   showActions: !showResolved,
+                  onTap: () => context.push('/governance/risks/${risk.id}'),
                   onResolve: () => _act(risk, 'resolve'),
                   onAck: () => _act(risk, 'ack'),
                   onReopen: () => _act(risk, 'reopen'),
@@ -234,6 +236,7 @@ class _RiskCard extends StatelessWidget {
   const _RiskCard({
     required this.risk,
     required this.showActions,
+    required this.onTap,
     required this.onResolve,
     required this.onAck,
     required this.onReopen,
@@ -241,6 +244,7 @@ class _RiskCard extends StatelessWidget {
 
   final RiskAlert risk;
   final bool showActions;
+  final VoidCallback onTap;
   final VoidCallback onResolve;
   final VoidCallback onAck;
   final VoidCallback onReopen;
@@ -259,6 +263,7 @@ class _RiskCard extends StatelessWidget {
     final overdue = risk.deadline != null && risk.deadline!.isBefore(DateTime.now());
     return AppCard(
       margin: const EdgeInsets.only(bottom: 10),
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(

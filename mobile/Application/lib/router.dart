@@ -30,6 +30,10 @@ import 'screens/event/event_center_page.dart';
 import 'screens/data_quality/data_quality_center_page.dart';
 import 'screens/governance/auto_task_center_page.dart';
 import 'screens/governance/risk_center_page.dart';
+import 'screens/governance/risk_detail_page.dart';
+import 'screens/search/global_search_page.dart';
+import 'screens/sync/sync_center_page.dart';
+import 'screens/todo/todo_center_page.dart';
 import 'services/auth_gate.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -204,6 +208,26 @@ final GoRouter appRouter = GoRouter(
       path: '/governance/risks',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (c, s) => const RiskCenterPage(),
+    ),
+    GoRoute(
+      path: '/governance/risks/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => RiskDetailPage(id: s.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/search',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const GlobalSearchPage(),
+    ),
+    GoRoute(
+      path: '/todo',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const TodoCenterPage(),
+    ),
+    GoRoute(
+      path: '/sync',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const SyncCenterPage(),
     ),
     GoRoute(
       path: '/profile',

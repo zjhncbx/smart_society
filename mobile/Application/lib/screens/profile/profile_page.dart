@@ -10,6 +10,7 @@ import '../../providers/organization_provider.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
+import '../../utils/date_format.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/member_avatar.dart';
 
@@ -305,6 +306,43 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 16),
+          // 同步中心
+          AppCard(
+            onTap: () => context.push('/sync'),
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Icon(Icons.sync, color: cs.primary, size: 28),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '同步中心',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        sync.pendingCount > 0
+                            ? '${sync.pendingCount} 项待同步 · 最近同步 '
+                                '${sync.lastSyncedAt == null ? '从未' : formatDateTime(sync.lastSyncedAt!)}'
+                            : '数据状态：已同步'
+                                '${sync.lastSyncedAt == null ? '' : ' · ${formatDateTime(sync.lastSyncedAt!)}'}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: cs.outline),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
           // Quick actions row
           Row(
             children: [

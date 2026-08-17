@@ -59,12 +59,14 @@ class SyncProvider extends ChangeNotifier {
   Timer? _timer;
   bool _syncing = false;
   bool _initialized = false;
+  DateTime? _lastSyncedAt;
 
   final List<VoidCallback> _refreshListeners = [];
 
   List<SyncEntry> get queue => _queue;
   int get pendingCount => _queue.length;
   bool get isSyncing => _syncing;
+  DateTime? get lastSyncedAt => _lastSyncedAt;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -164,6 +166,9 @@ class SyncProvider extends ChangeNotifier {
         // 保留在队列，下次重试
       }
     }
+    if (_queue.isEmpty) {
+      _lastSyncedAt = DateTime.now();
+    }
     await _persist();
   }
 
@@ -210,6 +215,8 @@ class SyncProvider extends ChangeNotifier {
       for (final cb in _refreshListeners) {
         cb();
       }
+      _lastSyncedAt = DateTime.now();
+      notifyListeners();
     } catch (e) {
       debugPrint('PULL_FAIL: $e');
     }
