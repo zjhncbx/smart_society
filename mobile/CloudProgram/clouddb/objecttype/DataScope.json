@@ -1,5 +1,5 @@
 {
-  "objectTypeName": "UserOrganization",
+  "objectTypeName": "DataScope",
   "fields": [
     {
       "fieldName": "id",
@@ -10,37 +10,10 @@
       "belongPrimaryKey": true
     },
     {
-      "fieldName": "userId",
-      "fieldType": "String",
-      "isNeedEncrypt": false,
-      "notNull": true,
-      "isSensitive": false,
-      "defaultValue": "",
-      "belongPrimaryKey": false
-    },
-    {
       "fieldName": "orgId",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": true,
-      "isSensitive": false,
-      "defaultValue": "",
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "role",
-      "fieldType": "String",
-      "isNeedEncrypt": false,
-      "notNull": true,
-      "isSensitive": false,
-      "defaultValue": "admin",
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "memberId",
-      "fieldType": "String",
-      "isNeedEncrypt": false,
-      "notNull": false,
       "isSensitive": false,
       "defaultValue": "",
       "belongPrimaryKey": false
@@ -55,12 +28,30 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "dataScope",
+      "fieldName": "userId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "scopeType",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
       "defaultValue": "org",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "dataTypes",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "[]",
       "belongPrimaryKey": false
     },
     {
@@ -73,26 +64,44 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "joinedAt",
+      "fieldName": "createdAt",
       "fieldType": "Date",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
       "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createdBy",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "updatedBy",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
     }
   ],
   "indexes": [
     {
-      "indexName": "user_org_id",
+      "indexName": "data_scope_id",
       "indexList": [{ "fieldName": "id", "sortType": "ASC" }]
-    },
-    {
-      "indexName": "user_org_userid",
-      "indexList": [{ "fieldName": "userId", "sortType": "ASC" }]
-    },
-    {
-      "indexName": "user_org_memberid",
-      "indexList": [{ "fieldName": "memberId", "sortType": "ASC" }]
     }
   ],
   "permissions": [

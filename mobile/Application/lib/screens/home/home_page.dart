@@ -14,6 +14,7 @@ import '../../providers/data_quality_provider.dart';
 import '../../providers/governance_provider.dart';
 import '../../providers/notice_provider.dart';
 import '../../providers/organization_provider.dart';
+import '../../providers/permission_provider.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
@@ -72,6 +73,7 @@ class _HomePageState extends State<HomePage> {
     context.read<EventProvider>().load();
     context.read<DataQualityProvider>().load();
     context.read<GovernanceProvider>().load();
+    context.read<PermissionProvider>().load();
     if (orgId != null && orgId.isNotEmpty) {
       await SyncProvider.instance.pullAndRefresh(orgId);
     }

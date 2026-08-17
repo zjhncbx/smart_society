@@ -32,6 +32,7 @@
 | run-data-quality | `run-data-quality` | 数据质量检查 |
 | run-governance-rules | `run-governance-rules` | 规则引擎批量运行 |
 | record-event / record-audit | `record-business-event` / `record-audit-log` | 事件与审计写入 |
+| get-my-permissions / get-roles / save-role / save-data-scope | `get-my-permissions` / `get-roles` / `save-role` / `save-data-scope` | 权限计算与 RBAC 配置（Web 权限框架消费） |
 
 > 成员/项目/公告的普通增删改仍走 `upsert-*` / `delete-*`（离线队列），但**状态机与高风险迁移**必须走动作型接口；新增动作（决议执行、项目进度上报等）一律按本规范命名。
 

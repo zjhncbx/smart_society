@@ -1,5 +1,5 @@
 {
-  "objectTypeName": "UserOrganization",
+  "objectTypeName": "Permission",
   "fields": [
     {
       "fieldName": "id",
@@ -10,7 +10,7 @@
       "belongPrimaryKey": true
     },
     {
-      "fieldName": "userId",
+      "fieldName": "code",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": true,
@@ -19,25 +19,7 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "orgId",
-      "fieldType": "String",
-      "isNeedEncrypt": false,
-      "notNull": true,
-      "isSensitive": false,
-      "defaultValue": "",
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "role",
-      "fieldType": "String",
-      "isNeedEncrypt": false,
-      "notNull": true,
-      "isSensitive": false,
-      "defaultValue": "admin",
-      "belongPrimaryKey": false
-    },
-    {
-      "fieldName": "memberId",
+      "fieldName": "name",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -46,7 +28,7 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "roleId",
+      "fieldName": "category",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -55,12 +37,12 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "dataScope",
+      "fieldName": "description",
       "fieldType": "String",
       "isNeedEncrypt": false,
       "notNull": false,
       "isSensitive": false,
-      "defaultValue": "org",
+      "defaultValue": "",
       "belongPrimaryKey": false
     },
     {
@@ -73,7 +55,15 @@
       "belongPrimaryKey": false
     },
     {
-      "fieldName": "joinedAt",
+      "fieldName": "createdAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "updatedAt",
       "fieldType": "Date",
       "isNeedEncrypt": false,
       "notNull": false,
@@ -83,16 +73,8 @@
   ],
   "indexes": [
     {
-      "indexName": "user_org_id",
+      "indexName": "permission_id",
       "indexList": [{ "fieldName": "id", "sortType": "ASC" }]
-    },
-    {
-      "indexName": "user_org_userid",
-      "indexList": [{ "fieldName": "userId", "sortType": "ASC" }]
-    },
-    {
-      "indexName": "user_org_memberid",
-      "indexList": [{ "fieldName": "memberId", "sortType": "ASC" }]
     }
   ],
   "permissions": [

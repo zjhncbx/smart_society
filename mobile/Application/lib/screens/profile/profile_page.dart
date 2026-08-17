@@ -8,6 +8,7 @@ import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
 import '../../providers/organization_provider.dart';
 import '../../providers/project_provider.dart';
+import '../../providers/permission_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/sync_provider.dart';
 import '../../utils/date_format.dart';
@@ -26,6 +27,14 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _busy = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PermissionProvider>().load();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final labels = context.labels;
     final theme = Theme.of(context);
@@ -37,6 +46,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final orgProvider = context.watch<OrganizationProvider>();
     final settings = context.watch<SettingsProvider>();
     final sync = context.watch<SyncProvider>();
+    final perm = context.watch<PermissionProvider>();
 
     final user = auth.user;
     final org = orgProvider.currentOrg;
@@ -164,7 +174,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ),
-          if (orgProvider.currentOrgRole == 'admin')
+          if (perm.canManageOrg || orgProvider.currentOrgRole == 'admin')
             AppCard(
               onTap: _busy ? null : () => _transferAdmin(context),
               margin: const EdgeInsets.symmetric(vertical: 4),
@@ -489,7 +499,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
-          if (orgProvider.currentOrgRole == 'admin')
+          if (perm.canDeleteOrg || orgProvider.currentOrgRole == 'admin')
             AppCard(
               onTap: _busy ? null : () => _confirmDeleteOrg(context),
               margin: const EdgeInsets.symmetric(vertical: 4),
