@@ -65,6 +65,7 @@
 - **云端权限安全加固（Web 前置）**：upsert/delete（成员/项目/公告）、get-all-data、组织层级/关系、钉钉凭证接口统一增加云端成员校验，组织关系与钉钉凭证进一步要求管理员；同步队列与拉取自动注入 userId，杜绝按 id/orgId 越权读写
 - **审计日志（Web 前置）**：新增 AuditLog 对象（action/对象/操作人/改前改后/变更原因/关联ID），record/get-audit-log 云函数；成员/项目/公告增删改、财务提交/审批/驳回/结账/反结账等 10 个关键业务函数自动落审计，支持按对象/动作/操作人筛选分页
 - **事件关联链路（Web 前置）**：BusinessEvent 增加 correlationId，事件流支持“一次业务动作产生的一串事件”聚合追踪；云数据契约（统一字段/事件/工作项/新增对象规划）已冻结于 `docs/云数据契约.md`
+- **跨端统一身份（Web 前置）**：按身份规范新增 ExternalIdentity 对象与 ensure-user-identity 云函数（provider+providerSubject → 稳定内部 userId，幂等）；密码账号 AppUser.id 即内部 userId，华为账号 OpenID 不再直接充当业务主键
 - **成员数据管理**：支持 CSV 导出与粘贴导入（钉钉托管组织仅可导出）；财务支持反结账（撤销结转凭证，恢复年度录入）
 - **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
 
@@ -108,9 +109,9 @@ smart_society/                     # 仓库根目录
 │       ├── cloud-config.json
 │       ├── clouddb/
 │       │   ├── db-config.json
-│       │   ├── objecttype/         # 20 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化/审计等）
+│       │   ├── objecttype/         # 21 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化/审计/身份等）
 │       │   └── dataentry/          # 种子数据
-│       └── cloudfunctions/         # 48 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计等）
+│       └── cloudfunctions/         # 49 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计、身份等）
 └── web/                            # 网页端（规划中）
     └── README.md
 ```
@@ -161,7 +162,7 @@ flutter run --debug -d <deviceId>
 
 ### 3. 云数据库
 
-20 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
+21 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
 
 | 对象类型 | 主键 | 说明 |
 |----------|------|------|
@@ -184,12 +185,13 @@ flutter run --debug -d <deviceId>
 | RiskAlert | id | 风险与预警（kind 区分风险/预警，责任人/期限/状态） |
 | AutomationRunLog | id | 自动化运行审计日志（动作/耗时/结果） |
 | AuditLog | id | 审计日志（改前改后/操作人/变更原因/关联ID） |
+| ExternalIdentity | identityId | 外部身份映射（provider+providerSubject → 内部 userId） |
 
 权限配置：World/Authenticated 仅可读，Creator/Administrator 可读写删。端侧不直连云数据库，由云函数服务端 SDK 访问；`OrgSettings` 中的钉钉凭证由 `get-org-settings` 按角色裁剪，普通成员不可见。
 
 ### 4. 云函数
 
-48 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
+49 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
 
 **数据 CRUD（7 个，按 orgId 隔离）**：
 
@@ -318,7 +320,7 @@ flutter run --debug -d <deviceId>
 | 端云一体化工程结构 | ✅ | mobile/Application/ + mobile/CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
-| 云函数部署 + 真机联调 | ✅ | 48 个云函数 + 20 张表部署至 AGC |
+| 云函数部署 + 真机联调 | ✅ | 49 个云函数 + 21 张表部署至 AGC |
 | 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
 | **设置数据上云（V3.2）** | ✅ | 角色名/钉钉配置/主题/昵称云端存储，按组织隔离，凭证仅管理员可见 |
 | **事件中心（V4.1）** | ✅ | 统一业务事件模型 + 云函数自动落事件 + 组织事件流页 |
