@@ -285,3 +285,27 @@ export const reportDataSchema = z.object({
     successRate: z.number(),
   }),
 });
+
+export const trendStatsSchema = z.object({
+  eventTrend: z.array(z.object({ date: z.string(), count: z.number() })),
+  riskTrend: z.array(z.object({ date: z.string(), count: z.number() })),
+  automationTrend: z.array(
+    z.object({ date: z.string(), runs: z.number(), successRate: z.number() }),
+  ),
+  approvalTrend: z.array(z.object({ date: z.string(), avgHours: z.number() })),
+  approvalAvgHours: z.number(),
+  approvalPreviousAvgHours: z.number(),
+  totals: z.object({
+    events: z.number(),
+    risks: z.number(),
+    pendingApprovals: z.number(),
+  }),
+  anomalies: z.array(z.string()),
+});
+
+export const entityGraphSchema = z.object({
+  root: z.string(),
+  nodes: z.array(z.object({ id: z.string(), type: z.string(), name: z.string() })),
+  edges: z.array(z.object({ from: z.string(), to: z.string(), label: z.string() })),
+  summary: z.record(z.string(), z.number()),
+});

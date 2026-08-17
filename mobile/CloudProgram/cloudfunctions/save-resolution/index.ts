@@ -171,6 +171,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     resolution.responsibleName = String(params?.responsibleName || '');
     resolution.deadline = params?.deadline ? new Date(String(params.deadline)) : null;
     resolution.meetingId = String(params?.meetingId || '');
+    resolution.projectId = String(params?.projectId || '');
     resolution.correlationId = correlationId;
     resolution.version = (resolution.version || 1) + (existing.length > 0 ? 1 : 0);
     resolution.sourceType = 'manual';

@@ -90,6 +90,15 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "projectId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "sourceRuleId",
       "fieldType": "String",
       "isNeedEncrypt": false,

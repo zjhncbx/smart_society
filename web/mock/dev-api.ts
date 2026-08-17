@@ -588,6 +588,7 @@ const resolutions = [
     orgId: 'org_demo',
     title: '关于开展会员数据治理的决议',
     content: '同意启动会员数据治理项目，由秘书处牵头，2026 年底前完成。',
+    projectId: 'p_demo_1',
     status: 'executing',
     responsibleName: '李四',
     deadline: '2026-12-31',
@@ -1240,6 +1241,93 @@ export async function handleApi(
         pendingWorkItems: workItems.filter((w) => w.status === 'open').length,
         dqScore: snapshot.score,
         successRate: 98,
+      },
+    });
+    return;
+  }
+  if (path === '/trends') {
+    const days: string[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      days.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+    }
+    const eventCounts = new Map(days.map((d) => [d, 0]));
+    const riskCounts = new Map(days.map((d) => [d, 0]));
+    const runCounts = new Map(days.map((d) => [d, 0]));
+    const runSuccess = new Map(days.map((d) => [d, 0]));
+    for (const e of events) eventCounts.set(e.occurredAt.slice(0, 10), (eventCounts.get(e.occurredAt.slice(0, 10)) ?? 0) + 1);
+    for (const r of risks) riskCounts.set(r.createdAt.slice(0, 10), (riskCounts.get(r.createdAt.slice(0, 10)) ?? 0) + 1);
+    for (const l of automationLogs) {
+      runCounts.set(l.runAt.slice(0, 10), (runCounts.get(l.runAt.slice(0, 10)) ?? 0) + 1);
+      if (l.status === 'success') runSuccess.set(l.runAt.slice(0, 10), (runSuccess.get(l.runAt.slice(0, 10)) ?? 0) + 1);
+    }
+    const eventTrend = days.map((d) => ({ date: d, count: eventCounts.get(d) ?? 0 }));
+    const riskTrend = days.map((d) => ({ date: d, count: riskCounts.get(d) ?? 0 }));
+    const automationTrend = days.map((d) => {
+      const runs = runCounts.get(d) ?? 0;
+      return { date: d, runs, successRate: runs === 0 ? 100 : Math.round(((runSuccess.get(d) ?? 0) / runs) * 100) };
+    });
+    json(res, {
+      eventTrend,
+      riskTrend,
+      automationTrend,
+      approvalTrend: days.map((d) => ({ date: d, avgHours: 0 })),
+      approvalAvgHours: 0,
+      approvalPreviousAvgHours: 0,
+      totals: {
+        events: eventTrend.reduce((s, t) => s + t.count, 0),
+        risks: riskTrend.reduce((s, t) => s + t.count, 0),
+        pendingApprovals: approvals.filter((a) => a.status === 'running').length,
+      },
+      anomalies: [approvals.filter((a) => a.status === 'running').length > 0 ? `${approvals.filter((a) => a.status === 'running').length} 项审批在途` : '无异常'],
+    });
+    return;
+  }
+  if (path === '/relations') {
+    const entityId = String(body.entityId ?? '');
+    const project = projects.find((p) => p.id === entityId);
+    if (!project) { json(res, null, -1, '项目不存在'); return; }
+    const nodes: Array<{ id: string; type: string; name: string }> = [
+      { id: `project:${project.id}`, type: 'project', name: project.name },
+    ];
+    const edges: Array<{ from: string; to: string; label: string }> = [];
+    if (project.managerId) {
+      const manager = members.find((m) => m.id === project.managerId);
+      if (manager) {
+        nodes.push({ id: `member:${manager.id}`, type: 'member', name: `${manager.name}（负责人）` });
+        edges.push({ from: `project:${project.id}`, to: `member:${manager.id}`, label: '负责' });
+      }
+    }
+    for (const r of resolutions.filter((x) => (x as { projectId?: string }).projectId === entityId)) {
+      nodes.push({ id: `resolution:${r.id}`, type: 'resolution', name: r.title });
+      edges.push({ from: `resolution:${r.id}`, to: `project:${project.id}`, label: '决议执行' });
+    }
+    for (const f of financeRecords.filter((x) => x.projectId === entityId)) {
+      nodes.push({ id: `finance:${f.id}`, type: 'finance', name: `${f.summary}（¥${f.amount}）` });
+      edges.push({ from: `project:${project.id}`, to: `finance:${f.id}`, label: f.type });
+      const appr = approvals.find((a) => a.bizId === f.id);
+      if (appr) {
+        nodes.push({ id: `approval:${appr.id}`, type: 'approval', name: `${appr.flowName}：${appr.title}` });
+        edges.push({ from: `finance:${f.id}`, to: `approval:${appr.id}`, label: '审批' });
+      }
+    }
+    for (const r of risks.filter((x) => x.sourceEntityId === entityId)) {
+      nodes.push({ id: `risk:${r.id}`, type: 'risk', name: r.title });
+      edges.push({ from: `project:${project.id}`, to: `risk:${r.id}`, label: '风险' });
+    }
+    for (const w of workItems.filter((x) => x.workItemType === 'project_task' && x.originId.startsWith(`${entityId}:`))) {
+      nodes.push({ id: `task:${w.id}`, type: 'task', name: w.title });
+      edges.push({ from: `project:${project.id}`, to: `task:${w.id}`, label: '任务' });
+    }
+    json(res, {
+      root: `project:${project.id}`,
+      nodes,
+      edges,
+      summary: {
+        resolutions: resolutions.filter((x) => (x as { projectId?: string }).projectId === entityId).length,
+        finances: financeRecords.filter((x) => x.projectId === entityId).length,
+        risks: risks.filter((x) => x.sourceEntityId === entityId).length,
+        tasks: workItems.filter((x) => x.workItemType === 'project_task' && x.originId.startsWith(`${entityId}:`)).length,
       },
     });
     return;

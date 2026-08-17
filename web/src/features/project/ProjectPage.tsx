@@ -14,10 +14,13 @@ import {
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { getProjects, saveProject, transitionProject } from '@/api/endpoints/project';
+import { getEntityRelations } from '@/api/endpoints/relations';
 import { Project } from '@/models/contract';
+import { EChart } from '@/components/EChart';
+import type { EChartsOption } from 'echarts';
 
 const statusColor: Record<number, string> = { 0: 'default', 1: 'blue', 2: 'orange', 3: 'green' };
 
@@ -25,7 +28,13 @@ export function ProjectPage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
   const [open, setOpen] = useState(false);
+  const [relationId, setRelationId] = useState<string | null>(null);
   const projects = useQuery({ queryKey: ['projects'], queryFn: () => getProjects({ pageSize: 100 }) });
+  const relations = useQuery({
+    queryKey: ['relations', relationId],
+    queryFn: () => getEntityRelations(relationId!),
+    enabled: relationId != null,
+  });
   const save = useMutation({
     mutationFn: saveProject,
     onSuccess: () => {
@@ -62,11 +71,14 @@ export function ProjectPage(): React.JSX.Element {
     { title: '任务', width: 90, render: (_, r) => `${r.doneTaskCount}/${r.taskCount}` },
     {
       title: '操作',
-      width: 220,
+      width: 280,
       render: (_, row) => (
         <Space>
           <Button size="small" onClick={() => setOpen(true)}>
             编辑
+          </Button>
+          <Button size="small" type="dashed" onClick={() => setRelationId(row.id)}>
+            关系图
           </Button>
           {row.status === 0 && (
             <Button size="small" type="primary" onClick={() => transition.mutate({ id: row.id, action: 'start' })}>
@@ -92,6 +104,32 @@ export function ProjectPage(): React.JSX.Element {
       ),
     },
   ];
+
+  const graphOption: EChartsOption = useMemo(() => {
+    const graph = relations.data;
+    if (!graph) return {};
+    const categories = Array.from(new Set(graph.nodes.map((n) => n.type))).map((type) => ({ name: type }));
+    return {
+      tooltip: {},
+      legend: [{ data: categories.map((c) => c.name), bottom: 0 }],
+      series: [
+        {
+          type: 'graph',
+          layout: 'force',
+          roam: true,
+          force: { repulsion: 140, edgeLength: 90 },
+          label: { show: true, position: 'right', fontSize: 11 },
+          categories,
+          data: graph.nodes.map((n) => ({ id: n.id, name: n.name, category: n.type })),
+          links: graph.edges.map((e) => ({
+            source: e.from,
+            target: e.to,
+            label: { show: true, formatter: e.label, fontSize: 10 },
+          })),
+        },
+      ],
+    };
+  }, [relations.data]);
 
   return (
     <div>
@@ -151,6 +189,29 @@ export function ProjectPage(): React.JSX.Element {
             </Form.Item>
           </Space>
         </Form>
+      </Modal>
+      <Modal
+        title="业务关系图（血缘）"
+        open={relationId != null}
+        onCancel={() => setRelationId(null)}
+        footer={null}
+        width={760}
+      >
+        {relations.data && (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              {Object.entries(relations.data.summary).map(([k, v]) => (
+                <Tag key={k} style={{ marginRight: 8 }}>
+                  {k}: {v}
+                </Tag>
+              ))}
+            </div>
+            <EChart option={graphOption} height={380} />
+            <Typography.Paragraph type="secondary" style={{ marginTop: 12 }}>
+              节点：{relations.data.nodes.map((n) => n.name).join('；')}
+            </Typography.Paragraph>
+          </>
+        )}
       </Modal>
     </div>
   );

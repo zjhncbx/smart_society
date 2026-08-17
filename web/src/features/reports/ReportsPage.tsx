@@ -1,14 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Col, Row, Statistic, Typography } from 'antd';
+import { Alert, Button, Card, Col, Row, Statistic, Typography } from 'antd';
 import type { EChartsOption } from 'echarts';
+import { useMemo } from 'react';
 
 import { getReportData } from '@/api/endpoints/reports';
+import { getTrendStats } from '@/api/endpoints/trends';
 import { EChart } from '@/components/EChart';
 import { exportCsv } from '@/utils/exportCsv';
 
 export function ReportsPage(): React.JSX.Element {
   const reports = useQuery({ queryKey: ['reports'], queryFn: getReportData });
+  const trends = useQuery({ queryKey: ['trends'], queryFn: getTrendStats });
   const data = reports.data;
+  const trendData = trends.data;
 
   const financeOption: EChartsOption = {
     tooltip: { trigger: 'axis' },
@@ -48,6 +52,18 @@ export function ReportsPage(): React.JSX.Element {
       },
     ],
   };
+  const eventTrendOption: EChartsOption = useMemo(
+    () => ({
+      tooltip: { trigger: 'axis' },
+      xAxis: { type: 'category', data: trendData?.eventTrend.map((t) => t.date.slice(5)) ?? [] },
+      yAxis: { type: 'value' },
+      series: [
+        { name: '事件', type: 'line', smooth: true, data: trendData?.eventTrend.map((t) => t.count) ?? [] },
+        { name: '风险', type: 'bar', data: trendData?.riskTrend.map((t) => t.count) ?? [] },
+      ],
+    }),
+    [trendData],
+  );
 
   const exportReport = () => {
     if (!data) return;
@@ -61,6 +77,15 @@ export function ReportsPage(): React.JSX.Element {
   return (
     <div>
       <Typography.Title level={4}>报表与分析</Typography.Title>
+      {trendData && trendData.anomalies.length > 0 && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 12 }}
+          message="变化感知"
+          description={trendData.anomalies.join('；')}
+        />
+      )}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={4}>
           <Card>
@@ -89,11 +114,42 @@ export function ReportsPage(): React.JSX.Element {
         </Col>
         <Col span={4}>
           <Card>
+            <Statistic
+              title="审批平均耗时"
+              value={trendData?.approvalAvgHours ?? '—'}
+              suffix="h"
+              valueStyle={{ color: '#d46b08' }}
+            />
+          </Card>
+        </Col>
+        <Col span={4}>
+          <Card>
             <Button onClick={exportReport}>导出报表 CSV</Button>
           </Card>
         </Col>
       </Row>
       <Row gutter={16}>
+        <Col span={12}>
+          <Card title="近 7 天事件与风险趋势" style={{ marginBottom: 16 }}>
+            <EChart option={eventTrendOption} height={280} />
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card title="自动化运行趋势" style={{ marginBottom: 16 }}>
+            <EChart
+              option={{
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'category', data: trendData?.automationTrend.map((t) => t.date.slice(5)) ?? [] },
+                yAxis: { type: 'value', max: 100 },
+                series: [
+                  { name: '成功率%', type: 'line', smooth: true, data: trendData?.automationTrend.map((t) => t.successRate) ?? [] },
+                  { name: '运行次数', type: 'bar', data: trendData?.automationTrend.map((t) => t.runs) ?? [] },
+                ],
+              }}
+              height={280}
+            />
+          </Card>
+        </Col>
         <Col span={12}>
           <Card title="收支趋势" style={{ marginBottom: 16 }}>
             <EChart option={financeOption} height={280} />

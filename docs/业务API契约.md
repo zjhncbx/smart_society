@@ -39,6 +39,8 @@
 | save/get/act-license | `save-license` / `get-licenses` / `act-license` | 证照管理（保存/查询/续期-过期-重开，幂等+事件+审计） |
 | save/get/act-compliance-item | `save-compliance-item` / `get-compliance-items` / `act-compliance-item` | 合规事项（保存/查询/开始-完成-重开） |
 | save/get/act-term | `save-term` / `get-terms` / `act-term` | 任期管理（保存/查询/换届准备-生效-归档） |
+| get-trend-stats | `get-trend-stats` | 变化感知：近 7 天趋势与环比异常（事件/风险/自动化/审批时长） |
+| get-entity-relations | `get-entity-relations` | 业务血缘：项目根节点聚合决议/负责人/财务/审批/风险/任务 |
 
 > 成员/项目/公告的普通增删改仍走 `upsert-*` / `delete-*`（离线队列），但**状态机与高风险迁移**必须走动作型接口；新增动作（决议执行、项目进度上报等）一律按本规范命名。
 

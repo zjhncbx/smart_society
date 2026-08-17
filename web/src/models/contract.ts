@@ -276,3 +276,33 @@ export interface ReportData {
     successRate: number;
   };
 }
+
+export interface TrendStats {
+  eventTrend: Array<{ date: string; count: number }>;
+  riskTrend: Array<{ date: string; count: number }>;
+  automationTrend: Array<{ date: string; runs: number; successRate: number }>;
+  approvalTrend: Array<{ date: string; avgHours: number }>;
+  approvalAvgHours: number;
+  approvalPreviousAvgHours: number;
+  totals: { events: number; risks: number; pendingApprovals: number };
+  anomalies: string[];
+}
+
+export interface EntityGraphNode {
+  id: string;
+  type: string;
+  name: string;
+}
+
+export interface EntityGraphEdge {
+  from: string;
+  to: string;
+  label: string;
+}
+
+export interface EntityGraph {
+  root: string;
+  nodes: EntityGraphNode[];
+  edges: EntityGraphEdge[];
+  summary: Record<string, number>;
+}

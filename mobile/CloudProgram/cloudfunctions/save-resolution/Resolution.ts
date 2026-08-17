@@ -9,6 +9,7 @@ export class Resolution {
   responsibleName: string = '';
   deadline: Date | null = null;
   meetingId: string = '';
+  projectId: string = '';
   sourceRuleId: string = '';
   correlationId: string = '';
   version: number = 1;
@@ -36,6 +37,7 @@ export class Resolution {
     map.set('responsibleName', 'String');
     map.set('deadline', 'Date');
     map.set('meetingId', 'String');
+    map.set('projectId', 'String');
     map.set('sourceRuleId', 'String');
     map.set('correlationId', 'String');
     map.set('version', 'Integer');
@@ -74,6 +76,7 @@ export class Resolution {
       obj.responsibleName = data.responsibleName ?? '';
       obj.deadline = data.deadline ? new Date(data.deadline) : null;
       obj.meetingId = data.meetingId ?? '';
+      obj.projectId = data.projectId ?? '';
       obj.sourceRuleId = data.sourceRuleId ?? '';
       obj.correlationId = data.correlationId ?? '';
       obj.version = data.version ?? 1;

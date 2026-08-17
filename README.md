@@ -72,6 +72,7 @@
 - **RBAC 第一版（P0-C）**：新增 Role（内置角色矩阵+自定义权限 JSON）/ Permission（权限目录）/ DataScope（数据范围）对象；UserOrganization 增强为组织成员关系（roleId/dataScope/status）；get-my-permissions 云端计算角色/权限/数据范围（回退兼容旧 admin/member），get-roles/save-role/save-data-scope 供管理员配置；客户端权限框架已接入（我的页管理操作按权限码门禁）
 - **决议执行中心（GOV-02）**：新增 Resolution 对象（统一字段+标题/内容/状态/责任人/期限/会议关联/关联ID）；save-resolution / get-resolutions / act-resolution 云函数（幂等、事件、审计）；规则引擎新增 GR-09 决议逾期未执行（自动生成预警与推进任务）；统一工作项物化纳入“决议执行”类型
 - **治理对象生命周期（GOV-01/CMP-01）**：新增 License 证照 / ComplianceItem 合规事项 / Term 任期 三个对象及 save/get/act 云函数（幂等键+事件+审计）；规则引擎新增 GR-10 证照到期（180/90/30 天分级）、GR-11 任期届满（180/90/30 天换届提醒）、GR-12 合规事项逾期；统一工作项物化纳入证照/合规/任期类型
+- **变化感知与业务血缘（P1）**：get-trend-stats 提供近 7 天事件/风险/自动化/审批时长趋势与环比异常判断；get-entity-relations 以项目为根聚合决议（Resolution.projectId）/负责人/财务/审批/风险/自动任务血缘图；Web 报表页新增趋势图、项目页新增关系图（ECharts graph）
 - **核心表统一字段迁移**：Member / Project / Notice 三张核心主数据表补齐统一字段（code/status/createdAt/createdBy/updatedBy/version/sourceType/sourceId），云函数模型与 Flutter 模型同步，upsert 时自动生成编码与版本号
 - **Web 管理端（W0~W3）**：React19+TS strict+Vite7+AntD5+TanStack Query+Zustand 单页应用，统一 API Client（{ ret } 契约、idempotencyKey/correlationId、Zod 校验）；已实现核心工作台（WorkItem/组织态势/全域检索/风险/数据质量/自动化/审计事件链）、组织业务（组织治理/成员档案/项目/审批决议/财务）、高级治理（规则管理/报表 ECharts/CSV 导出/全域感知）；开发态 Mock 可完整跑通，接 AGC 网关后替换（详见 `web/README.md`）
 - **成员数据管理**：支持 CSV 导出与粘贴导入（钉钉托管组织仅可导出）；财务支持反结账（撤销结转凭证，恢复年度录入）
@@ -119,7 +120,7 @@ smart_society/                     # 仓库根目录
 │       │   ├── db-config.json
 │       │   ├── objecttype/         # 28 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化/审计/身份/幂等/工作项/权限/决议等）
 │       │   └── dataentry/          # 种子数据
-│       └── cloudfunctions/         # 59 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计、身份、权限、决议等）
+│       └── cloudfunctions/         # 70 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计、身份、权限、决议、治理对象、趋势/血缘等）
 └── web/                            # 网页端（W0~W3 已实现，见 web/README.md）
     ├── src/                        # React + TS strict + AntD5 + 统一 API Client
     ├── mock/                       # 开发态 Mock API（{ ret } 契约）
@@ -212,7 +213,7 @@ flutter run --debug -d <deviceId>
 
 ### 4. 云函数
 
-68 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
+70 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
 
 **数据 CRUD（7 个，按 orgId 隔离）**：
 
@@ -341,7 +342,7 @@ flutter run --debug -d <deviceId>
 | 端云一体化工程结构 | ✅ | mobile/Application/ + mobile/CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
-| 云函数部署 + 真机联调 | ✅ | 68 个云函数 + 31 张表部署至 AGC |
+| 云函数部署 + 真机联调 | ✅ | 70 个云函数 + 31 张表部署至 AGC |
 | 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
 | **设置数据上云（V3.2）** | ✅ | 角色名/钉钉配置/主题/昵称云端存储，按组织隔离，凭证仅管理员可见 |
 | **事件中心（V4.1）** | ✅ | 统一业务事件模型 + 云函数自动落事件 + 组织事件流页 |

@@ -148,7 +148,17 @@ server.listen(PORT, async () => {
       '报表：聚合数据',
     );
 
-    console.log('W1/W2/W3 Mock smoke 全部通过');
+    const trend = await post<{ eventTrend: unknown[]; anomalies: unknown[] }>('/trends', {});
+    assert(trend.eventTrend.length === 7 && Array.isArray(trend.anomalies), '趋势：近 7 天与异常');
+
+    const rel = await post<{
+      nodes: unknown[];
+      edges: unknown[];
+      summary: Record<string, number>;
+    }>('/relations', { entityType: 'project', entityId: 'p_demo_1' });
+    assert(rel.nodes.length > 1 && rel.edges.length > 0, '血缘：项目关系图节点与边');
+
+    console.log('W1/W2/W3 + 趋势/血缘 Mock smoke 全部通过');
     server.close();
     process.exit(0);
   } catch (error) {
