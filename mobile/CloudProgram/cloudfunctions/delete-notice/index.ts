@@ -2,6 +2,7 @@ import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { Notice } from './Notice';
 import { UserOrganization } from './UserOrganization';
 import { BusinessEvent } from './BusinessEvent';
+import { AuditLog } from './AuditLog';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -22,6 +23,46 @@ function parseParams(event: any): any {
 }
 
 const ZONE_NAME = 'default';
+
+async function recordAudit(
+  col: CloudDBCollection<AuditLog>,
+  orgId: string,
+  action: string,
+  entityType: string,
+  entityId: string,
+  entityName: string,
+  actorId: string,
+  actorName: string,
+  before: any,
+  after: any,
+  changeReason = '',
+): Promise<void> {
+  const now = new Date();
+  const log = new AuditLog();
+  log.id = 'al' + Date.now() + Math.floor(Math.random() * 100000);
+  log.orgId = orgId;
+  log.code = '';
+  log.action = action;
+  log.entityType = entityType;
+  log.entityId = entityId;
+  log.entityName = entityName || '';
+  log.actorId = actorId || 'system';
+  log.actorName = actorName || '系统';
+  log.before = before !== undefined && before !== null ? JSON.stringify(before) : 'null';
+  log.after = after !== undefined && after !== null ? JSON.stringify(after) : 'null';
+  log.changeReason = changeReason;
+  log.correlationId = '';
+  log.status = 'success';
+  log.version = 1;
+  log.sourceType = 'manual';
+  log.sourceId = '';
+  log.isDeleted = false;
+  log.createdAt = now;
+  log.createdBy = actorId || '';
+  log.updatedAt = now;
+  log.updatedBy = actorId || '';
+  await col.upsert([log]);
+}
 
 async function recordEvent(
   col: CloudDBCollection<BusinessEvent>,
@@ -97,6 +138,14 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       String(params?.actorId || 'system'),
       String(params?.actorName || '系统'),
       {},
+    );
+
+    const auditCol: CloudDBCollection<AuditLog> = db.collection(AuditLog);
+    await recordAudit(
+      auditCol, orgId, 'delete', 'notice', String(id),
+      existing.length > 0 ? existing[0].title : '',
+      userId, String(params?.actorName || '成员'),
+      existing.length > 0 ? existing[0] : null, null,
     );
 
     logger.info(`delete-notice done: id=${id}`);

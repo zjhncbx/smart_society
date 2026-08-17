@@ -6,6 +6,7 @@ import { Notice } from './Notice';
 import { Member } from './Member';
 import { UserOrganization } from './UserOrganization';
 import { BusinessEvent } from './BusinessEvent';
+import { AuditLog } from './AuditLog';
 
 function parseParams(event: any): any {
   let body: any = event && event.body !== undefined ? event.body : event;
@@ -27,6 +28,46 @@ function parseParams(event: any): any {
 const ZONE_NAME = 'default';
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
+
+async function recordAudit(
+  col: CloudDBCollection<AuditLog>,
+  orgId: string,
+  action: string,
+  entityType: string,
+  entityId: string,
+  entityName: string,
+  actorId: string,
+  actorName: string,
+  before: any,
+  after: any,
+  changeReason = '',
+): Promise<void> {
+  const now = new Date();
+  const log = new AuditLog();
+  log.id = 'al' + Date.now() + Math.floor(Math.random() * 100000);
+  log.orgId = orgId;
+  log.code = '';
+  log.action = action;
+  log.entityType = entityType;
+  log.entityId = entityId;
+  log.entityName = entityName || '';
+  log.actorId = actorId || 'system';
+  log.actorName = actorName || '系统';
+  log.before = before !== undefined && before !== null ? JSON.stringify(before) : 'null';
+  log.after = after !== undefined && after !== null ? JSON.stringify(after) : 'null';
+  log.changeReason = changeReason;
+  log.correlationId = '';
+  log.status = 'success';
+  log.version = 1;
+  log.sourceType = 'manual';
+  log.sourceId = '';
+  log.isDeleted = false;
+  log.createdAt = now;
+  log.createdBy = actorId || '';
+  log.updatedAt = now;
+  log.updatedBy = actorId || '';
+  await col.upsert([log]);
+}
 
 async function recordEvent(
   col: CloudDBCollection<BusinessEvent>,
@@ -345,6 +386,12 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
         instanceId: record.instanceId,
         projectId: record.projectId,
       },
+    );
+
+    const auditCol: CloudDBCollection<AuditLog> = db.collection(AuditLog);
+    await recordAudit(
+      auditCol, orgId, 'submit', 'finance', record.id, record.summary,
+      userId, userName, null, record,
     );
 
     logger.info(`submit-finance-record done: id=${record.id}, status=${record.status}`);
