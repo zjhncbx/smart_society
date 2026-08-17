@@ -48,6 +48,13 @@ class ApprovalFlow {
     this.enabled = true,
     this.isDefault = false,
     required this.createdAt,
+    this.code = '',
+    this.status = 'active',
+    this.createdBy = '',
+    this.updatedBy = '',
+    this.version = 1,
+    this.sourceType = 'manual',
+    this.sourceId = '',
     this.updatedAt,
   }) : nodes = nodes ?? [];
 
@@ -59,6 +66,13 @@ class ApprovalFlow {
   bool enabled;
   bool isDefault;
   final DateTime createdAt;
+  final String code;
+  final String status;
+  final String createdBy;
+  final String updatedBy;
+  final int version;
+  final String sourceType;
+  final String sourceId;
   final DateTime? updatedAt;
 
   Map<String, dynamic> toJson() => {
@@ -70,6 +84,13 @@ class ApprovalFlow {
         'enabled': enabled,
         'isDefault': isDefault,
         'createdAt': createdAt.millisecondsSinceEpoch,
+        'code': code,
+        'status': status,
+        'createdBy': createdBy,
+        'updatedBy': updatedBy,
+        'version': version,
+        'sourceType': sourceType,
+        'sourceId': sourceId,
         if (updatedAt != null) 'updatedAt': updatedAt!.millisecondsSinceEpoch,
       };
 
@@ -82,6 +103,13 @@ class ApprovalFlow {
         enabled: (json['enabled'] as bool?) ?? true,
         isDefault: (json['isDefault'] as bool?) ?? false,
         createdAt: _toDate(json['createdAt']) ?? DateTime.now(),
+        code: (json['code'] as String?) ?? '',
+        status: (json['status'] as String?) ?? 'active',
+        createdBy: (json['createdBy'] as String?) ?? '',
+        updatedBy: (json['updatedBy'] as String?) ?? '',
+        version: (json['version'] as num?)?.toInt() ?? 1,
+        sourceType: (json['sourceType'] as String?) ?? 'manual',
+        sourceId: (json['sourceId'] as String?) ?? '',
         updatedAt: _toDate(json['updatedAt']),
       );
 }

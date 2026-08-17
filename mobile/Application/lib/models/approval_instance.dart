@@ -81,6 +81,11 @@ class ApprovalInstance {
     this.createdBy = '',
     this.createdByName = '',
     required this.createdAt,
+    this.code = '',
+    this.updatedBy = '',
+    this.version = 1,
+    this.sourceType = 'manual',
+    this.sourceId = '',
     this.updatedAt,
   }) : history = history ?? [];
 
@@ -98,6 +103,11 @@ class ApprovalInstance {
   final String createdBy;
   final String createdByName;
   final DateTime createdAt;
+  final String code;
+  final String updatedBy;
+  final int version;
+  final String sourceType;
+  final String sourceId;
   final DateTime? updatedAt;
 
   bool get isRunning => status == kInstanceRunning;
@@ -131,6 +141,11 @@ class ApprovalInstance {
       createdBy: (json['createdBy'] as String?) ?? '',
       createdByName: (json['createdByName'] as String?) ?? '',
       createdAt: _toDate(json['createdAt']) ?? DateTime.now(),
+      code: (json['code'] as String?) ?? '',
+      updatedBy: (json['updatedBy'] as String?) ?? '',
+      version: (json['version'] as num?)?.toInt() ?? 1,
+      sourceType: (json['sourceType'] as String?) ?? 'manual',
+      sourceId: (json['sourceId'] as String?) ?? '',
       updatedAt: _toDate(json['updatedAt']),
     );
   }

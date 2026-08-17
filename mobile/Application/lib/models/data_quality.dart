@@ -23,6 +23,12 @@ class DataQualityIssue {
     this.resolvedBy = '',
     this.resolvedByName = '',
     required this.createdAt,
+    this.code = '',
+    this.createdBy = '',
+    this.updatedBy = '',
+    this.version = 1,
+    this.sourceType = 'system',
+    this.sourceId = '',
     this.updatedAt,
   });
 
@@ -46,6 +52,12 @@ class DataQualityIssue {
   final String resolvedBy;
   final String resolvedByName;
   final DateTime createdAt;
+  final String code;
+  final String createdBy;
+  final String updatedBy;
+  final int version;
+  final String sourceType;
+  final String sourceId;
   final DateTime? updatedAt;
 
   bool get isOpen => status == 'open';
@@ -74,6 +86,12 @@ class DataQualityIssue {
         resolvedBy: (json['resolvedBy'] as String?) ?? '',
         resolvedByName: (json['resolvedByName'] as String?) ?? '',
         createdAt: _toDate(json['createdAt']) ?? DateTime.now(),
+        code: (json['code'] as String?) ?? '',
+        createdBy: (json['createdBy'] as String?) ?? '',
+        updatedBy: (json['updatedBy'] as String?) ?? '',
+        version: (json['version'] as num?)?.toInt() ?? 1,
+        sourceType: (json['sourceType'] as String?) ?? 'system',
+        sourceId: (json['sourceId'] as String?) ?? '',
         updatedAt: _toDate(json['updatedAt']),
       );
 }
@@ -87,6 +105,13 @@ class DataQualitySnapshot {
     this.checkedAt,
     this.ruleCount = 0,
     this.issueCount = 0,
+    this.code = '',
+    this.status = 'active',
+    this.createdBy = '',
+    this.updatedBy = '',
+    this.version = 1,
+    this.sourceType = 'system',
+    this.sourceId = '',
   });
 
   final int score;
@@ -95,6 +120,13 @@ class DataQualitySnapshot {
   final DateTime? checkedAt;
   final int ruleCount;
   final int issueCount;
+  final String code;
+  final String status;
+  final String createdBy;
+  final String updatedBy;
+  final int version;
+  final String sourceType;
+  final String sourceId;
 
   int get openCount => (counts['open'] as num?)?.toInt() ?? issueCount;
   int get resolvedCount => (counts['resolved'] as num?)?.toInt() ?? 0;
@@ -109,6 +141,13 @@ class DataQualitySnapshot {
       checkedAt: _toDate(json['checkedAt']),
       ruleCount: (json['ruleCount'] as num?)?.toInt() ?? 0,
       issueCount: (json['issueCount'] as num?)?.toInt() ?? 0,
+      code: (json['code'] as String?) ?? '',
+      status: (json['status'] as String?) ?? 'active',
+      createdBy: (json['createdBy'] as String?) ?? '',
+      updatedBy: (json['updatedBy'] as String?) ?? '',
+      version: (json['version'] as num?)?.toInt() ?? 1,
+      sourceType: (json['sourceType'] as String?) ?? 'system',
+      sourceId: (json['sourceId'] as String?) ?? '',
     );
   }
 }

@@ -14,6 +14,11 @@ class AutoTask {
     this.sourceEntityId = '',
     this.sourceEntityName = '',
     this.correlationId = '',
+    this.code = '',
+    this.createdBy = '',
+    this.updatedBy = '',
+    this.version = 1,
+    this.sourceId = '',
     this.triggerEventId = '',
     this.assigneeId = '',
     this.assigneeName = '',
@@ -40,6 +45,11 @@ class AutoTask {
   final String sourceEntityId;
   final String sourceEntityName;
   final String correlationId;
+  final String code;
+  final String createdBy;
+  final String updatedBy;
+  final int version;
+  final String sourceId;
   final String triggerEventId;
   final String assigneeId;
   final String assigneeName;
@@ -70,6 +80,11 @@ class AutoTask {
         sourceEntityId: (json['sourceEntityId'] as String?) ?? '',
         sourceEntityName: (json['sourceEntityName'] as String?) ?? '',
         correlationId: (json['correlationId'] as String?) ?? '',
+        code: (json['code'] as String?) ?? '',
+        createdBy: (json['createdBy'] as String?) ?? '',
+        updatedBy: (json['updatedBy'] as String?) ?? '',
+        version: (json['version'] as num?)?.toInt() ?? 1,
+        sourceId: (json['sourceId'] as String?) ?? '',
         triggerEventId: (json['triggerEventId'] as String?) ?? '',
         assigneeId: (json['assigneeId'] as String?) ?? '',
         assigneeName: (json['assigneeName'] as String?) ?? '',
@@ -110,6 +125,12 @@ class RiskAlert {
     this.resolvedByName = '',
     this.metadata = const {},
     this.correlationId = '',
+    this.code = '',
+    this.createdBy = '',
+    this.updatedBy = '',
+    this.version = 1,
+    this.sourceType = 'system',
+    this.sourceId = '',
     required this.createdAt,
     this.updatedAt,
   });
@@ -135,6 +156,12 @@ class RiskAlert {
   final String resolvedByName;
   final Map<String, dynamic> metadata;
   final String correlationId;
+  final String code;
+  final String createdBy;
+  final String updatedBy;
+  final int version;
+  final String sourceType;
+  final String sourceId;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -166,6 +193,12 @@ class RiskAlert {
         resolvedByName: (json['resolvedByName'] as String?) ?? '',
         metadata: _parseMap(json['metadata']),
         correlationId: (json['correlationId'] as String?) ?? '',
+        code: (json['code'] as String?) ?? '',
+        createdBy: (json['createdBy'] as String?) ?? '',
+        updatedBy: (json['updatedBy'] as String?) ?? '',
+        version: (json['version'] as num?)?.toInt() ?? 1,
+        sourceType: (json['sourceType'] as String?) ?? 'system',
+        sourceId: (json['sourceId'] as String?) ?? '',
         createdAt: _toDate(json['createdAt']) ?? DateTime.now(),
         updatedAt: _toDate(json['updatedAt']),
       );

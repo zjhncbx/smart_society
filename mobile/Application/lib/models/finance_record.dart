@@ -59,6 +59,11 @@ class FinanceRecord {
     this.instanceId = '',
     this.createdBy = '',
     this.createdByName = '',
+    this.code = '',
+    this.updatedBy = '',
+    this.version = 1,
+    this.sourceType = 'manual',
+    this.sourceId = '',
     this.period = '',
     this.restricted = false,
     required this.createdAt,
@@ -82,6 +87,11 @@ class FinanceRecord {
   final String instanceId;
   final String createdBy;
   final String createdByName;
+  final String code;
+  final String updatedBy;
+  final int version;
+  final String sourceType;
+  final String sourceId;
   final String period;
   final bool restricted;
   final DateTime createdAt;
@@ -117,6 +127,11 @@ class FinanceRecord {
         'instanceId': instanceId,
         'createdBy': createdBy,
         'createdByName': createdByName,
+        'code': code,
+        'updatedBy': updatedBy,
+        'version': version,
+        'sourceType': sourceType,
+        'sourceId': sourceId,
         'period': period,
         'restricted': restricted,
         'createdAt': createdAt.millisecondsSinceEpoch,
@@ -141,6 +156,11 @@ class FinanceRecord {
         instanceId: (json['instanceId'] as String?) ?? '',
         createdBy: (json['createdBy'] as String?) ?? '',
         createdByName: (json['createdByName'] as String?) ?? '',
+        code: (json['code'] as String?) ?? '',
+        updatedBy: (json['updatedBy'] as String?) ?? '',
+        version: (json['version'] as num?)?.toInt() ?? 1,
+        sourceType: (json['sourceType'] as String?) ?? 'manual',
+        sourceId: (json['sourceId'] as String?) ?? '',
         period: (json['period'] as String?) ?? '',
         restricted: (json['restricted'] as bool?) ?? false,
         createdAt: _toDate(json['createdAt']) ?? DateTime.now(),

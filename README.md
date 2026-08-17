@@ -74,6 +74,7 @@
 - **治理对象生命周期（GOV-01/CMP-01）**：新增 License 证照 / ComplianceItem 合规事项 / Term 任期 三个对象及 save/get/act 云函数（幂等键+事件+审计）；规则引擎新增 GR-10 证照到期（180/90/30 天分级）、GR-11 任期届满（180/90/30 天换届提醒）、GR-12 合规事项逾期；统一工作项物化纳入证照/合规/任期类型
 - **变化感知与业务血缘（P1）**：get-trend-stats 提供近 7 天事件/风险/自动化/审批时长趋势与环比异常判断；get-entity-relations 以项目为根聚合决议（Resolution.projectId）/负责人/财务/审批/风险/自动任务血缘图；Web 报表页新增趋势图、项目页新增关系图（ECharts graph）
 - **核心表统一字段迁移**：Member / Project / Notice 三张核心主数据表补齐统一字段（code/status/createdAt/createdBy/updatedBy/version/sourceType/sourceId），云函数模型与 Flutter 模型同步，upsert 时自动生成编码与版本号
+- **Flutter DTO 统一字段对齐**：FinanceRecord / ApprovalInstance / ApprovalFlow / AutoTask / RiskAlert / DataQualityIssue / DataQualitySnapshot 等移动端模型补齐统一字段（code/status/createdBy/updatedBy/version/sourceType/sourceId），与云数据契约一致
 - **Web 管理端（W0~W3）**：React19+TS strict+Vite7+AntD5+TanStack Query+Zustand 单页应用，统一 API Client（{ ret } 契约、idempotencyKey/correlationId、Zod 校验）；已实现核心工作台（WorkItem/组织态势/全域检索/风险/数据质量/自动化/审计事件链）、组织业务（组织治理/成员档案/项目/审批决议/财务）、高级治理（规则管理/报表 ECharts/CSV 导出/全域感知）；开发态 Mock 可完整跑通，接 AGC 网关后替换（详见 `web/README.md`）
 - **成员数据管理**：支持 CSV 导出与粘贴导入（钉钉托管组织仅可导出）；财务支持反结账（撤销结转凭证，恢复年度录入）
 - **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
