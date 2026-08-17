@@ -47,6 +47,9 @@ const ReportsPage = lazy(() =>
 const SensingPage = lazy(() =>
   import('@/features/sensing/SensingPage').then((m) => ({ default: m.SensingPage })),
 );
+const DocumentsPage = lazy(() =>
+  import('@/features/documents/DocumentsPage').then((m) => ({ default: m.DocumentsPage })),
+);
 
 function RequireAuth({ children }: { children: ReactNode }): ReactNode {
   const userId = useSession((s) => s.userId);
@@ -180,6 +183,14 @@ export const router = createBrowserRouter([
         element: (
           <SuspensePage>
             <SearchPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'documents',
+        element: (
+          <SuspensePage>
+            <DocumentsPage />
           </SuspensePage>
         ),
       },

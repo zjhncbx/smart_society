@@ -158,11 +158,55 @@ server.listen(PORT, async () => {
     }>('/relations', { entityType: 'project', entityId: 'p_demo_1' });
     assert(rel.nodes.length > 1 && rel.edges.length > 0, '血缘：项目关系图节点与边');
 
-    console.log('W1/W2/W3 + 趋势/血缘 Mock smoke 全部通过');
+    const docs = await post<{ items: Array<{ id: string; status: string }>; total: number }>(
+      '/documents',
+      { pageSize: 10 },
+    );
+    assert(docs.items.length > 0 && docs.total > 0, '文件中心：列表与总数');
+
+    const initDoc = await post<{
+      documentId: string;
+      uploadPath: string;
+      code: string;
+      correlationId: string;
+    }>('/documents/init', {
+      name: '烟测上传文件',
+      fileName: 'smoke.txt',
+      contentType: 'text/plain',
+      domain: 'attachment',
+    });
+    assert(
+      initDoc.documentId.length > 0 && initDoc.uploadPath.startsWith('_uploads/'),
+      '文件中心：上传初始化',
+    );
+
+    const committed = await post<{ documentId: string; status: string; size: number }>(
+      '/documents/commit',
+      {
+        documentId: initDoc.documentId,
+        mode: 'proxy',
+        contentBase64: Buffer.from('社易管 smoke 文件内容').toString('base64'),
+        correlationId: initDoc.correlationId,
+      },
+    );
+    assert(committed.status === 'active' && committed.size > 0, '文件中心：提交（代理写入）');
+
+    const downloaded = await post<{ fileName: string; size: number; base64: string }>(
+      '/documents/download',
+      { documentId: initDoc.documentId },
+    );
+    assert(downloaded.base64.length > 0 && downloaded.size > 0, '文件中心：代理下载');
+
+    const removed = await post<{ status: string }>('/documents/delete', {
+      documentId: initDoc.documentId,
+    });
+    assert(removed.status === 'deleted', '文件中心：软删');
+
+    console.log('W1/W2/W3 + 趋势/血缘 + 文件中心 Mock smoke 全部通过');
     server.close();
     process.exit(0);
   } catch (error) {
-    console.error('W1 Mock smoke 失败：', error);
+    console.error('Mock smoke 失败：', error);
     server.close();
     process.exit(1);
   }

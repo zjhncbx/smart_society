@@ -284,7 +284,7 @@ API Base URL、认证配置、静态资源地址全部通过环境变量注入�
 | 字段 | 含义 | 用途 |
 |---|---|---|
 | `region` / `agcgw.CN` | 中国区 AGC 网关（connect-drcn.dbankcloud.cn） | AGC SDK 通道参考 |
-| `service.cloudstorage.storage_url` | AGC 云存储域名（agc-storage-drcn.platform.dbankcloud.cn） | 后续文件上传下载 |
+| `service.cloudstorage.storage_url` | AGC 云存储域名（agc-storage-drcn.platform.dbankcloud.cn） | 文件中心 /documents（代理上传≤5MB、代理下载≤10MB、软删） |
 | `client.project_id / app_id` | 项目与应用标识 | 网关/控制台定位 |
 
 Web 真实接入步骤：
@@ -469,12 +469,13 @@ W1 页面全部通过统一 API Client 对接云端业务函数；开发态由 `
 数据导出          ✅ utils/exportCsv（BOM+转义）+ 自动化记录/治理报表导出
 高级全域感知      ✅ /sensing：态势指标 + 风险分布图 + 数据质量维度 + 近期事件流
 业务血缘关系图    ✅ 项目页「关系图」：决议→项目→负责人/财务/审批/风险/任务（ECharts graph）
+文件中心          ✅ /documents：按分类/状态/关键词/只看我的查询，代理上传（base64）与下载（Blob），DataScope 提示，软删
 ```
 
 ECharts 采用 `echarts/core` 按需引入（Line/Bar/Pie + Grid/Tooltip/Legend + Canvas），报表分包约 554KB（gzip 190KB）。
 
-本地验证：`pnpm smoke`（W1/W2/W3 共 21 项断言 ✅）、`pnpm typecheck` ✅、`pnpm lint`（0 error）✅、`pnpm test`（6/6）✅、`pnpm build` ✅（exit 0，无告警）。
+本地验证：`pnpm smoke`（W1/W2/W3 + 趋势/血缘 + 文件中心共 29 项断言 ✅）、`pnpm typecheck` ✅、`pnpm lint`（0 error）✅、`pnpm test`（6/6）✅、`pnpm build` ✅（exit 0，无告警）。
 
 ### 下一步
 
-接入真实 AGC 网关（`VITE_API_BASE_URL`）替换 Mock，并按 `docs/业务API契约.md` / `docs/云数据契约.md` 对齐真实接口；Web 与移动端/云端联调后完成三端验收。
+接入真实 AGC 网关（`VITE_API_BASE_URL`）替换 Mock，并按 `docs/业务API契约.md` / `docs/云数据契约.md` 对齐真实接口；云存储按 `docs/云存储安全策略.md` 配置安全规则与 `CLOUD_STORAGE_BUCKET` 环境变量；Web 与移动端/云端联调后完成三端验收。

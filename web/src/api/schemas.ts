@@ -56,6 +56,27 @@ export const workItemSchema = z.object({
   updatedAt: z.string().optional(),
 });
 
+export const documentSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  code: z.string(),
+  name: z.string(),
+  fileName: z.string(),
+  contentType: z.string(),
+  size: z.number(),
+  domain: z.string(),
+  refType: z.string(),
+  refId: z.string(),
+  storagePath: z.string().optional(),
+  status: z.enum(['uploading', 'active', 'deleted', 'failed']),
+  downloadCount: z.number(),
+  ownerId: z.string(),
+  ownerName: z.string(),
+  correlationId: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
+});
+
 export const permissionBundleSchema = z.object({
   roleId: z.string(),
   roleName: z.string(),

@@ -7,6 +7,7 @@ import {
   DashboardOutlined,
   DatabaseOutlined,
   FileDoneOutlined,
+  FileTextOutlined,
   FolderOutlined,
   SearchOutlined,
   SafetyCertificateOutlined,
@@ -34,6 +35,7 @@ const navItems = [
   { key: '/sensing', label: '全域感知', icon: <SafetyCertificateOutlined /> },
   { key: '/audit', label: '审计与事件', icon: <UnorderedListOutlined /> },
   { key: '/reports', label: '报表与分析', icon: <BarChartOutlined /> },
+  { key: '/documents', label: '文件中心', icon: <FileTextOutlined /> },
   { key: '/settings', label: '系统设置', icon: <SettingOutlined /> },
 ];
 

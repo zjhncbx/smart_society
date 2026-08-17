@@ -31,6 +31,27 @@ interface MockWorkItem {
   updatedAt: string;
 }
 
+interface MockDocument {
+  id: string;
+  orgId: string;
+  code: string;
+  name: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  domain: string;
+  refType: string;
+  refId: string;
+  storagePath: string;
+  status: 'uploading' | 'active' | 'deleted' | 'failed';
+  downloadCount: number;
+  ownerId: string;
+  ownerName: string;
+  correlationId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const now = Date.now();
 const iso = (offsetMs: number): string => new Date(now + offsetMs).toISOString();
 
@@ -146,6 +167,71 @@ const workItems: MockWorkItem[] = [
     updatedAt: iso(-3 * 86400000),
   },
 ];
+
+const documents: MockDocument[] = [
+  {
+    id: 'doc_demo_1',
+    orgId: 'org_demo',
+    code: 'DOC-2026-000001',
+    name: '年度财务报告',
+    fileName: '2025年度财务报告.pdf',
+    contentType: 'application/pdf',
+    size: 2456789,
+    domain: 'finance',
+    refType: '',
+    refId: '',
+    storagePath: 'org_demo/finance/doc_demo_1',
+    status: 'active',
+    downloadCount: 12,
+    ownerId: 'u_demo_1',
+    ownerName: '张三',
+    correlationId: 'c_demo_doc_1',
+    createdAt: iso(-30 * 86400000),
+    updatedAt: iso(-2 * 86400000),
+  },
+  {
+    id: 'doc_demo_2',
+    orgId: 'org_demo',
+    code: 'DOC-2026-000002',
+    name: '理事会决议归档',
+    fileName: '理事会第12次会议决议.pdf',
+    contentType: 'application/pdf',
+    size: 562300,
+    domain: 'governance',
+    refType: 'resolution',
+    refId: 'res_demo_1',
+    storagePath: 'org_demo/governance/doc_demo_2',
+    status: 'active',
+    downloadCount: 5,
+    ownerId: 'u_demo_1',
+    ownerName: '张三',
+    correlationId: 'c_demo_doc_2',
+    createdAt: iso(-15 * 86400000),
+    updatedAt: iso(-1 * 86400000),
+  },
+  {
+    id: 'doc_demo_3',
+    orgId: 'org_demo',
+    code: 'DOC-2026-000003',
+    name: '会员名册（脱敏）',
+    fileName: '会员名册-2026Q2.xlsx',
+    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    size: 88420,
+    domain: 'member',
+    refType: '',
+    refId: '',
+    storagePath: 'org_demo/member/doc_demo_3',
+    status: 'active',
+    downloadCount: 3,
+    ownerId: 'u_demo_2',
+    ownerName: '李四',
+    correlationId: 'c_demo_doc_3',
+    createdAt: iso(-7 * 86400000),
+    updatedAt: iso(-7 * 86400000),
+  },
+];
+
+const documentContents = new Map<string, string>();
 
 interface MockRisk {
   id: string;
@@ -978,6 +1064,127 @@ export async function handleApi(
     );
     const list = filtered.slice(page * pageSize, (page + 1) * pageSize);
     json(res, { events: list, total: filtered.length, hasMore: (page + 1) * pageSize < filtered.length });
+    return;
+  }
+  if (path === '/documents') {
+    const keyword = String(body.keyword ?? '').trim().toLowerCase();
+    const onlyMine = body.onlyMine === true;
+    const filtered = documents.filter(
+      (d) =>
+        (!body.domain || d.domain === body.domain) &&
+        (!body.status || d.status === body.status) &&
+        (!keyword || d.name.toLowerCase().includes(keyword) || d.fileName.toLowerCase().includes(keyword)) &&
+        (!onlyMine || d.ownerId === 'u_demo_1'),
+    );
+    const items = filtered
+      .slice(page * pageSize, (page + 1) * pageSize)
+      .map((d) => ({ ...d, storagePath: d.ownerId === 'u_demo_1' ? d.storagePath : '' }));
+    json(res, {
+      items,
+      total: filtered.length,
+      dataScope: 'org',
+      hasMore: (page + 1) * pageSize < filtered.length,
+    });
+    return;
+  }
+  if (path === '/documents/init') {
+    const id = `doc_${Date.now()}`;
+    const domain = String(body.domain ?? 'attachment');
+    const doc: MockDocument = {
+      id,
+      orgId: 'org_demo',
+      code: `DOC-2026-${String(documents.length + 1).padStart(6, '0')}`,
+      name: String(body.name ?? '未命名文件'),
+      fileName: String(body.fileName ?? ''),
+      contentType: String(body.contentType ?? 'application/octet-stream'),
+      size: Number(body.size ?? 0),
+      domain,
+      refType: String(body.refType ?? ''),
+      refId: String(body.refId ?? ''),
+      storagePath: '',
+      status: 'uploading',
+      downloadCount: 0,
+      ownerId: 'u_demo_1',
+      ownerName: '张三',
+      correlationId: `c_mock_${id}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    documents.unshift(doc);
+    json(res, {
+      documentId: doc.id,
+      uploadPath: `_uploads/u_demo_1/${doc.id}`,
+      code: doc.code,
+      domain: doc.domain,
+      correlationId: doc.correlationId,
+    });
+    return;
+  }
+  if (path === '/documents/commit') {
+    const doc = documents.find((d) => d.id === body.documentId);
+    if (!doc) {
+      json(res, null, -1, '文件不存在');
+      return;
+    }
+    if (doc.status !== 'uploading' && doc.status !== 'failed') {
+      json(res, null, -1, `当前状态不可提交：${doc.status}`);
+      return;
+    }
+    const contentBase64 = String(body.contentBase64 ?? '');
+    const size = contentBase64 ? Buffer.from(contentBase64, 'base64').length : doc.size;
+    if (contentBase64) {
+      documentContents.set(doc.id, contentBase64);
+    }
+    doc.size = size;
+    doc.status = 'active';
+    doc.storagePath = `${doc.orgId}/${doc.domain}/${doc.id}`;
+    doc.updatedAt = new Date().toISOString();
+    json(res, {
+      documentId: doc.id,
+      storagePath: doc.storagePath,
+      status: doc.status,
+      size: doc.size,
+      correlationId: doc.correlationId,
+    });
+    return;
+  }
+  if (path === '/documents/download') {
+    const doc = documents.find((d) => d.id === body.documentId);
+    if (!doc || doc.status !== 'active') {
+      json(res, null, -1, '文件不存在或不可下载');
+      return;
+    }
+    const content =
+      documentContents.get(doc.id) ??
+      Buffer.from(`社易管 Mock 文件内容：${doc.name}（${doc.fileName}）`).toString('base64');
+    doc.downloadCount += 1;
+    doc.updatedAt = new Date().toISOString();
+    json(res, {
+      documentId: doc.id,
+      name: doc.name,
+      fileName: doc.fileName,
+      contentType: doc.contentType,
+      size: Buffer.from(content, 'base64').length,
+      base64: content,
+      correlationId: doc.correlationId,
+    });
+    return;
+  }
+  if (path === '/documents/delete') {
+    const doc = documents.find((d) => d.id === body.documentId);
+    if (!doc) {
+      json(res, null, -1, '文件不存在');
+      return;
+    }
+    if (doc.status === 'deleted') {
+      json(res, { documentId: doc.id, status: 'deleted' });
+      return;
+    }
+    doc.status = 'deleted';
+    doc.storagePath = '';
+    documentContents.delete(doc.id);
+    doc.updatedAt = new Date().toISOString();
+    json(res, { documentId: doc.id, status: 'deleted' });
     return;
   }
   if (path === '/search') {
