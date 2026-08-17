@@ -1,0 +1,9 @@
+{
+  "name": "list-documents",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "dependencies": {
+    "@hw-agconnect/cloud-server": "^1.0.0"
+  }
+}

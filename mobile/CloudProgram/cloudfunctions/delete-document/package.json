@@ -1,0 +1,11 @@
+{
+  "name": "delete-document",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "dependencies": {
+    "@hw-agconnect/cloud-server": "^1.0.0",
+    "@agconnect/cloudstorage-server": "^1.0.1",
+    "@agconnect/common-server": "^1.1.0"
+  }
+}

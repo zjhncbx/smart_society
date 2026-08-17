@@ -41,6 +41,8 @@
 | save/get/act-term | `save-term` / `get-terms` / `act-term` | 任期管理（保存/查询/换届准备-生效-归档） |
 | get-trend-stats | `get-trend-stats` | 变化感知：近 7 天趋势与环比异常（事件/风险/自动化/审批时长） |
 | get-entity-relations | `get-entity-relations` | 业务血缘：项目根节点聚合决议/负责人/财务/审批/风险/任务 |
+| init/commit-file | `init-file-upload` / `commit-file-upload` | 文件上传：初始化（幂等）+ 提交（SDK 直传 move 或代理写入，事件+审计） |
+| list/get/delete-document | `list-documents` / `get-document-file` / `delete-document` | 文件中心：按 DataScope 分页查询 / 服务端代理下载（base64，≤10MB）/ 软删+存储删除（强制幂等键） |
 
 > 成员/项目/公告的普通增删改仍走 `upsert-*` / `delete-*`（离线队列），但**状态机与高风险迁移**必须走动作型接口；新增动作（决议执行、项目进度上报等）一律按本规范命名。
 
@@ -50,7 +52,7 @@
 
 ## 3.1 原则
 
-以下动作**强制要求幂等**（缺失 `idempotencyKey` 直接拒绝执行）：`submit-finance-record`、`act-finance-node`、`close-period`、`unclose-period`、`act-auto-task`、`act-risk-alert`、`resolve-data-quality-issue`。
+以下动作**强制要求幂等**（缺失 `idempotencyKey` 直接拒绝执行）：`submit-finance-record`、`act-finance-node`、`close-period`、`unclose-period`、`act-auto-task`、`act-risk-alert`、`resolve-data-quality-issue`、`init-file-upload`、`commit-file-upload`、`delete-document`。
 
 ## 3.2 调用约定
 
