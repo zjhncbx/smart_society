@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/services.dart';
 
@@ -66,5 +67,11 @@ class CloudFunctionService {
       }
     }
     throw lastError!;
+  }
+
+  /// 生成一次业务动作的幂等键：同一动作重试时复用同一键，服务端据此去重。
+  static String newIdempotencyKey(String action) {
+    final rand = Random().nextInt(0xFFFFFF);
+    return 'idem_${action}_${DateTime.now().microsecondsSinceEpoch}_$rand';
   }
 }

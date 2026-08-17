@@ -129,6 +129,7 @@ class GovernanceProvider extends ChangeNotifier {
       params: {
         ..._base,
         'userName': _userNameGetter(),
+        'idempotencyKey': CloudFunctionService.newIdempotencyKey('act_auto_task'),
         'id': id,
         'action': action,
       },
@@ -144,6 +145,7 @@ class GovernanceProvider extends ChangeNotifier {
       params: {
         ..._base,
         'userName': _userNameGetter(),
+        'idempotencyKey': CloudFunctionService.newIdempotencyKey('act_risk'),
         'id': id,
         'action': action,
         if (note.isNotEmpty) 'note': note,

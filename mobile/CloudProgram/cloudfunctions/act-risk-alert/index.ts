@@ -2,6 +2,7 @@ import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { RiskAlert } from './RiskAlert';
 import { UserOrganization } from './UserOrganization';
 import { BusinessEvent } from './BusinessEvent';
+import { IdempotencyRecord } from './IdempotencyRecord';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -22,6 +23,45 @@ function parseParams(event: any): any {
 }
 
 const ZONE_NAME = 'default';
+
+async function readIdempotent(
+  col: CloudDBCollection<IdempotencyRecord>,
+  key: string,
+): Promise<any> {
+  if (!key) return null;
+  const rows = await col.query().equalTo('id', key).get();
+  if (rows.length === 0) return null;
+  try {
+    return JSON.parse(rows[0].result || '{}');
+  } catch {
+    return {};
+  }
+}
+
+async function storeIdempotent(
+  col: CloudDBCollection<IdempotencyRecord>,
+  orgId: string,
+  key: string,
+  action: string,
+  entityType: string,
+  entityId: string,
+  result: any,
+  actorId: string,
+): Promise<void> {
+  if (!key) return;
+  const now = new Date();
+  const rec = new IdempotencyRecord();
+  rec.id = key;
+  rec.orgId = orgId;
+  rec.action = action;
+  rec.entityType = entityType;
+  rec.entityId = entityId || '';
+  rec.result = JSON.stringify(result || {});
+  rec.createdAt = now;
+  rec.expiresAt = new Date(now.getTime() + 24 * 3600 * 1000);
+  rec.createdBy = actorId || '';
+  await col.upsert([rec]);
+}
 
 let myHandler = async function (event: any, context: any, callback: any, logger: any) {
   logger.info('act-risk-alert called');
@@ -61,6 +101,16 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     if (risk.orgId !== orgId) {
       callback({ ret: { code: -1, message: '风险/预警不属于该组织' } });
       return;
+    }
+
+    const idempotencyKey = String(params?.idempotencyKey || '');
+    const idemCol: CloudDBCollection<IdempotencyRecord> = db.collection(IdempotencyRecord);
+    if (idempotencyKey) {
+      const cached = await readIdempotent(idemCol, idempotencyKey);
+      if (cached !== null) {
+        callback({ ret: { code: 0, message: 'ok（幂等返回）', data: cached } });
+        return;
+      }
     }
 
     const now = new Date();
@@ -110,6 +160,11 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     ev.occurredAt = now;
     ev.createdAt = now;
     await eventCol.upsert([ev]);
+
+    await storeIdempotent(
+      idemCol, orgId, idempotencyKey, action, 'risk', risk.id,
+      { id: risk.id, status: risk.status }, userId,
+    );
 
     logger.info(`act-risk-alert done: id=${id}, action=${action}`);
     callback({

@@ -48,8 +48,8 @@
 | P0-A | WorkItem 统一工作项 | 无表无函数无模型 | 审批/自动任务/项目任务/风险整改/数据治理统一抽象，Web 只消费 WorkItem 视图 |
 | P0-B | 跨端 userId 客户端落地 | 客户端仍用 openId；User/Person/OrganizationMembership 未落地 | 登录后调用 ensure-user-identity 换取内部 userId；建立 User→Person→OrganizationMembership 链 |
 | P0-C | Role/Permission/DataScope 第一版 | 仅 admin/member 二元 | 建立 Role/Permission/DataScope 数据模型与云端鉴权（会长/秘书长/财务/理事/监事等） |
-| P0-D | 统一业务动作 API | CRUD 驱动仍有残留 | 审批/项目状态/风险处置/数据治理/决议执行封装为业务动作，服务端执行状态机与规则 |
-| P0-E | 服务端幂等 | 无 idempotencyKey | 审批/财务/状态迁移/自动化/任务支持幂等键与去重 |
+| P0-D | 统一业务动作 API | ✅ 第一版已完成（commit：统一业务API与幂等）；项目/决议等新动作按 `docs/业务API契约.md` 命名 | 审批/财务/风险/数据治理已动作化；决议执行、项目进度上报待新对象 |
+| P0-E | 服务端幂等 | ✅ 第一版已完成（IdempotencyRecord + 7 个动作函数） | 审批/财务/状态迁移/自动化/任务支持幂等键与去重 |
 
 ## 0.3 必须补强（可与基础工程并行，核心页面开发前完成）
 

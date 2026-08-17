@@ -152,6 +152,7 @@ class DataQualityProvider extends ChangeNotifier {
       params: {
         ..._base,
         'userName': _userNameGetter(),
+        'idempotencyKey': CloudFunctionService.newIdempotencyKey('resolve_dq'),
         'id': id,
         'action': action,
         if (note.isNotEmpty) 'note': note,

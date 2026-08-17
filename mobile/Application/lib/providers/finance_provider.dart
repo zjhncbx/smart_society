@@ -317,6 +317,7 @@ class FinanceProvider extends ChangeNotifier {
       params: {
         ..._base,
         'userName': _userNameGetter(),
+        'idempotencyKey': CloudFunctionService.newIdempotencyKey('close_period'),
         'year': year,
       },
       timeout: const Duration(seconds: 40),
@@ -333,6 +334,7 @@ class FinanceProvider extends ChangeNotifier {
       params: {
         ..._base,
         'userName': _userNameGetter(),
+        'idempotencyKey': CloudFunctionService.newIdempotencyKey('unclose_period'),
         'year': year,
       },
       timeout: const Duration(seconds: 40),
@@ -394,6 +396,7 @@ class FinanceProvider extends ChangeNotifier {
       params: {
         ..._base,
         'userName': _userNameGetter(),
+        'idempotencyKey': CloudFunctionService.newIdempotencyKey('submit_finance'),
         'record': {
           'type': type,
           'amount': amount,
@@ -420,6 +423,7 @@ class FinanceProvider extends ChangeNotifier {
       params: {
         ..._base,
         'userName': _userNameGetter(),
+        'idempotencyKey': CloudFunctionService.newIdempotencyKey('act_finance'),
         'instanceId': instanceId,
         'action': action,
         'comment': comment,

@@ -4,6 +4,7 @@ import { Notice } from './Notice';
 import { UserOrganization } from './UserOrganization';
 import { BusinessEvent } from './BusinessEvent';
 import { AuditLog } from './AuditLog';
+import { IdempotencyRecord } from './IdempotencyRecord';
 
 function parseParams(event: any): any {
   let body: any = event && event.body !== undefined ? event.body : event;
@@ -25,6 +26,45 @@ function parseParams(event: any): any {
 const ZONE_NAME = 'default';
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
+
+async function readIdempotent(
+  col: CloudDBCollection<IdempotencyRecord>,
+  key: string,
+): Promise<any> {
+  if (!key) return null;
+  const rows = await col.query().equalTo('id', key).get();
+  if (rows.length === 0) return null;
+  try {
+    return JSON.parse(rows[0].result || '{}');
+  } catch {
+    return {};
+  }
+}
+
+async function storeIdempotent(
+  col: CloudDBCollection<IdempotencyRecord>,
+  orgId: string,
+  key: string,
+  action: string,
+  entityType: string,
+  entityId: string,
+  result: any,
+  actorId: string,
+): Promise<void> {
+  if (!key) return;
+  const now = new Date();
+  const rec = new IdempotencyRecord();
+  rec.id = key;
+  rec.orgId = orgId;
+  rec.action = action;
+  rec.entityType = entityType;
+  rec.entityId = entityId || '';
+  rec.result = JSON.stringify(result || {});
+  rec.createdAt = now;
+  rec.expiresAt = new Date(now.getTime() + 24 * 3600 * 1000);
+  rec.createdBy = actorId || '';
+  await col.upsert([rec]);
+}
 
 async function recordAudit(
   col: CloudDBCollection<AuditLog>,
@@ -134,6 +174,16 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       return;
     }
 
+    const idempotencyKey = String(params?.idempotencyKey || '');
+    const idemCol: CloudDBCollection<IdempotencyRecord> = db.collection(IdempotencyRecord);
+    if (idempotencyKey) {
+      const cached = await readIdempotent(idemCol, idempotencyKey);
+      if (cached !== null) {
+        callback({ ret: { code: 0, message: 'ok（幂等返回）', data: cached } });
+        return;
+      }
+    }
+
     const recordCol: CloudDBCollection<FinanceRecord> = db.collection(FinanceRecord);
     const rows = await queryAllByOrg(recordCol, orgId);
     const closing = rows.filter((r) => r.type === 'closing' && r.period === year);
@@ -167,6 +217,11 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     await recordAudit(
       auditCol, orgId, 'unclose', 'finance', `unclose-${year}`, `${year} 年度反结账`,
       userId, userName, closing, null,
+    );
+
+    await storeIdempotent(
+      idemCol, orgId, idempotencyKey, 'unclose', 'finance', `unclose-${year}`,
+      { removed: closing.length }, userId,
     );
 
     logger.info(`unclose-period done: orgId=${orgId}, year=${year}, vouchers=${closing.length}`);
