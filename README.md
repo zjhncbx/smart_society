@@ -103,9 +103,9 @@ smart_society/                     # 仓库根目录
 │       ├── cloud-config.json
 │       ├── clouddb/
 │       │   ├── db-config.json
-│       │   ├── objecttype/         # 18 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化等）
+│       │   ├── objecttype/         # 19 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化等）
 │       │   └── dataentry/          # 种子数据
-│       └── cloudfunctions/         # 43 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理等）
+│       └── cloudfunctions/         # 46 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理等）
 └── web/                            # 网页端（规划中）
     └── README.md
 ```
@@ -156,7 +156,7 @@ flutter run --debug -d <deviceId>
 
 ### 3. 云数据库
 
-18 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
+19 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
 
 | 对象类型 | 主键 | 说明 |
 |----------|------|------|
@@ -183,7 +183,7 @@ flutter run --debug -d <deviceId>
 
 ### 4. 云函数
 
-43 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
+46 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
 
 **数据 CRUD（7 个，按 orgId 隔离）**：
 
@@ -312,7 +312,7 @@ flutter run --debug -d <deviceId>
 | 端云一体化工程结构 | ✅ | mobile/Application/ + mobile/CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
-| 云函数部署 + 真机联调 | ✅ | 43 个云函数 + 18 张表部署至 AGC |
+| 云函数部署 + 真机联调 | ✅ | 46 个云函数 + 19 张表部署至 AGC |
 | 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
 | **设置数据上云（V3.2）** | ✅ | 角色名/钉钉配置/主题/昵称云端存储，按组织隔离，凭证仅管理员可见 |
 | **事件中心（V4.1）** | ✅ | 统一业务事件模型 + 云函数自动落事件 + 组织事件流页 |
