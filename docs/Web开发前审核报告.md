@@ -7,7 +7,75 @@
 
 ---
 
+# 〇、Web 开发启动门禁（Go / No-Go 终审）
+
+> **终审日期**：2026-08-17（第二轮，代码级核验，非文档自述）  
+> **结论：基础工程 Go；核心业务页面 No-Go。**
+
+当前已具备进入 **Web 基础工程搭建**（技术栈/路由/Layout/Design System/API Client/Auth/状态管理/数据模型/权限框架/基础组件）的条件；但 **5 项 P0 架构缺口未封口，暂不建议大规模开发会员/组织/项目/审批/财务/决议等核心业务页面**，否则会再次出现三端模型与业务逻辑分叉。
+
+## 0.1 逐项终审结果（代码级证据）
+
+| 核验项 | 结论 | 证据 |
+|---|---|---|
+| ① Cloud DB 对象（21 张表） | ✅ 基础可用 | 21 张表 JSON 可解析；`AuditLog` 完整满足统一字段 |
+| ② 统一字段契约 | ❌ 未代码级冻结 | 21 张表中仅 1 张（AuditLog）满足 11 项统一字段；20 张存量表缺 `code/version/sourceType/sourceId` 等 |
+| ③ 云函数权限 | ✅ 组织级已加固 | 49 个函数全量 TS 编译通过；组织级写接口已成员校验，管理员操作已 admin 校验（结账/审批流/期初/组织设置/关系/钉钉凭证） |
+| ④ AuditLog | ✅ 云侧闭环 / ⚠️ 查询入口待建 | AuditLog 对象 + record/get-audit-logs + 10 个关键业务函数接入（成员/项目/公告增删改、财务提交/审批/驳回/结账/反结账）；Web 审计页与端侧页面待建设 |
+| ⑤ BusinessEvent / correlationId | ⚠️ 字段级完成，链路未贯通 | CloudDB 字段 + 17 个云函数模型 + record/get 透传 ✅；但各业务函数 recordEvent 写入 `correlationId=''`（未生成关联键），且 Flutter 模型未含该字段 |
+| ⑥ 跨端 userId | ❌ 客户端未落地 | 云侧 ensure-user-identity + ExternalIdentity 已建 ✅；客户端仍有 19 处直接使用华为 `openId` 作为 userId；User/Person/OrganizationMembership 四层模型未落地 |
+| ⑦ User/Person/Membership | ❌ 未落地 | Flutter models 无 Person/OrganizationMembership；UserOrganization 仅二元 admin/member，无 personId/roleId/dataScope |
+| ⑧ Role/Permission/DataScope | ❌ 不足 | 无 Role/Permission/DataScope/OperationPolicy 对象；权限仅 `role === 'admin'` 二元判断 |
+| ⑨ WorkItem | ❌ 未完成 | 云函数/对象/Flutter 均无 WorkItem（0 命中）；审批/自动任务/项目任务/风险整改仍分散 |
+| ⑩ 统一业务 API | ⚠️ 基础有，动作化不足 | 49 个云函数统一 `{ ret: { code, message, data } }`；但成员/项目/公告仍由客户端通用 upsert/delete CRUD 驱动，无统一业务动作封装（如 progress/approve/resolve） |
+| ⑪ 服务端幂等 | ❌ 不足 | 0 个函数包含 idempotencyKey；仅客户端 3 次指数退避重试 |
+| ⑫ Flutter Models 与契约一致性 | ❌ 未同步 | BusinessEvent 无 correlationId；Member/Project/Notice 等无 code/version/sourceType |
+| ⑬ Web 工程 | ⚠️ 仅壳 | `web/` 仅 README.md，无工程初始化 |
+| ⑭ cloud_objects IdGenerator | ⚠️ 编译 stub | `id-generator/IdGenerator.ts` 为 Cloud Object 编译生成占位，`randomUUID` 未实现，不代表身份体系完成 |
+
+## 0.2 阻塞项（核心业务页面 No-Go 的原因）
+
+| 编号 | 阻塞项 | 现状 | 要求 |
+|---|---|---|---|
+| P0-A | WorkItem 统一工作项 | 无表无函数无模型 | 审批/自动任务/项目任务/风险整改/数据治理统一抽象，Web 只消费 WorkItem 视图 |
+| P0-B | 跨端 userId 客户端落地 | 客户端仍用 openId；User/Person/OrganizationMembership 未落地 | 登录后调用 ensure-user-identity 换取内部 userId；建立 User→Person→OrganizationMembership 链 |
+| P0-C | Role/Permission/DataScope 第一版 | 仅 admin/member 二元 | 建立 Role/Permission/DataScope 数据模型与云端鉴权（会长/秘书长/财务/理事/监事等） |
+| P0-D | 统一业务动作 API | CRUD 驱动仍有残留 | 审批/项目状态/风险处置/数据治理/决议执行封装为业务动作，服务端执行状态机与规则 |
+| P0-E | 服务端幂等 | 无 idempotencyKey | 审批/财务/状态迁移/自动化/任务支持幂等键与去重 |
+
+## 0.3 必须补强（可与基础工程并行，核心页面开发前完成）
+
+- 统一字段代码级冻结：20 张存量表分批补齐 `code/version/sourceType/sourceId/createdBy/updatedBy` 等，Flutter/Web 模型同步
+- correlationId 端到端贯通：业务函数按“一次业务动作”生成关联键，事件→规则→动作→审计可全链追踪；Flutter/Web 模型同步
+- AuditLog 查询入口：Web 审计页消费 `get-audit-logs`（云侧已就绪）
+- API 契约文档：动作命名、权限矩阵、状态机表、错误码统一
+
+## 0.4 可以进入 Web 的基础工程
+
+```text
+Web 项目初始化
+├─ 技术栈与目录结构
+├─ 路由 / Layout / Design System
+├─ API Client（对接云函数 { ret } 契约）
+├─ Auth（对接 ensure-user-identity 获取内部 userId）
+├─ 状态管理 / 数据模型（严格按 docs/云数据契约.md）
+├─ 权限框架（预留 RBAC/DataScope 接口，先落角色判断）
+└─ 基础组件（表格/表单/弹窗/分页/批量操作）
+```
+
+> 门禁更新规则：P0-A ~ P0-E 全部封口并部署验证后，将本报告结论改为“核心业务页面 Go”，并在下方登记门禁变更记录。
+
+### 门禁变更记录
+
+| 日期 | 结论 | 说明 |
+|---|---|---|
+| 2026-08-17 | 基础工程 Go / 核心业务 No-Go | 首版门禁：5 项 P0 架构缺口待封口 |
+
+---
+
 # 一、结论摘要
+
+> ⚠️ 完整 Go/No-Go 结论见 §〇（2026-08-17 第二轮终审）：**基础工程 Go / 核心业务页面 No-Go**，阻塞项为 WorkItem、跨端 userId 客户端落地、RBAC、统一业务动作 API、服务端幂等。
 
 当前移动端已经具备：事件中心、数据质量中心、规则引擎（GR-01~08）、自动任务、风险/预警、组织态势、数字画像、全域检索、统一待办、同步中心等能力，**Phase 3/4 的整体完成度较高**。
 
