@@ -1,0 +1,131 @@
+import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
+import { DataQualityIssue } from './DataQualityIssue';
+import { UserOrganization } from './UserOrganization';
+import { BusinessEvent } from './BusinessEvent';
+
+// 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
+function parseParams(event: any): any {
+  let body: any = event && event.body !== undefined ? event.body : event;
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { return {}; }
+  }
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { return {}; }
+  }
+  if (body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 && 'data' in body) {
+    body = body.data;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { return {}; }
+    }
+  }
+  return body ?? {};
+}
+
+const ZONE_NAME = 'default';
+
+let myHandler = async function (event: any, context: any, callback: any, logger: any) {
+  logger.info('resolve-data-quality-issue called');
+
+  try {
+    const params = parseParams(event);
+    const orgId = params?.orgId as string;
+    const userId = params?.userId as string;
+    const userName = String(params?.userName || '成员');
+    const id = params?.id as string;
+    const action = String(params?.action || 'resolve');
+    const note = String(params?.note || '');
+    if (!orgId || !userId || !id) {
+      callback({ ret: { code: -1, message: '缺少 orgId/userId/id 参数' } });
+      return;
+    }
+    if (!['resolve', 'ignore', 'reopen'].includes(action)) {
+      callback({ ret: { code: -1, message: 'action 不合法' } });
+      return;
+    }
+
+    const db = cloud.database({ zoneName: ZONE_NAME });
+    const uoCol: CloudDBCollection<UserOrganization> = db.collection(UserOrganization);
+    const mine = await uoCol.query().equalTo('id', `${orgId}_${userId}`).get();
+    if (mine.length === 0) {
+      callback({ ret: { code: -1, message: '您不是该组织成员' } });
+      return;
+    }
+
+    const col: CloudDBCollection<DataQualityIssue> = db.collection(DataQualityIssue);
+    const rows = await col.query().equalTo('id', id).get();
+    if (rows.length === 0) {
+      callback({ ret: { code: -1, message: '数据质量问题不存在' } });
+      return;
+    }
+    const issue = rows[0];
+    if (issue.orgId !== orgId) {
+      callback({ ret: { code: -1, message: '数据质量问题不属于该组织' } });
+      return;
+    }
+
+    const now = new Date();
+    if (action === 'resolve') {
+      issue.status = 'resolved';
+      issue.resolvedAt = now;
+      issue.resolvedBy = userId;
+      issue.resolvedByName = userName;
+    } else if (action === 'ignore') {
+      issue.status = 'ignored';
+      issue.resolvedAt = now;
+      issue.resolvedBy = userId;
+      issue.resolvedByName = userName;
+    } else {
+      issue.status = 'open';
+      issue.resolvedAt = null;
+      issue.resolvedBy = '';
+      issue.resolvedByName = '';
+    }
+    if (note) {
+      try {
+        const detail = JSON.parse(issue.detail || '{}');
+        detail.lastNote = note;
+        detail.lastNoteBy = userName;
+        detail.lastNoteAt = now.toISOString();
+        issue.detail = JSON.stringify(detail);
+      } catch {
+        issue.detail = JSON.stringify({ lastNote: note, lastNoteBy: userName, lastNoteAt: now.toISOString() });
+      }
+    }
+    issue.updatedAt = now;
+    await col.upsert([issue]);
+
+    const eventCol: CloudDBCollection<BusinessEvent> = db.collection(BusinessEvent);
+    const ev = new BusinessEvent();
+    ev.id = 'ev' + Date.now() + Math.floor(Math.random() * 100000);
+    ev.orgId = orgId;
+    ev.eventType = action === 'resolve' ? 'resolved' : 'updated';
+    ev.entityType = 'quality';
+    ev.entityId = issue.id;
+    ev.entityName = `${issue.ruleName}：${issue.entityName}`;
+    ev.actorId = userId;
+    ev.actorName = userName;
+    ev.level = action === 'resolve' ? 'info' : 'warning';
+    ev.metadata = JSON.stringify({ action, note, ruleId: issue.ruleId });
+    ev.sourceType = 'manual';
+    ev.sourceId = '';
+    ev.version = 1;
+    ev.isDeleted = false;
+    ev.occurredAt = now;
+    ev.createdAt = now;
+    await eventCol.upsert([ev]);
+
+    logger.info(`resolve-data-quality-issue done: id=${id}, action=${action}`);
+    callback({
+      ret: {
+        code: 0,
+        message: 'ok',
+        data: { id: issue.id, status: issue.status },
+      },
+    });
+  } catch (err: any) {
+    logger.error(`resolve-data-quality-issue error: ${err.message}`);
+    callback({ ret: { code: -1, message: err.message } });
+  }
+};
+
+export { myHandler };

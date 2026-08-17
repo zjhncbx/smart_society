@@ -1,0 +1,104 @@
+{
+  "objectTypeName": "DataQualitySnapshot",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "belongPrimaryKey": true
+    },
+    {
+      "fieldName": "orgId",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "score",
+      "fieldType": "Integer",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "100",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "dimensions",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "{}",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "counts",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "{}",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "ruleCount",
+      "fieldType": "Integer",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "0",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "issueCount",
+      "fieldType": "Integer",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "0",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "checkedAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "checkedBy",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "defaultValue": "",
+      "belongPrimaryKey": false
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Date",
+      "isNeedEncrypt": false,
+      "notNull": false,
+      "isSensitive": false,
+      "belongPrimaryKey": false
+    }
+  ],
+  "indexes": [
+    {
+      "indexName": "data_quality_snapshot_id",
+      "indexList": [{ "fieldName": "id", "sortType": "ASC" }]
+    }
+  ],
+  "permissions": [
+    { "role": "World", "rights": ["Read"] },
+    { "role": "Authenticated", "rights": ["Read"] },
+    { "role": "Creator", "rights": ["Read", "Upsert", "Delete"] },
+    { "role": "Administrator", "rights": ["Read", "Upsert", "Delete"] }
+  ]
+}

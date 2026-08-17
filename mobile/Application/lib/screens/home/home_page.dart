@@ -8,6 +8,7 @@ import '../../models/business_event.dart';
 import '../../models/project.dart';
 import '../../providers/finance_provider.dart';
 import '../../providers/event_provider.dart';
+import '../../providers/data_quality_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/notice_provider.dart';
 import '../../providers/organization_provider.dart';
@@ -67,6 +68,7 @@ class _HomePageState extends State<HomePage> {
     finance.loadStats();
     finance.loadTasks();
     context.read<EventProvider>().load();
+    context.read<DataQualityProvider>().load();
     if (orgId != null && orgId.isNotEmpty) {
       await SyncProvider.instance.pullAndRefresh(orgId);
     }
@@ -96,6 +98,7 @@ class _HomePageState extends State<HomePage> {
     final taskCount = context.watch<FinanceProvider>().taskCount;
     final finance = context.watch<FinanceProvider>();
     final events = context.watch<EventProvider>().recentEvents;
+    final dq = context.watch<DataQualityProvider>();
     final orgId = context.watch<OrganizationProvider>().currentOrgId ?? '';
     final binding = context.watch<SettingsProvider>().memberBinding(orgId);
     final myTasks = [
@@ -202,6 +205,13 @@ class _HomePageState extends State<HomePage> {
               onTap: (id) => context.go('/projects/$id'),
             ),
           ],
+          const SizedBox(height: 12),
+          _DataQualityCard(
+            score: dq.snapshot.score,
+            openCount: dq.openTotal,
+            hasSnapshot: dq.snapshot.checkedAt != null,
+            onTap: () => context.go('/quality'),
+          ),
           const SizedBox(height: 20),
           // 快捷入口
           AppCard(
@@ -765,6 +775,76 @@ class _BudgetWarningsCard extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _DataQualityCard extends StatelessWidget {
+  const _DataQualityCard({
+    required this.score,
+    required this.openCount,
+    required this.hasSnapshot,
+    required this.onTap,
+  });
+
+  final int score;
+  final int openCount;
+  final bool hasSnapshot;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final appTheme = context.appTheme;
+    final color = score >= 90
+        ? const Color(0xFF00B96B)
+        : score >= 70
+            ? const Color(0xFFFF8800)
+            : const Color(0xFFF54A45);
+    return AppCard(
+      margin: EdgeInsets.zero,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.verified_outlined, size: 22, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '数据治理健康度',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    hasSnapshot
+                        ? (openCount > 0
+                            ? '$score 分 · $openCount 项数据问题待处理'
+                            : '$score 分 · 数据质量良好')
+                        : '尚未运行数据质量检查',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 18, color: appTheme.textSecondary),
+          ],
+        ),
       ),
     );
   }
