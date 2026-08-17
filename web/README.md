@@ -412,6 +412,22 @@ React 19 + TypeScript 5 (strict) + Vite 7 + Ant Design 5
 本地验证：`pnpm typecheck`（通过）、`pnpm test`（5/5 通过）、`pnpm lint`（0 error）。  
 `pnpm build` 需在 Node >= 20.19 环境执行（当前 Node 18 下 Vite 7 会构建产物但以非零码退出）。
 
-### 下一步（W1）
+### W1 核心工作台（已完成 ✅）
 
-工作台真实化：我的 WorkItem、组织态势、全域检索、风险与预警、数据质量、自动化治理、AuditLog / 事件链查询——均通过统一 API Client 对接云端业务函数。
+```text
+我的 WorkItem     ✅ 列表/类型筛选/完成/取消/同步（服务端 DataScope 契约）
+组织态势          ✅ 状态/待处理/风险/预警/数据问题/流程阻塞/最值得关注
+全域检索          ✅ /search：跨工作项/风险/事件统一检索
+风险与预警        ✅ /risk：分级计数 + 确认监控/标记解决/重开
+数据治理          ✅ /data-quality：健康度+维度+问题清单+运行检查+解决/忽略
+自动化治理        ✅ /automation：执行统计 + 运行记录 + 运行规则
+审计与事件链      ✅ /audit：审计日志 + 事件流，按 correlationId 跨表筛选
+```
+
+W1 页面全部通过统一 API Client 对接云端业务函数；开发态由 `web/mock/dev-api.ts`（Vite 中间件 + 可独立运行的 handler）提供 `{ ret }` 契约 Mock 数据。
+
+本地验证：`pnpm smoke`（Mock 9 项断言 ✅）、`pnpm typecheck` ✅、`pnpm lint`（0 error）✅、`pnpm test`（5/5）✅、`pnpm build` ✅。
+
+### 下一步（W2）
+
+组织治理、成员与档案、项目、审批、决议、财务——接入真实 AGC 网关（`VITE_API_BASE_URL`）后替换 Mock。

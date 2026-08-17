@@ -83,3 +83,66 @@ export interface AuditLog {
   correlationId?: string;
   createdAt: string;
 }
+
+export interface RiskAlert {
+  id: string;
+  orgId: string;
+  kind: 'risk' | 'warning';
+  title: string;
+  description: string;
+  sourceRuleId: string;
+  sourceRuleName: string;
+  sourceEntityType: string;
+  sourceEntityId: string;
+  sourceEntityName: string;
+  severity: 'low' | 'medium' | 'high';
+  status: 'open' | 'monitoring' | 'resolved';
+  ownerId?: string;
+  ownerName?: string;
+  deadline?: string;
+  correlationId: string;
+  createdAt: string;
+}
+
+export interface DataQualityIssue {
+  id: string;
+  orgId: string;
+  ruleId: string;
+  ruleName: string;
+  category: string;
+  entityName: string;
+  severity: 'low' | 'medium' | 'high';
+  status: 'open' | 'resolved' | 'ignored';
+  description: string;
+  checkCount: number;
+  createdAt: string;
+}
+
+export interface DataQualitySnapshot {
+  score: number;
+  dimensions: Record<string, number>;
+  counts: Record<string, number>;
+  checkedAt?: string;
+}
+
+export interface AutomationRunLog {
+  id: string;
+  ruleId: string;
+  ruleName: string;
+  status: 'success' | 'failed';
+  actions: Record<string, number>;
+  runBy: string;
+  runAt: string;
+  durationMs: number;
+  correlationId?: string;
+}
+
+export interface OrgPosture {
+  status: '正常' | '关注' | '需介入';
+  pendingCount: number;
+  riskCount: number;
+  warningCount: number;
+  dqOpenCount: number;
+  escalatedCount: number;
+  topConcerns: Array<{ level: 'risk' | 'warning' | 'data'; text: string }>;
+}

@@ -61,3 +61,87 @@ export const permissionBundleSchema = z.object({
   dataScope: z.string(),
   isAdmin: z.boolean(),
 });
+
+export const riskAlertSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  kind: z.enum(['risk', 'warning']),
+  title: z.string(),
+  description: z.string(),
+  sourceRuleId: z.string(),
+  sourceRuleName: z.string(),
+  sourceEntityType: z.string(),
+  sourceEntityId: z.string(),
+  sourceEntityName: z.string(),
+  severity: z.enum(['low', 'medium', 'high']),
+  status: z.enum(['open', 'monitoring', 'resolved']),
+  ownerId: z.string().optional(),
+  ownerName: z.string().optional(),
+  deadline: z.string().optional(),
+  correlationId: z.string(),
+  createdAt: z.string(),
+});
+
+export const dataQualityIssueSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  ruleId: z.string(),
+  ruleName: z.string(),
+  category: z.string(),
+  entityName: z.string(),
+  severity: z.enum(['low', 'medium', 'high']),
+  status: z.enum(['open', 'resolved', 'ignored']),
+  description: z.string(),
+  checkCount: z.number(),
+  createdAt: z.string(),
+});
+
+export const dataQualitySnapshotSchema = z.object({
+  score: z.number(),
+  dimensions: z.record(z.string(), z.number()),
+  counts: z.record(z.string(), z.number()),
+  checkedAt: z.string().optional(),
+});
+
+export const automationRunLogSchema = z.object({
+  id: z.string(),
+  ruleId: z.string(),
+  ruleName: z.string(),
+  status: z.enum(['success', 'failed']),
+  actions: z.record(z.string(), z.number()),
+  runBy: z.string(),
+  runAt: z.string(),
+  durationMs: z.number(),
+  correlationId: z.string().optional(),
+});
+
+export const orgPostureSchema = z.object({
+  status: z.enum(['正常', '关注', '需介入']),
+  pendingCount: z.number(),
+  riskCount: z.number(),
+  warningCount: z.number(),
+  dqOpenCount: z.number(),
+  escalatedCount: z.number(),
+  topConcerns: z.array(
+    z.object({
+      level: z.enum(['risk', 'warning', 'data']),
+      text: z.string(),
+    }),
+  ),
+});
+
+export const auditLogSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  action: z.string(),
+  entityType: z.string(),
+  entityId: z.string(),
+  entityName: z.string(),
+  actorId: z.string(),
+  actorName: z.string(),
+  before: z.string().optional(),
+  after: z.string().optional(),
+  changeReason: z.string().optional(),
+  correlationId: z.string().optional(),
+  createdAt: z.string(),
+});

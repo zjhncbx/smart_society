@@ -3,8 +3,10 @@ import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
+import { devApiPlugin } from './mock/dev-api';
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), devApiPlugin()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -15,13 +17,12 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
+    chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
         manualChunks: {
           react: ['react', 'react-dom', 'react-router'],
-          antd: ['antd', '@ant-design/icons', '@ant-design/v5-patch-for-react-19'],
           query: ['@tanstack/react-query', 'zustand'],
-          charts: ['echarts'],
         },
       },
     },

@@ -11,6 +11,21 @@ import { AppLayout } from '@/layouts/AppLayout';
 const WorkbenchPage = lazy(() =>
   import('@/features/workbench/WorkbenchPage').then((m) => ({ default: m.WorkbenchPage })),
 );
+const RiskPage = lazy(() =>
+  import('@/features/risk/RiskPage').then((m) => ({ default: m.RiskPage })),
+);
+const DataQualityPage = lazy(() =>
+  import('@/features/data-quality/DataQualityPage').then((m) => ({ default: m.DataQualityPage })),
+);
+const AutomationPage = lazy(() =>
+  import('@/features/automation/AutomationPage').then((m) => ({ default: m.AutomationPage })),
+);
+const AuditLogPage = lazy(() =>
+  import('@/features/audit/AuditLogPage').then((m) => ({ default: m.AuditLogPage })),
+);
+const SearchPage = lazy(() =>
+  import('@/features/search/SearchPage').then((m) => ({ default: m.SearchPage })),
+);
 
 function RequireAuth({ children }: { children: ReactNode }): ReactNode {
   const userId = useSession((s) => s.userId);
@@ -27,9 +42,6 @@ const placeholderRoutes = [
   ['project', '项目与任务'],
   ['approval', '审批与决议'],
   ['finance', '财务管理'],
-  ['risk', '风险与预警'],
-  ['data-quality', '数据治理'],
-  ['automation', '自动化治理'],
   ['sensing', '全域感知'],
   ['reports', '报表与分析'],
   ['settings', '系统设置'],
@@ -61,6 +73,46 @@ export const router = createBrowserRouter([
         path,
         element: <PlaceholderPage title={title} />,
       })),
+      {
+        path: 'risk',
+        element: (
+          <SuspensePage>
+            <RiskPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'data-quality',
+        element: (
+          <SuspensePage>
+            <DataQualityPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'automation',
+        element: (
+          <SuspensePage>
+            <AutomationPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'audit',
+        element: (
+          <SuspensePage>
+            <AuditLogPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'search',
+        element: (
+          <SuspensePage>
+            <SearchPage />
+          </SuspensePage>
+        ),
+      },
     ],
   },
 ]);

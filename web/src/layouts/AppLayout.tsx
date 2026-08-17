@@ -8,10 +8,12 @@ import {
   DatabaseOutlined,
   FileDoneOutlined,
   FolderOutlined,
+  SearchOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
   TeamOutlined,
   ThunderboltOutlined,
+  UnorderedListOutlined,
   WalletOutlined,
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router';
@@ -30,6 +32,7 @@ const navItems = [
   { key: '/data-quality', label: '数据治理', icon: <DatabaseOutlined /> },
   { key: '/automation', label: '自动化治理', icon: <ThunderboltOutlined /> },
   { key: '/sensing', label: '全域感知', icon: <SafetyCertificateOutlined /> },
+  { key: '/audit', label: '审计与事件', icon: <UnorderedListOutlined /> },
   { key: '/reports', label: '报表与分析', icon: <BarChartOutlined /> },
   { key: '/settings', label: '系统设置', icon: <SettingOutlined /> },
 ];
@@ -69,6 +72,7 @@ export function AppLayout(): React.JSX.Element {
           <Typography.Text>
             组织：{currentOrgId ?? '未选择'} · 用户：{displayName ?? '未登录'}
           </Typography.Text>
+          <SearchOutlined style={{ cursor: 'pointer' }} onClick={() => navigate('/search')} />
           <AuditOutlined />
         </Layout.Header>
         <Layout.Content style={{ padding: 24 }}>
