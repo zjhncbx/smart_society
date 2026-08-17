@@ -21,6 +21,9 @@ class AuthProvider extends ChangeNotifier {
   bool get loading => _loading;
   String? get error => _error;
 
+  /// 跨端统一内部 userId（华为登录经 ensure-user-identity 映射；密码账号即 AppUser.id）
+  String get userId => _user?.id ?? _user?.openId ?? '';
+
   Future<void> init() async {
     final box = await Hive.openBox(_boxName);
     final raw = box.get(_userKey);

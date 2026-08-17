@@ -1,6 +1,7 @@
 import { cloud, CloudDBCollection } from '@hw-agconnect/cloud-server';
 import { AppUser } from './AppUser';
 import { ExternalIdentity } from './ExternalIdentity';
+import { Person } from './Person';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -55,8 +56,12 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       .get();
 
     const now = new Date();
+    const userCol: CloudDBCollection<AppUser> = db.collection(AppUser);
     if (rows.length > 0) {
       const identity = rows[0];
+      let personId = '';
+      const userRows = await userCol.query().equalTo('id', identity.userId).get();
+      if (userRows.length > 0) personId = userRows[0].personId;
       if (identity.isDeleted) {
         identity.isDeleted = false;
         identity.status = 'active';
@@ -73,6 +78,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
             identityId: identity.identityId,
             isNew: false,
             displayName: identity.displayName,
+            personId,
           },
         },
       });
@@ -80,14 +86,30 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     }
 
     // 新建内部用户 + 外部身份映射
-    const userCol: CloudDBCollection<AppUser> = db.collection(AppUser);
     const userId = randomId('u');
     const user = new AppUser();
     user.id = userId;
     user.displayName = displayName || provider;
+    user.personId = 'p' + Date.now() + Math.floor(Math.random() * 1000000);
     user.createdAt = now;
     user.updatedAt = now;
     await userCol.upsert([user]);
+
+    const person = new Person();
+    person.personId = user.personId;
+    person.userId = userId;
+    person.name = displayName || provider;
+    person.status = 'active';
+    person.version = 1;
+    person.sourceType = 'manual';
+    person.sourceId = '';
+    person.isDeleted = false;
+    person.createdAt = now;
+    person.createdBy = userId;
+    person.updatedAt = now;
+    person.updatedBy = userId;
+    const personCol: CloudDBCollection<Person> = db.collection(Person);
+    await personCol.upsert([person]);
 
     const identity = new ExternalIdentity();
     identity.identityId = randomId('ei');
@@ -116,6 +138,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
           identityId: identity.identityId,
           isNew: true,
           displayName: identity.displayName,
+          personId: user.personId,
         },
       },
     });

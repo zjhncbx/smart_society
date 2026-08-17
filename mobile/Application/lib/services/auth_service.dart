@@ -37,7 +37,27 @@ class AuthService {
         throw Exception('登录失败：未获取到用户标识');
       }
       _log('signIn: 成功 openId=$openId displayName=${json['displayName']}');
-      return AuthUser.fromJson(json);
+      final external = AuthUser.fromJson(json);
+      // 跨端统一身份：外部 OpenID 映射为内部稳定 userId（幂等）
+      final identity = await CloudFunctionService.instance.callChecked(
+        'ensure-user-identity',
+        params: {
+          'provider': 'huawei',
+          'providerSubject': openId,
+          'displayName': external.displayName ?? '',
+        },
+        timeout: const Duration(seconds: 30),
+      );
+      final identityMap = identity is Map<String, dynamic> ? identity : <String, dynamic>{};
+      final userId = (identityMap['userId'] as String?) ?? external.openId;
+      _log('signIn: 内部 userId=$userId');
+      return AuthUser(
+        id: userId,
+        openId: external.openId,
+        unionId: external.unionId,
+        displayName: external.displayName,
+        avatarUri: external.avatarUri,
+      );
     } on PlatformException catch (e) {
       _log('signIn: PlatformException code=${e.code} message=${e.message} details=${e.details}');
       rethrow;
@@ -89,6 +109,7 @@ class AuthService {
     }
     _log('signInWithAccount: success userId=$userId');
     return AuthUser(
+      id: userId,
       openId: userId,
       displayName: (map['displayName'] as String?) ?? '用户',
     );

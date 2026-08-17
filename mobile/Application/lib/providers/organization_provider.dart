@@ -91,7 +91,7 @@ class OrganizationProvider extends ChangeNotifier {
 
   /// 登录/登出后刷新本地 userId，并补齐云端设置与组织数据。
   void _onAuthChanged() {
-    final uid = _auth.user?.openId ?? '';
+    final uid = _auth.userId;
     if (uid == _userId) return;
     _userId = uid.isEmpty ? null : uid;
     _roleConfig.userId = uid.isEmpty ? null : uid;

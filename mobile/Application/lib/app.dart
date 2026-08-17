@@ -35,11 +35,11 @@ Future<void> mainApp() async {
   await settingsProvider.init();
 
   final roleConfigProvider = RoleConfigProvider()
-    ..userId = authProvider.user?.openId;
+    ..userId = authProvider.userId;
   await roleConfigProvider.init();
 
   final syncProvider = SyncProvider.instance;
-  SyncProvider.setUserIdGetter(() => authProvider.user?.openId ?? '');
+  SyncProvider.setUserIdGetter(() => authProvider.userId);
   await syncProvider.init();
 
   runApp(SmartSocietyApp(
@@ -250,7 +250,7 @@ class SmartSocietyApp extends StatelessWidget {
             auth: authProvider,
             settings: settingsProvider,
             roleConfig: roleConfigProvider,
-          )..init(userId: authProvider.user?.openId ?? ''),
+          )..init(userId: authProvider.userId),
         ),
         ChangeNotifierProvider(
           create: (_) {
@@ -279,34 +279,34 @@ class SmartSocietyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => FinanceProvider(
             orgIdGetter: orgIdGetter(),
-            userIdGetter: () => authProvider.user?.openId ?? '',
+            userIdGetter: () => authProvider.userId,
             userNameGetter: () => settingsProvider.nickname,
           ),
         ),
         ChangeNotifierProvider(
           create: (_) => EventProvider(
             orgIdGetter: orgIdGetter(),
-            userIdGetter: () => authProvider.user?.openId ?? '',
+            userIdGetter: () => authProvider.userId,
           ),
         ),
         ChangeNotifierProvider(
           create: (_) => DataQualityProvider(
             orgIdGetter: orgIdGetter(),
-            userIdGetter: () => authProvider.user?.openId ?? '',
+            userIdGetter: () => authProvider.userId,
             userNameGetter: () => settingsProvider.nickname,
           ),
         ),
         ChangeNotifierProvider(
           create: (_) => GovernanceProvider(
             orgIdGetter: orgIdGetter(),
-            userIdGetter: () => authProvider.user?.openId ?? '',
+            userIdGetter: () => authProvider.userId,
             userNameGetter: () => settingsProvider.nickname,
           ),
         ),
         ChangeNotifierProvider(
           create: (_) => WorkItemProvider(
             orgIdGetter: orgIdGetter(),
-            userIdGetter: () => authProvider.user?.openId ?? '',
+            userIdGetter: () => authProvider.userId,
             userNameGetter: () => settingsProvider.nickname,
           ),
         ),

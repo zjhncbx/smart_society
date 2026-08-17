@@ -5,6 +5,7 @@ export class AppUser {
   passwordHash: string = '';
   passwordSalt: string = '';
   displayName: string = '';
+  personId: string = '';
   createdAt: Date | null = null;
   updatedAt: Date | null = null;
 
@@ -20,6 +21,7 @@ export class AppUser {
     map.set('passwordHash', 'String');
     map.set('passwordSalt', 'String');
     map.set('displayName', 'String');
+    map.set('personId', 'String');
     map.set('createdAt', 'Date');
     map.set('updatedAt', 'Date');
     return map;
@@ -46,6 +48,7 @@ export class AppUser {
       obj.passwordHash = data.passwordHash ?? '';
       obj.passwordSalt = data.passwordSalt ?? '';
       obj.displayName = data.displayName ?? '';
+      obj.personId = data.personId ?? '';
       obj.createdAt = data.createdAt ? new Date(data.createdAt) : null;
       obj.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     }

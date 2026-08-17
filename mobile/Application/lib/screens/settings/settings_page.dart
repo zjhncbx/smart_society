@@ -409,7 +409,7 @@ class _SettingsPageState extends State<SettingsPage> {
           orgId: orgId,
           clientId: clientId,
           clientSecret: clientSecret,
-          userId: context.read<AuthProvider>().user?.openId ?? '',
+          userId: context.read<AuthProvider>().userId,
         );
         if (!mounted) return;
         final lastSelection = settings.dingTalkSelectedDeptIds(orgId);
