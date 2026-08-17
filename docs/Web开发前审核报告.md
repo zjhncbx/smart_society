@@ -18,9 +18,9 @@
 # 〇、Web 开发启动门禁（Go / No-Go 终审）
 
 > **终审日期**：2026-08-17（第二轮，代码级核验，非文档自述）  
-> **结论：基础工程 Go；核心业务页面 No-Go。**
+> **结论：基础工程 Go；核心业务页面 条件 Go（P0-A~E 第一版已完成，部署验证后正式放行）。**
 
-当前已具备进入 **Web 基础工程搭建**（技术栈/路由/Layout/Design System/API Client/Auth/状态管理/数据模型/权限框架/基础组件）的条件；但 **5 项 P0 架构缺口未封口，暂不建议大规模开发会员/组织/项目/审批/财务/决议等核心业务页面**，否则会再次出现三端模型与业务逻辑分叉。
+当前已具备进入 **Web 基础工程搭建** 的条件；5 项 P0 架构缺口（WorkItem/跨端 userId/RBAC/统一业务动作 API/服务端幂等）**第一版均已封口**，在 AGC 部署验证（新表 + 新函数 + 改造函数）后，核心业务页面即可放行。
 
 ## 0.1 逐项终审结果（代码级证据）
 
@@ -31,12 +31,12 @@
 | ③ 云函数权限 | ✅ 组织级已加固 | 49 个函数全量 TS 编译通过；组织级写接口已成员校验，管理员操作已 admin 校验（结账/审批流/期初/组织设置/关系/钉钉凭证） |
 | ④ AuditLog | ✅ 云侧闭环 / ⚠️ 查询入口待建 | AuditLog 对象 + record/get-audit-logs + 10 个关键业务函数接入（成员/项目/公告增删改、财务提交/审批/驳回/结账/反结账）；Web 审计页与端侧页面待建设 |
 | ⑤ BusinessEvent / correlationId | ⚠️ 字段级完成，链路未贯通 | CloudDB 字段 + 17 个云函数模型 + record/get 透传 ✅；但各业务函数 recordEvent 写入 `correlationId=''`（未生成关联键），且 Flutter 模型未含该字段 |
-| ⑥ 跨端 userId | ❌ 客户端未落地 | 云侧 ensure-user-identity + ExternalIdentity 已建 ✅；客户端仍有 19 处直接使用华为 `openId` 作为 userId；User/Person/OrganizationMembership 四层模型未落地 |
-| ⑦ User/Person/Membership | ❌ 未落地 | Flutter models 无 Person/OrganizationMembership；UserOrganization 仅二元 admin/member，无 personId/roleId/dataScope |
-| ⑧ Role/Permission/DataScope | ❌ 不足 | 无 Role/Permission/DataScope/OperationPolicy 对象；权限仅 `role === 'admin'` 二元判断 |
-| ⑨ WorkItem | ❌ 未完成 | 云函数/对象/Flutter 均无 WorkItem（0 命中）；审批/自动任务/项目任务/风险整改仍分散 |
-| ⑩ 统一业务 API | ⚠️ 基础有，动作化不足 | 49 个云函数统一 `{ ret: { code, message, data } }`；但成员/项目/公告仍由客户端通用 upsert/delete CRUD 驱动，无统一业务动作封装（如 progress/approve/resolve） |
-| ⑪ 服务端幂等 | ❌ 不足 | 0 个函数包含 idempotencyKey；仅客户端 3 次指数退避重试 |
+| ⑥ 跨端 userId | ✅ 客户端已落地 | 华为登录自动换取内部 userId，原 19 处 openId 用法已替换；Person 对象已建 |
+| ⑦ User/Person/Membership | ✅ 第一版落地 | AppUser（User）+ Person + UserOrganization（OrganizationMembership，含 roleId/dataScope/status） |
+| ⑧ Role/Permission/DataScope | ✅ 第一版落地 | Role/Permission/DataScope 对象 + get-my-permissions 云端鉴权（内置矩阵+回退兼容）+ 管理配置接口 |
+| ⑨ WorkItem | ✅ 第一版落地 | WorkItem 对象 + refresh/get/act 云函数 + 移动端统一工作项页 |
+| ⑩ 统一业务 API | ✅ 第一版落地 | 业务动作命名规范冻结于 docs/业务API契约.md；审批/财务/风险/数据治理/工作项已动作化 |
+| ⑪ 服务端幂等 | ✅ 第一版落地 | IdempotencyRecord + 7 个关键动作函数幂等键支持 |
 | ⑫ Flutter Models 与契约一致性 | ❌ 未同步 | BusinessEvent 无 correlationId；Member/Project/Notice 等无 code/version/sourceType |
 | ⑬ Web 工程 | ⚠️ 仅壳 | `web/` 仅 README.md，无工程初始化 |
 | ⑭ cloud_objects IdGenerator | ⚠️ 编译 stub | `id-generator/IdGenerator.ts` 为 Cloud Object 编译生成占位，`randomUUID` 未实现，不代表身份体系完成 |
@@ -78,6 +78,7 @@ Web 项目初始化
 | 日期 | 结论 | 说明 |
 |---|---|---|
 | 2026-08-17 | 基础工程 Go / 核心业务 No-Go | 首版门禁：5 项 P0 架构缺口待封口 |
+| 2026-08-17 | 基础工程 Go / 核心业务 条件 Go | P0-A~E 第一版全部封口（WorkItem/跨端userId/RBAC/统一业务API/幂等），待 AGC 部署验证后正式放行 |
 
 ---
 
