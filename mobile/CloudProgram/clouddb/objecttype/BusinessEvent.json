@@ -183,7 +183,7 @@
       "fieldName": "occurredAt",
       "fieldType": "Date",
       "isNeedEncrypt": false,
-      "notNull": true,
+      "notNull": false,
       "isSensitive": false,
       "belongPrimaryKey": false
     },
