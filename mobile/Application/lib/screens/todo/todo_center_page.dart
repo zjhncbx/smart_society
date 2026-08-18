@@ -96,7 +96,7 @@ class _TodoCenterPageState extends State<TodoCenterPage> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => context.go('/work-items'),
+                      onPressed: () => context.push('/work-items'),
                       child: const Text('统一工作项'),
                     ),
                   ],
@@ -107,7 +107,7 @@ class _TodoCenterPageState extends State<TodoCenterPage> {
             _SectionHeader(
               title: '审批待办',
               count: approvalTasks.length,
-              onViewAll: () => context.go('/finance/tasks'),
+              onViewAll: () => context.push('/finance/tasks'),
             ),
             if (approvalTasks.isEmpty)
               const _EmptyHint(text: '暂无待我审批的单据')
@@ -149,7 +149,7 @@ class _TodoCenterPageState extends State<TodoCenterPage> {
             _SectionHeader(
               title: '自动任务',
               count: autoTasks.length,
-              onViewAll: () => context.go('/governance/tasks'),
+              onViewAll: () => context.push('/governance/tasks'),
             ),
             if (autoTasks.isEmpty)
               const _EmptyHint(text: '暂无自动生成的任务，可在自动任务中心运行规则')
@@ -157,7 +157,7 @@ class _TodoCenterPageState extends State<TodoCenterPage> {
               for (final task in autoTasks.take(8))
                 AppCard(
                   margin: const EdgeInsets.only(bottom: 8),
-                  onTap: () => context.go('/governance/tasks'),
+                  onTap: () => context.push('/governance/tasks'),
                   child: ListTile(
                     dense: true,
                     leading: const Icon(
@@ -192,7 +192,7 @@ class _TodoCenterPageState extends State<TodoCenterPage> {
             _SectionHeader(
               title: '我的任务${binding != null ? '（${binding.memberName}）' : ''}',
               count: myTasks.length,
-              onViewAll: () => context.go('/projects'),
+              onViewAll: () => context.push('/projects/list'),
             ),
             if (binding == null)
               const _EmptyHint(text: '尚未绑定会员，请先在「我的」中绑定身份')
@@ -202,7 +202,7 @@ class _TodoCenterPageState extends State<TodoCenterPage> {
               for (final item in myTasks.take(8))
                 AppCard(
                   margin: const EdgeInsets.only(bottom: 8),
-                  onTap: () => context.go('/projects/${item.project.id}'),
+                  onTap: () => context.push('/projects/${item.project.id}'),
                   child: ListTile(
                     dense: true,
                     leading: const Icon(

@@ -40,6 +40,25 @@ import 'services/auth_gate.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// 当前 StatefulShellRoute 的导航壳引用，供 Tab 分支返回拦截（onExit）使用。
+StatefulNavigationShell? _currentNavigationShell;
+
+void registerNavigationShell(StatefulNavigationShell shell) {
+  _currentNavigationShell = shell;
+}
+
+/// Tab 分支根页面按返回键时的处理：
+/// - 非首页 Tab：先切回首页 Tab，并拦截返回事件（避免直接退出应用回到桌面）。
+/// - 首页 Tab：放行，交给系统执行默认返回（退出应用）。
+Future<bool> _handleShellExit(BuildContext context, GoRouterState state) async {
+  final shell = _currentNavigationShell;
+  if (shell != null && shell.currentIndex != 0) {
+    shell.goBranch(0, initialLocation: false);
+    return false;
+  }
+  return true;
+}
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/home',
@@ -57,30 +76,72 @@ final GoRouter appRouter = GoRouter(
       branches: [
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/home', builder: (c, s) => const HomePage()),
+            GoRoute(
+              path: '/home',
+              onExit: _handleShellExit,
+              builder: (c, s) => const HomePage(),
+            ),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/members', builder: (c, s) => const MemberListPage()),
+            GoRoute(
+              path: '/members',
+              onExit: _handleShellExit,
+              builder: (c, s) => const MemberListPage(),
+            ),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/projects', builder: (c, s) => const ProjectListPage()),
+            GoRoute(
+              path: '/projects',
+              onExit: _handleShellExit,
+              builder: (c, s) => const ProjectListPage(),
+            ),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/notices', builder: (c, s) => const NoticeListPage()),
+            GoRoute(
+              path: '/notices',
+              onExit: _handleShellExit,
+              builder: (c, s) => const NoticeListPage(),
+            ),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/finance', builder: (c, s) => const FinanceListPage()),
+            GoRoute(
+              path: '/finance',
+              onExit: _handleShellExit,
+              builder: (c, s) => const FinanceListPage(),
+            ),
           ],
         ),
       ],
+    ),
+    // root 级“模块列表”路由：供首页/待办/画像等入口 push 打开，
+    // 返回键可以回到来源页面，而不是把 Tab 栈替换掉后直接退出应用。
+    GoRoute(
+      path: '/members/list',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const MemberListPage(),
+    ),
+    GoRoute(
+      path: '/projects/list',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const ProjectListPage(),
+    ),
+    GoRoute(
+      path: '/notices/list',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const NoticeListPage(),
+    ),
+    GoRoute(
+      path: '/finance/list',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (c, s) => const FinanceListPage(),
     ),
     GoRoute(
       path: '/login',

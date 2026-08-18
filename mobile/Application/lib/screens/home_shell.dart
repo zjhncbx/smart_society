@@ -6,6 +6,7 @@ import '../config/org_config_provider.dart';
 import '../providers/finance_provider.dart';
 import '../providers/notice_provider.dart';
 import '../providers/organization_provider.dart';
+import '../router.dart';
 import '../widgets/member_avatar.dart';
 
 class HomeShell extends StatelessWidget {
@@ -15,6 +16,7 @@ class HomeShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    registerNavigationShell(navigationShell);
     final labels = context.labels;
     final org = context.watch<OrganizationProvider>().currentOrg;
     return Scaffold(

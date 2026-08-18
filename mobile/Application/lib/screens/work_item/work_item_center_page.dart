@@ -72,7 +72,7 @@ class _WorkItemCenterPageState extends State<WorkItemCenterPage> {
   void _open(WorkItem item) {
     switch (item.workItemType) {
       case 'approval':
-        context.go('/finance/tasks');
+        context.push('/finance/tasks');
         break;
       case 'project_task':
         final projectId = item.originId.split(':').first;
@@ -84,11 +84,11 @@ class _WorkItemCenterPageState extends State<WorkItemCenterPage> {
         context.push('/governance/risks/${item.originId}');
         break;
       case 'data_quality':
-        context.go('/quality');
+        context.push('/quality');
         break;
       case 'auto_task':
       default:
-        context.go('/governance/tasks');
+        context.push('/governance/tasks');
         break;
     }
   }

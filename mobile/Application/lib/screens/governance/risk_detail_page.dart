@@ -88,15 +88,15 @@ class _RiskDetailPageState extends State<RiskDetailPage> {
         if (bizId != null && '$bizId'.isNotEmpty) {
           context.push('/finance/$bizId');
         } else {
-          context.go('/finance/tasks');
+          context.push('/finance/tasks');
         }
         break;
       case 'quality':
-        context.go('/quality');
+        context.push('/quality');
         break;
       case 'organization':
       default:
-        context.go('/governance/risks');
+        context.push('/governance/risks');
         break;
     }
   }

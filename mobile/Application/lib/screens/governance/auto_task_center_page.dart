@@ -83,8 +83,8 @@ class _AutoTaskCenterPageState extends State<AutoTaskCenterPage> {
               openCount: provider.openTaskCount,
               running: provider.running,
               onRun: _runRules,
-              onOpenApprovals: () => context.go('/finance/tasks'),
-              onOpenRisks: () => context.go('/governance/risks'),
+              onOpenApprovals: () => context.push('/finance/tasks'),
+              onOpenRisks: () => context.push('/governance/risks'),
             ),
             const SizedBox(height: 16),
             Text(

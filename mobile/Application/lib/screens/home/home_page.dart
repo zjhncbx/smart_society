@@ -162,10 +162,10 @@ class _HomePageState extends State<HomePage> {
                 .where((i) => i.isOpen && i.severity == 'high')
                 .take(2)
                 .toList(),
-            onOpenTodo: () => context.go('/todo'),
-            onOpenAutoTasks: () => context.go('/governance/tasks'),
-            onOpenRisks: () => context.go('/governance/risks'),
-            onOpenQuality: () => context.go('/quality'),
+            onOpenTodo: () => context.push('/todo'),
+            onOpenAutoTasks: () => context.push('/governance/tasks'),
+            onOpenRisks: () => context.push('/governance/risks'),
+            onOpenQuality: () => context.push('/quality'),
           ),
           const SizedBox(height: 12),
           // 必须处理
@@ -176,18 +176,18 @@ class _HomePageState extends State<HomePage> {
             overdue: overdue,
             dueToday: dueToday,
             dueWeek: dueWeek,
-            onOpenTodo: () => context.go('/todo'),
-            onOpenApprovals: () => context.go('/finance/tasks'),
-            onOpenAutoTasks: () => context.go('/governance/tasks'),
-            onOpenProjects: () => context.go('/projects'),
+            onOpenTodo: () => context.push('/todo'),
+            onOpenApprovals: () => context.push('/finance/tasks'),
+            onOpenAutoTasks: () => context.push('/governance/tasks'),
+            onOpenProjects: () => context.push('/projects/list'),
           ),
           if (gov.escalatedTaskCount > 0 || dq.highSeverityOpenCount > 0) ...[
             const SizedBox(height: 12),
             _FlowBlockCard(
               escalatedCount: gov.escalatedTaskCount,
               highDqCount: dq.highSeverityOpenCount,
-              onOpenAutoTasks: () => context.go('/governance/tasks'),
-              onOpenQuality: () => context.go('/quality'),
+              onOpenAutoTasks: () => context.push('/governance/tasks'),
+              onOpenQuality: () => context.push('/quality'),
             ),
           ],
           const SizedBox(height: 12),
@@ -198,7 +198,7 @@ class _HomePageState extends State<HomePage> {
             _BudgetWarningsCard(
               warnings: budgetWarnings,
               projectExpense: projectExpense,
-              onTap: (id) => context.go('/projects/$id'),
+              onTap: (id) => context.push('/projects/$id'),
             ),
           ],
           const SizedBox(height: 20),
@@ -214,25 +214,25 @@ class _HomePageState extends State<HomePage> {
                       label: labels.tabMembers,
                       icon: Icons.people_outline,
                       color: const Color(0xFF3370FF),
-                      onTap: () => context.go('/members'),
+                      onTap: () => context.push('/members/list'),
                     ),
                     _QuickAction(
                       label: labels.tabProjects,
                       icon: Icons.task_alt_outlined,
                       color: const Color(0xFF00B96B),
-                      onTap: () => context.go('/projects'),
+                      onTap: () => context.push('/projects/list'),
                     ),
                     _QuickAction(
                       label: labels.tabNotices,
                       icon: Icons.campaign_outlined,
                       color: const Color(0xFFFF8800),
-                      onTap: () => context.go('/notices'),
+                      onTap: () => context.push('/notices/list'),
                     ),
                     _QuickAction(
                       label: labels.tabFinance,
                       icon: Icons.account_balance_wallet_outlined,
                       color: const Color(0xFF7B61FF),
-                      onTap: () => context.go('/finance'),
+                      onTap: () => context.push('/finance/list'),
                     ),
                   ],
                 ),
@@ -243,25 +243,25 @@ class _HomePageState extends State<HomePage> {
                       label: '审批待办',
                       icon: Icons.fact_check_outlined,
                       color: const Color(0xFFF54A45),
-                      onTap: () => context.go('/finance/tasks'),
+                      onTap: () => context.push('/finance/tasks'),
                     ),
                     _QuickAction(
                       label: '设置',
                       icon: Icons.settings_outlined,
                       color: const Color(0xFF8A9099),
-                      onTap: () => context.go('/settings'),
+                      onTap: () => context.push('/settings'),
                     ),
                     _QuickAction(
                       label: '事件流',
                       icon: Icons.timeline_outlined,
                       color: const Color(0xFF13C2C2),
-                      onTap: () => context.go('/events'),
+                      onTap: () => context.push('/events'),
                     ),
                     _QuickAction(
                       label: '自动任务',
                       icon: Icons.auto_awesome_outlined,
                       color: const Color(0xFF7B61FF),
-                      onTap: () => context.go('/governance/tasks'),
+                      onTap: () => context.push('/governance/tasks'),
                     ),
                   ],
                 ),
@@ -280,7 +280,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               TextButton(
-                onPressed: () => context.go('/events'),
+                onPressed: () => context.push('/events'),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   minimumSize: Size.zero,
@@ -303,7 +303,7 @@ class _HomePageState extends State<HomePage> {
             for (final ev in events)
               AppCard(
                 margin: const EdgeInsets.only(bottom: 8),
-                onTap: () => context.go('/events'),
+                onTap: () => context.push('/events'),
                 child: Row(
                   children: [
                     Container(
@@ -367,7 +367,7 @@ class _HomePageState extends State<HomePage> {
             for (final p in activeProjects.take(3))
               AppCard(
                 margin: const EdgeInsets.only(bottom: 8),
-                onTap: () => context.go('/projects/${p.id}'),
+                onTap: () => context.push('/projects/${p.id}'),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -424,7 +424,7 @@ class _HomePageState extends State<HomePage> {
             for (final n in notices)
               AppCard(
                 margin: const EdgeInsets.only(bottom: 8),
-                onTap: () => context.go('/notices/${n.id}'),
+                onTap: () => context.push('/notices/${n.id}'),
                 child: Row(
                   children: [
                     if (!n.isRead)
