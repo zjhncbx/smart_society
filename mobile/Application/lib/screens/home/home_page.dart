@@ -34,6 +34,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String? _lastOrgId;
   bool _watching = false;
+  OrganizationProvider? _orgProvider;
 
   @override
   void initState() {
@@ -46,19 +47,21 @@ class _HomePageState extends State<HomePage> {
     super.didChangeDependencies();
     if (_watching) return;
     _watching = true;
-    final org = context.read<OrganizationProvider>();
-    _lastOrgId = org.currentOrgId;
-    org.addListener(_onOrgChanged);
+    // 缓存 Provider 引用：dispose/回调中不能再用 context 查找 ancestor
+    _orgProvider = context.read<OrganizationProvider>();
+    _lastOrgId = _orgProvider!.currentOrgId;
+    _orgProvider!.addListener(_onOrgChanged);
   }
 
   @override
   void dispose() {
-    context.read<OrganizationProvider>().removeListener(_onOrgChanged);
+    _orgProvider?.removeListener(_onOrgChanged);
     super.dispose();
   }
 
   void _onOrgChanged() {
-    final orgId = context.read<OrganizationProvider>().currentOrgId;
+    if (!mounted) return;
+    final orgId = _orgProvider?.currentOrgId;
     if (orgId != _lastOrgId) {
       _lastOrgId = orgId;
       _refresh();

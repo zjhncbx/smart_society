@@ -24,6 +24,7 @@ class _FinanceListPageState extends State<FinanceListPage> {
   String? _statusFilter;
   String? _lastOrgId;
   bool _orgWatched = false;
+  OrganizationProvider? _orgProvider;
 
   @override
   void initState() {
@@ -36,19 +37,21 @@ class _FinanceListPageState extends State<FinanceListPage> {
     super.didChangeDependencies();
     if (_orgWatched) return;
     _orgWatched = true;
-    final org = context.read<OrganizationProvider>();
-    _lastOrgId = org.currentOrgId;
-    org.addListener(_onOrgChanged);
+    // 缓存 Provider 引用：dispose/回调中不能再用 context 查找 ancestor
+    _orgProvider = context.read<OrganizationProvider>();
+    _lastOrgId = _orgProvider!.currentOrgId;
+    _orgProvider!.addListener(_onOrgChanged);
   }
 
   @override
   void dispose() {
-    context.read<OrganizationProvider>().removeListener(_onOrgChanged);
+    _orgProvider?.removeListener(_onOrgChanged);
     super.dispose();
   }
 
   void _onOrgChanged() {
-    final orgId = context.read<OrganizationProvider>().currentOrgId;
+    if (!mounted) return;
+    final orgId = _orgProvider?.currentOrgId;
     if (orgId != _lastOrgId) {
       _lastOrgId = orgId;
       _statusFilter = null;
