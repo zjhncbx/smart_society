@@ -66,7 +66,8 @@ final GoRouter appRouter = GoRouter(
   redirect: (context, state) {
     final loc = state.uri.path;
     if (!isAuthenticated && loc != '/login') return '/login';
-    if (isAuthenticated && loc == '/login') return '/members';
+    if (isAuthenticated && loc == '/login') return '/home';
+    if (isAuthenticated && consumePendingHomeAfterLogin()) return '/home';
     return null;
   },
   routes: [

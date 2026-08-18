@@ -65,6 +65,8 @@ class AuthProvider extends ChangeNotifier {
     try {
       _user = await _authService.signIn();
       gate.isAuthenticated = true;
+      // 登录成功后强制下次路由定位到首页，而不是恢复旧会话位置
+      gate.markPendingHomeAfterLogin();
       final box = await Hive.openBox(_boxName);
       await box.put(_userKey, _user!.toJson());
       debugPrint('[AuthProvider] signIn: 登录成功，用户=${_user!.displayName}');
@@ -96,6 +98,8 @@ class AuthProvider extends ChangeNotifier {
         displayName: displayName,
       );
       gate.isAuthenticated = true;
+      // 登录成功后强制下次路由定位到首页，而不是恢复旧会话位置
+      gate.markPendingHomeAfterLogin();
       final box = await Hive.openBox(_boxName);
       await box.put(_userKey, _user!.toJson());
       debugPrint('[AuthProvider] account signIn success: ${_user!.displayName}');
