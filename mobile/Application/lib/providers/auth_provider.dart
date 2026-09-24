@@ -115,8 +115,9 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signOut() async {
     try {
       await _authService.signOut();
-    } catch (_) {
-      // 即使原生登出失败也清除本地状态
+    } catch (e) {
+      // 即使原生登出失败也清除本地状态，但记录日志便于排障
+      debugPrint('[AuthProvider] signOut: 原生登出失败（继续清除本地状态） -> $e');
     }
     _user = null;
     gate.isAuthenticated = false;

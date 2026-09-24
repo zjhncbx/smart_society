@@ -79,7 +79,10 @@ class OrganizationProvider extends ChangeNotifier {
     // 从云端刷新
     try {
       await loadMyOrgs();
-    } catch (_) {}
+    } catch (e) {
+      // 云端刷新失败不阻断启动，保留本地缓存并记录日志
+      debugPrint('[OrganizationProvider] init: loadMyOrgs 失败（使用本地缓存） -> $e');
+    }
     // 自动拉取当前组织的设置与最新数据（成员/项目/公告）
     final orgId = _currentOrgId;
     if (orgId != null && orgId.isNotEmpty) {
@@ -216,7 +219,9 @@ class OrganizationProvider extends ChangeNotifier {
     // 操作者已不再是管理员，刷新本地角色；刷新失败不影响云端结果
     try {
       await loadMyOrgs();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[OrganizationProvider] transferAdmin: 刷新组织列表失败（不影响云端结果） -> $e');
+    }
     return res is Map<String, dynamic> ? res : <String, dynamic>{};
   }
 

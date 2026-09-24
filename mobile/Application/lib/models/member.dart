@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 /// 社团成员
 class Member {
   Member({
@@ -115,7 +117,10 @@ List<String> _parseDepartments(dynamic v) {
     try {
       final decoded = jsonDecode(v);
       if (decoded is List) return decoded.map((e) => '$e').toList();
-    } catch (_) {}
+    } catch (e) {
+      // 解析失败保留其余字段：部门回退为空列表并记录日志
+      debugPrint('[Member] departments JSON 解析失败，回退为空列表: $e');
+    }
   }
   return const [];
 }

@@ -59,6 +59,14 @@ Future<bool> _handleShellExit(BuildContext context, GoRouterState state) async {
   return true;
 }
 
+/// 详情路由 id 参数缺失/为空时兜底重定向首页。
+/// 正常路径匹配（`:id` 存在）不会触发，属防御处理，替代裸 `!` 断言崩溃。
+String? _guardIdParam(BuildContext context, GoRouterState state) {
+  final id = state.pathParameters['id'];
+  if (id == null || id.isEmpty) return '/home';
+  return null;
+}
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/home',
@@ -167,6 +175,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/members/:id',
       parentNavigatorKey: _rootNavigatorKey,
+      redirect: _guardIdParam,
       builder: (c, s) => MemberDetailPage(id: s.pathParameters['id']!),
     ),
     GoRoute(
@@ -182,6 +191,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/projects/:id',
       parentNavigatorKey: _rootNavigatorKey,
+      redirect: _guardIdParam,
       builder: (c, s) => ProjectDetailPage(id: s.pathParameters['id']!),
     ),
     GoRoute(
@@ -192,6 +202,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/projects/:id/board',
       parentNavigatorKey: _rootNavigatorKey,
+      redirect: _guardIdParam,
       builder: (c, s) => ProjectBoardPage(id: s.pathParameters['id']!),
     ),
     GoRoute(
@@ -202,6 +213,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/notices/:id',
       parentNavigatorKey: _rootNavigatorKey,
+      redirect: _guardIdParam,
       builder: (c, s) => NoticeDetailPage(id: s.pathParameters['id']!),
     ),
     GoRoute(
@@ -241,6 +253,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/finance/:id',
       parentNavigatorKey: _rootNavigatorKey,
+      redirect: _guardIdParam,
       builder: (c, s) => FinanceRecordDetailPage(id: s.pathParameters['id']!),
     ),
     GoRoute(
@@ -251,7 +264,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/roles',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (c, s) => const SettingsPage(),
+      // 独立可达的角色管理入口：复用 SettingsPage 并定位到角色分区
+      builder: (c, s) => const SettingsPage(focusRoles: true),
     ),
     GoRoute(
       path: '/events',
@@ -276,6 +290,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/governance/risks/:id',
       parentNavigatorKey: _rootNavigatorKey,
+      redirect: _guardIdParam,
       builder: (c, s) => RiskDetailPage(id: s.pathParameters['id']!),
     ),
     GoRoute(

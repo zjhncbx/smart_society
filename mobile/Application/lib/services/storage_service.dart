@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 
@@ -49,10 +50,12 @@ class StorageService {
       final path =
           await _pathChannel.invokeMethod<String>('getStoragePath');
       if (path != null && path.isNotEmpty) return path;
-    } on PlatformException catch (_) {
+    } on PlatformException catch (e) {
       // 原生通道不可用，回退临时目录
-    } on MissingPluginException catch (_) {
+      debugPrint('[StorageService] 原生存储通道异常，回退临时目录: $e');
+    } on MissingPluginException catch (e) {
       // 测试环境无原生实现，回退临时目录
+      debugPrint('[StorageService] 原生插件未实现（测试环境），回退临时目录: $e');
     }
     final dir = await Directory.systemTemp.createTemp('smart_society');
     return dir.path;

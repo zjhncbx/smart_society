@@ -33,7 +33,13 @@ class _WorkItemCenterPageState extends State<WorkItemCenterPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
         await context.read<WorkItemProvider>().refresh();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[WorkItemCenter] 初始加载失败: $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('工作项加载失败，请稍后重试')),
+        );
+      }
     });
   }
 

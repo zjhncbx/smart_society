@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 const String kInstanceRunning = 'running';
 const String kInstanceApproved = 'approved';
 const String kInstanceRejected = 'rejected';
@@ -125,7 +127,10 @@ class ApprovalInstance {
         snapshot = ApprovalNodeSnapshot.fromJson(
             Map<String, dynamic>.from(jsonDecode(raw) as Map));
       }
-    } catch (_) {}
+    } catch (e) {
+      // 解析失败保留其余字段：节点快照回退为默认值并记录日志
+      debugPrint('[ApprovalInstance] nodeSnapshot 解析失败，回退为默认快照: $e');
+    }
     return ApprovalInstance(
       id: json['id'] as String,
       orgId: (json['orgId'] as String?) ?? '',
@@ -169,7 +174,10 @@ List<ApprovalHistoryEntry> _parseHistory(dynamic v) {
                 ApprovalHistoryEntry.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      // 解析失败保留其余字段：审批历史回退为空列表并记录日志
+      debugPrint('[ApprovalInstance] history JSON 解析失败，回退为空列表: $e');
+    }
   }
   return [];
 }

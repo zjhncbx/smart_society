@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 /// 流程节点类型
 const String kNodeApprove = 'approve';
 const String kNodeHandle = 'handle';
@@ -130,7 +132,10 @@ List<FlowNode> _parseNodes(dynamic v) {
             .map((e) => FlowNode.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      // 解析失败保留其余字段：节点回退为空列表并记录日志
+      debugPrint('[ApprovalFlow] nodes JSON 解析失败，回退为空列表: $e');
+    }
   }
   return [];
 }

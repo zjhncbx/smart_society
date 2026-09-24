@@ -16,7 +16,10 @@ import '../../widgets/common.dart';
 import '../../widgets/dingtalk_dept_picker.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, this.focusRoles = false});
+
+  /// `/settings/roles` 独立入口使用：进入后定位到角色名称编辑分区
+  final bool focusRoles;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -26,6 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final Map<String, TextEditingController> _roleControllers = {};
   final _clientIdController = TextEditingController();
   final _clientSecretController = TextEditingController();
+  final GlobalKey _rolesSectionKey = GlobalKey();
   bool _syncing = false;
 
   @override
@@ -35,6 +39,19 @@ class _SettingsPageState extends State<SettingsPage> {
     final orgId = _orgId;
     _clientIdController.text = settings.dingTalkClientId(orgId) ?? '';
     _clientSecretController.text = settings.dingTalkClientSecret(orgId) ?? '';
+    if (widget.focusRoles) {
+      // 独立角色入口：首帧后滚动到角色分区（非管理员无该分区时忽略）
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final sectionContext = _rolesSectionKey.currentContext;
+        if (sectionContext != null) {
+          Scrollable.ensureVisible(
+            sectionContext,
+            duration: const Duration(milliseconds: 300),
+            alignment: 0.1,
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -108,7 +125,10 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const Divider(),
-                _SectionHeader(title: labels.labelEditRoles),
+                KeyedSubtree(
+                  key: _rolesSectionKey,
+                  child: _SectionHeader(title: labels.labelEditRoles),
+                ),
                 ...labels.roles.map((role) {
                   final controller = _getRoleController(role.id, role.label);
                   return Padding(

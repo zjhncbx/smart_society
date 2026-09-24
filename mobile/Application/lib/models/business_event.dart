@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 /// 统一业务事件（WF-01 事件中心）。
 ///
 /// 覆盖创建/提交/审批/驳回/通过/变更/完成/逾期/撤回/归档/删除/状态变化等标准事件，
@@ -68,7 +70,10 @@ Map<String, dynamic> _parseMetadata(dynamic v) {
     try {
       final decoded = jsonDecode(v);
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    } catch (_) {}
+    } catch (e) {
+      // 解析失败保留其余字段：元数据回退为空 Map 并记录日志
+      debugPrint('[BusinessEvent] metadata JSON 解析失败，回退为空 Map: $e');
+    }
   }
   return const {};
 }

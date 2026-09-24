@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// 网络错误码
 class ApiException implements Exception {
@@ -118,6 +119,5 @@ class ApiClient {
 
 /// 打印请求日志（debug 模式）
 void debugLog(String message) {
-  // ignore: avoid_print
-  print('[Api] $message');
+  debugPrint('[Api] $message');
 }

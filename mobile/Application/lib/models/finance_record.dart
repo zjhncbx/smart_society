@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 /// 财务单据状态
 const String kFinanceApproving = 'approving';
 const String kFinanceApproved = 'approved';
@@ -185,7 +187,10 @@ List<FinanceEntry> _parseEntries(dynamic v) {
                 FinanceEntry.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      // 解析失败保留其余字段：分录回退为空列表并记录日志
+      debugPrint('[FinanceRecord] entries JSON 解析失败，回退为空列表: $e');
+    }
   }
   return [];
 }

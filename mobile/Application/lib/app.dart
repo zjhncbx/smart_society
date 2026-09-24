@@ -331,14 +331,7 @@ class SmartSocietyApp extends StatelessWidget {
           }
           return Consumer<OrganizationProvider>(
             builder: (context, orgProvider, _) {
-              if (!orgProvider.hasOrg && !settings.isInitialized) {
-                return MaterialApp(
-                  title: '社易管',
-                  debugShowCheckedModeBanner: false,
-                  theme: _buildTheme(settings.effectiveTheme),
-                  home: const SetupWizardPage(),
-                );
-              }
+              // 未加入任何组织（含未完成初始化）时进入引导向导
               if (!orgProvider.hasOrg) {
                 return MaterialApp(
                   title: '社易管',

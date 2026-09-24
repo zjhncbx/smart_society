@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 /// 项目状态：0 筹备中 / 1 进行中 / 2 已暂停 / 3 已完成
 const int kProjectPreparing = 0;
 const int kProjectActive = 1;
@@ -217,7 +219,9 @@ List<dynamic> _toList(dynamic v) {
     try {
       final decoded = jsonDecode(v);
       return decoded is List ? decoded : [];
-    } catch (_) {
+    } catch (e) {
+      // 解析失败保留其余字段：列表字段回退为空并记录日志
+      debugPrint('[Project] list JSON 解析失败，回退为空列表: $e');
       return [];
     }
   }

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 /// 数据质量问题（DQ-02）
 class DataQualityIssue {
   const DataQualityIssue({
@@ -160,7 +162,10 @@ Map<String, dynamic> _parseDetail(dynamic v) {
     try {
       final decoded = jsonDecode(v);
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    } catch (_) {}
+    } catch (e) {
+      // 解析失败保留其余字段：明细回退为空 Map 并记录日志
+      debugPrint('[DataQuality] detail JSON 解析失败，回退为空 Map: $e');
+    }
   }
   return const {};
 }

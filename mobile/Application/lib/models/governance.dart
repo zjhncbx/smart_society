@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 /// 自动任务（WF-03）：系统根据规则自动生成，与人工任务统一管理。
 class AutoTask {
   const AutoTask({
@@ -256,7 +258,10 @@ Map<String, dynamic> _parseMap(dynamic v) {
     try {
       final decoded = jsonDecode(v);
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    } catch (_) {}
+    } catch (e) {
+      // 解析失败保留其余字段：actions 回退为空 Map 并记录日志
+      debugPrint('[Governance] map JSON 解析失败，回退为空 Map: $e');
+    }
   }
   return const {};
 }

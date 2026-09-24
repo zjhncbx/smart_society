@@ -140,8 +140,9 @@ class _MemberListPageState extends State<MemberListPage> {
         );
         await provider.saveMember(member);
         count++;
-      } catch (_) {
+      } catch (e) {
         errors++;
+        debugPrint('[MemberList] 导入成员失败（$name）: $e');
       }
     }
     if (!mounted) return;
