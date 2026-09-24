@@ -1,7 +1,8 @@
-export class OrgSettings {
+﻿export class OrgSettings {
   orgId: string = '';
   themeIndex: number = 0;
   roleLabels: string = '{}';
+  ruleConfig: string = '{}';
   dingtalkClientId: string = '';
   dingtalkClientSecret: string = '';
   dingtalkLastSyncAt: number = 0;
@@ -16,6 +17,7 @@ export class OrgSettings {
     map.set('orgId', 'String');
     map.set('themeIndex', 'Integer');
     map.set('roleLabels', 'String');
+    map.set('ruleConfig', 'String');
     map.set('dingtalkClientId', 'String');
     map.set('dingtalkClientSecret', 'String');
     map.set('dingtalkLastSyncAt', 'Long');
@@ -41,6 +43,7 @@ export class OrgSettings {
       obj.orgId = data.orgId ?? '';
       obj.themeIndex = data.themeIndex ?? 0;
       obj.roleLabels = data.roleLabels ?? '{}';
+      obj.ruleConfig = data.ruleConfig ?? '{}';
       obj.dingtalkClientId = data.dingtalkClientId ?? '';
       obj.dingtalkClientSecret = data.dingtalkClientSecret ?? '';
       obj.dingtalkLastSyncAt = data.dingtalkLastSyncAt ?? 0;

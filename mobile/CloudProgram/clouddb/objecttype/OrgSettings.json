@@ -28,6 +28,15 @@
       "belongPrimaryKey": false
     },
     {
+      "fieldName": "ruleConfig",
+      "fieldType": "String",
+      "isNeedEncrypt": false,
+      "notNull": true,
+      "isSensitive": false,
+      "defaultValue": "{}",
+      "belongPrimaryKey": false
+    },
+    {
       "fieldName": "dingtalkClientId",
       "fieldType": "String",
       "isNeedEncrypt": false,

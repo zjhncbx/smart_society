@@ -14,6 +14,7 @@ import { Term } from './Term';
 import { DataQualityIssue } from './DataQualityIssue';
 import { UserOrganization } from './UserOrganization';
 import { BusinessEvent } from './BusinessEvent';
+import { OrgSettings } from './OrgSettings';
 
 // 兼容多种入参形态：event.body 字符串/对象、SDK 额外包裹 data、双层编码
 function parseParams(event: any): any {
@@ -119,6 +120,28 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       return;
     }
 
+    // 读取组织级规则启停配置（OrgSettings.ruleConfig，如 {"disabled":["GR-03","GR-08"]}）
+    const settingsCol: CloudDBCollection<OrgSettings> = db.collection(OrgSettings);
+    const settingsRows = await settingsCol.query().equalTo('orgId', orgId).get();
+    const disabledRules = new Set<string>();
+    try {
+      const config = JSON.parse(
+        (settingsRows.length > 0 ? settingsRows[0].ruleConfig : '{}') || '{}',
+      );
+      const list = config && Array.isArray(config.disabled) ? config.disabled : [];
+      for (const id of list) disabledRules.add(String(id));
+    } catch {
+      // 配置损坏时按全部启用处理
+    }
+    const skippedRules = new Set<string>();
+    const ruleEnabled = (ruleId: string): boolean => {
+      if (disabledRules.has(ruleId)) {
+        skippedRules.add(ruleId);
+        return false;
+      }
+      return true;
+    };
+
     const memberCol: CloudDBCollection<Member> = db.collection(Member);
     const projectCol: CloudDBCollection<Project> = db.collection(Project);
     const financeCol: CloudDBCollection<FinanceRecord> = db.collection(FinanceRecord);
@@ -175,7 +198,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     };
     const orgType = org ? String(org.orgType || '') : '';
     const keyRoleIds = keyRoles[orgType] || [];
-    if (keyRoleIds.length > 0) {
+    if (ruleEnabled('GR-06') && keyRoleIds.length > 0) {
       const present = new Set(members.filter((m) => m.roleId).map((m) => m.roleId));
       for (const roleId of keyRoleIds) {
         if (present.has(roleId)) continue;
@@ -199,8 +222,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       }
     }
 
-    // ---- GR-07 审批驳回次数异常 ----
-    for (const a of approvals) {
+    // ---- GR-07 审批驳回次数异常（停用则整段跳过） ----
+    for (const a of ruleEnabled('GR-07') ? approvals : []) {
       let rejectCount = 0;
       try {
         const history = JSON.parse(a.history || '[]');
@@ -230,9 +253,9 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       });
     }
 
-    // ---- GR-08 项目长时间未更新 ----
+    // ---- GR-08 项目长时间未更新（停用则整段跳过） ----
     const staleDays = 60 * DAY_MS;
-    for (const p of projects) {
+    for (const p of ruleEnabled('GR-08') ? projects : []) {
       if (p.status === 3) continue;
       const lastUpdate = p.updatedAt ? p.updatedAt.getTime() : p.createdAt.getTime();
       if (now.getTime() - lastUpdate < staleDays) continue;
@@ -257,8 +280,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       });
     }
 
-    // ---- GR-09 决议逾期未执行 ----
-    for (const r of resolutions) {
+    // ---- GR-09 决议逾期未执行（停用则整段跳过） ----
+    for (const r of ruleEnabled('GR-09') ? resolutions : []) {
       if (r.status === 'done' || r.isDeleted) continue;
       if (!r.deadline || r.deadline.getTime() >= today.getTime()) continue;
       const overdueDays = Math.floor((today.getTime() - startOfDay(r.deadline).getTime()) / DAY_MS);
@@ -280,8 +303,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       });
     }
 
-    // ---- GR-10 证照到期提醒 ----
-    for (const l of licenses) {
+    // ---- GR-10 证照到期提醒（停用则整段跳过） ----
+    for (const l of ruleEnabled('GR-10') ? licenses : []) {
       if (l.status === 'expired' || l.isDeleted || !l.expireAt) continue;
       const daysLeft = Math.ceil((l.expireAt.getTime() - today.getTime()) / DAY_MS);
       if (daysLeft < 0) {
@@ -322,8 +345,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       }
     }
 
-    // ---- GR-11 任期届满提醒 ----
-    for (const t of terms) {
+    // ---- GR-11 任期届满提醒（停用则整段跳过） ----
+    for (const t of ruleEnabled('GR-11') ? terms : []) {
       if (t.status === 'archived' || t.isDeleted || !t.endDate) continue;
       const daysLeft = Math.ceil((t.endDate.getTime() - today.getTime()) / DAY_MS);
       if (daysLeft < 0) {
@@ -355,8 +378,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       }
     }
 
-    // ---- GR-12 合规事项逾期 ----
-    for (const c of complianceItems) {
+    // ---- GR-12 合规事项逾期（停用则整段跳过） ----
+    for (const c of ruleEnabled('GR-12') ? complianceItems : []) {
       if (c.status === 'done' || c.isDeleted || !c.deadline) continue;
       if (c.deadline.getTime() >= today.getTime()) continue;
       const overdueDays = Math.floor((today.getTime() - startOfDay(c.deadline).getTime()) / DAY_MS);
@@ -378,8 +401,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       });
     }
 
-    // ---- GR-01 任务逾期自动升级 ----
-    for (const p of projects) {
+    // ---- GR-01 任务逾期自动升级（停用则整段跳过） ----
+    for (const p of ruleEnabled('GR-01') ? projects : []) {
       for (const t of parseTasks(p.tasks)) {
         if (Number(t.status) === 2) continue;
         const due = t.dueDate ? new Date(t.dueDate) : null;
@@ -423,8 +446,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       }
     }
 
-    // ---- GR-02 项目进度偏差 / 延期 ----
-    for (const p of projects) {
+    // ---- GR-02 项目进度偏差 / 延期（停用则整段跳过） ----
+    for (const p of ruleEnabled('GR-02') ? projects : []) {
       if (p.status === 3) continue;
       const managerId = String(p.managerId || '');
       const managerName = memberName(managerId);
@@ -459,8 +482,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       }
     }
 
-    // ---- GR-03 审批 SLA 超时 ----
-    for (const a of approvals) {
+    // ---- GR-03 审批 SLA 超时（停用则整段跳过） ----
+    for (const a of ruleEnabled('GR-03') ? approvals : []) {
       const ageDays = Math.floor((now.getTime() - (a.createdAt ? a.createdAt.getTime() : now.getTime())) / DAY_MS);
       if (ageDays < 3) continue;
       const title = String(a.title || a.flowName || '审批');
@@ -476,8 +499,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       });
     }
 
-    // ---- GR-04 数据质量问题自动生成修复任务 ----
-    for (const issue of dqIssues) {
+    // ---- GR-04 数据质量问题自动生成修复任务（停用则整段跳过） ----
+    for (const issue of ruleEnabled('GR-04') ? dqIssues : []) {
       if (issue.severity === 'low') continue;
       const entityName = `${issue.ruleName}：${issue.entityName || issue.description}`;
       taskHits.push({
@@ -491,13 +514,14 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       });
     }
 
-    // ---- GR-05 预算超支 ----
+    // ---- GR-05 预算超支（停用则整段跳过） ----
+    const gr05Enabled = ruleEnabled('GR-05');
     const expenseByProject = new Map<string, number>();
-    for (const r of finances) {
+    for (const r of gr05Enabled ? finances : []) {
       if (r.status !== 'approved' || r.type !== 'expense' || !r.projectId) continue;
       expenseByProject.set(r.projectId, (expenseByProject.get(r.projectId) || 0) + Number(r.amount || 0));
     }
-    for (const p of projects) {
+    for (const p of gr05Enabled ? projects : []) {
       const expense = expenseByProject.get(p.id) || 0;
       if (p.budget <= 0 || expense <= p.budget) continue;
       const managerId = String(p.managerId || '');
@@ -562,10 +586,11 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     }
     if (taskUpserts.length > 0) await taskCol.upsert(taskUpserts);
 
-    // 自动关闭：规则不再命中且仍 open 的任务
+    // 自动关闭：规则不再命中且仍 open 的任务（停用规则的存量任务保持不变，不级联关闭）
     const autoClosedTasks: AutoTask[] = [];
     for (const t of existingTasks) {
       if (t.status !== 'open') continue;
+      if (disabledRules.has(t.sourceRuleId)) continue;
       if (taskHitsById.has(`${t.sourceRuleId}|${t.sourceEntityId}`)) continue;
       t.status = 'done';
       t.completedAt = now;
@@ -620,6 +645,8 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     const autoResolvedRisks: RiskAlert[] = [];
     for (const r of existingRisks) {
       if (r.status === 'resolved') continue;
+      // 停用规则的存量风险/预警保持不变，不级联关闭
+      if (disabledRules.has(r.sourceRuleId)) continue;
       if (riskHitsById.has(`${r.sourceRuleId}|${r.sourceEntityId}`)) continue;
       r.status = 'resolved';
       r.resolvedAt = now;
@@ -647,6 +674,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
       riskUpserted: riskUpserts.length,
       riskAutoResolved: autoResolvedRisks.length,
       ruleHits: { task: taskHits.length, risk: riskHits.length },
+      skippedRules: Array.from(skippedRules),
     });
     log.runBy = userId;
     log.runAt = now;
@@ -683,7 +711,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
     }
     if (events.length > 0) await eventCol.upsert(events);
 
-    logger.info(`run-governance-rules done: orgId=${orgId}, tasks=${taskHits.length}, risks=${riskHits.length}`);
+    logger.info(`run-governance-rules done: orgId=${orgId}, tasks=${taskHits.length}, risks=${riskHits.length}, skipped=[${Array.from(skippedRules).join(',')}]`);
     callback({
       ret: {
         code: 0,
@@ -699,6 +727,7 @@ let myHandler = async function (event: any, context: any, callback: any, logger:
             total: riskUpserts.length,
             autoResolved: autoResolvedRisks.length,
           },
+          skippedRules: Array.from(skippedRules),
           durationMs: Date.now() - startedAt,
         },
       },
