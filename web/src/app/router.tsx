@@ -1,12 +1,25 @@
 /* eslint-disable react-refresh/only-export-components */
+import { Button, Result, Spin } from 'antd';
 import { lazy, ReactNode, Suspense } from 'react';
-import { Navigate, createBrowserRouter } from 'react-router';
+import { Navigate, createBrowserRouter, useNavigate } from 'react-router';
 
 import { useSession } from '@/auth/session';
 import { LoginPage } from '@/features/auth/LoginPage';
-import { PlaceholderPage } from '@/features/common/PlaceholderPage';
+import { NotConfiguredPage } from '@/features/common/NotConfiguredPage';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { AppLayout } from '@/layouts/AppLayout';
+
+const SettingsPage = lazy(() =>
+  import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+);
+
+/**
+ * 后端是否已配置：开发态恒可用（dev-api Mock）；生产构建要求
+ * VITE_API_MODE=agc 且已配置 VITE_API_BASE_URL，否则渲染未配置引导页。
+ */
+const backendConfigured: boolean =
+  !import.meta.env.PROD ||
+  (import.meta.env.VITE_API_MODE === 'agc' && Boolean(import.meta.env.VITE_API_BASE_URL));
 
 const WorkbenchPage = lazy(() =>
   import('@/features/workbench/WorkbenchPage').then((m) => ({ default: m.WorkbenchPage })),
@@ -50,6 +63,27 @@ const SensingPage = lazy(() =>
 const DocumentsPage = lazy(() =>
   import('@/features/documents/DocumentsPage').then((m) => ({ default: m.DocumentsPage })),
 );
+const LicensePage = lazy(() =>
+  import('@/features/governance/LicensePage').then((m) => ({ default: m.LicensePage })),
+);
+const CompliancePage = lazy(() =>
+  import('@/features/governance/CompliancePage').then((m) => ({ default: m.CompliancePage })),
+);
+const TermPage = lazy(() =>
+  import('@/features/governance/TermPage').then((m) => ({ default: m.TermPage })),
+);
+const FlowConfigPage = lazy(() =>
+  import('@/features/finance/FlowConfigPage').then((m) => ({ default: m.FlowConfigPage })),
+);
+const LedgerPage = lazy(() =>
+  import('@/features/finance/LedgerPage').then((m) => ({ default: m.LedgerPage })),
+);
+const ClosingPage = lazy(() =>
+  import('@/features/finance/ClosingPage').then((m) => ({ default: m.ClosingPage })),
+);
+const NoticePage = lazy(() =>
+  import('@/features/notice/NoticePage').then((m) => ({ default: m.NoticePage })),
+);
 
 function RequireAuth({ children }: { children: ReactNode }): ReactNode {
   const userId = useSession((s) => s.userId);
@@ -57,14 +91,37 @@ function RequireAuth({ children }: { children: ReactNode }): ReactNode {
 }
 
 function SuspensePage({ children }: { children: ReactNode }): ReactNode {
-  return <Suspense fallback={null}>{children}</Suspense>;
+  return (
+    <Suspense
+      fallback={
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 96 }}>
+          <Spin size="large" />
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
 }
 
-const placeholderRoutes = [
-  ['settings', '系统设置'],
-] as const;
+/** 404 兜底页：未知路由统一反馈并提供返回工作台入口 */
+function NotFoundPage(): React.JSX.Element {
+  const navigate = useNavigate();
+  return (
+    <Result
+      status="404"
+      title="404"
+      subTitle="页面不存在或已被移除"
+      extra={
+        <Button type="primary" onClick={() => navigate('/')}>
+          返回工作台
+        </Button>
+      }
+    />
+  );
+}
 
-export const router = createBrowserRouter([
+const appRoutes = [
   {
     path: '/login',
     element: <AuthLayout />,
@@ -86,10 +143,14 @@ export const router = createBrowserRouter([
           </SuspensePage>
         ),
       },
-      ...placeholderRoutes.map(([path, title]) => ({
-        path,
-        element: <PlaceholderPage title={title} />,
-      })),
+      {
+        path: 'settings',
+        element: (
+          <SuspensePage>
+            <SettingsPage />
+          </SuspensePage>
+        ),
+      },
       {
         path: 'organization',
         element: (
@@ -127,6 +188,30 @@ export const router = createBrowserRouter([
         element: (
           <SuspensePage>
             <FinancePage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'finance/flows',
+        element: (
+          <SuspensePage>
+            <FlowConfigPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'finance/ledger',
+        element: (
+          <SuspensePage>
+            <LedgerPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'finance/closing',
+        element: (
+          <SuspensePage>
+            <ClosingPage />
           </SuspensePage>
         ),
       },
@@ -194,6 +279,46 @@ export const router = createBrowserRouter([
           </SuspensePage>
         ),
       },
+      {
+        path: 'governance/licenses',
+        element: (
+          <SuspensePage>
+            <LicensePage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'governance/compliance',
+        element: (
+          <SuspensePage>
+            <CompliancePage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'governance/terms',
+        element: (
+          <SuspensePage>
+            <TermPage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: 'notices',
+        element: (
+          <SuspensePage>
+            <NoticePage />
+          </SuspensePage>
+        ),
+      },
+      {
+        path: '*',
+        element: <NotFoundPage />,
+      },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(
+  backendConfigured ? appRoutes : [{ path: '*', element: <NotConfiguredPage /> }],
+);

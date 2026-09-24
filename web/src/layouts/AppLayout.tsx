@@ -7,35 +7,58 @@ import {
   DashboardOutlined,
   DatabaseOutlined,
   FileDoneOutlined,
+  FileProtectOutlined,
   FileTextOutlined,
   FolderOutlined,
   SearchOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
+  SoundOutlined,
   TeamOutlined,
   ThunderboltOutlined,
-  UnorderedListOutlined,
   WalletOutlined,
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 
 import { useSession } from '@/auth/session';
+import { OrgSwitcher } from '@/components/OrgSwitcher';
 import { useUi } from '@/stores/ui';
 
 const navItems = [
   { key: '/', label: '工作台', icon: <DashboardOutlined /> },
   { key: '/organization', label: '组织治理', icon: <ApartmentOutlined /> },
   { key: '/membership', label: '成员与档案', icon: <TeamOutlined /> },
+  {
+    key: 'governance-group',
+    label: '治理对象',
+    icon: <FileProtectOutlined />,
+    children: [
+      { key: '/governance/licenses', label: '证照管理' },
+      { key: '/governance/compliance', label: '合规事项' },
+      { key: '/governance/terms', label: '任期管理' },
+    ],
+  },
   { key: '/project', label: '项目与任务', icon: <FolderOutlined /> },
   { key: '/approval', label: '审批与决议', icon: <FileDoneOutlined /> },
-  { key: '/finance', label: '财务管理', icon: <WalletOutlined /> },
+  {
+    key: 'finance-group',
+    label: '财务管理',
+    icon: <WalletOutlined />,
+    children: [
+      { key: '/finance', label: '基础收支' },
+      { key: '/finance/flows', label: '审批流' },
+      { key: '/finance/ledger', label: '总账与期初' },
+      { key: '/finance/closing', label: '期末结账' },
+    ],
+  },
   { key: '/risk', label: '风险与预警', icon: <BellOutlined /> },
   { key: '/data-quality', label: '数据治理', icon: <DatabaseOutlined /> },
   { key: '/automation', label: '自动化治理', icon: <ThunderboltOutlined /> },
   { key: '/sensing', label: '全域感知', icon: <SafetyCertificateOutlined /> },
-  { key: '/audit', label: '审计与事件', icon: <UnorderedListOutlined /> },
+  { key: '/audit', label: '审计与事件', icon: <AuditOutlined /> },
   { key: '/reports', label: '报表与分析', icon: <BarChartOutlined /> },
   { key: '/documents', label: '文件中心', icon: <FileTextOutlined /> },
+  { key: '/notices', label: '通知公告', icon: <SoundOutlined /> },
   { key: '/settings', label: '系统设置', icon: <SettingOutlined /> },
 ];
 
@@ -45,7 +68,6 @@ export function AppLayout(): React.JSX.Element {
   const collapsed = useUi((s) => s.siderCollapsed);
   const toggleSider = useUi((s) => s.toggleSider);
   const displayName = useSession((s) => s.displayName);
-  const currentOrgId = useSession((s) => s.currentOrgId);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -71,11 +93,9 @@ export function AppLayout(): React.JSX.Element {
             gap: 12,
           }}
         >
-          <Typography.Text>
-            组织：{currentOrgId ?? '未选择'} · 用户：{displayName ?? '未登录'}
-          </Typography.Text>
+          <OrgSwitcher />
+          <Typography.Text type="secondary">{displayName ?? '未登录'}</Typography.Text>
           <SearchOutlined style={{ cursor: 'pointer' }} onClick={() => navigate('/search')} />
-          <AuditOutlined />
         </Layout.Header>
         <Layout.Content style={{ padding: 24 }}>
           <Outlet />
