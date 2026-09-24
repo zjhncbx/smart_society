@@ -6,6 +6,7 @@ import { apiRequest } from '../client';
 export async function getEntityRelations(entityId: string): Promise<EntityGraph> {
   const data = await apiRequest<unknown>('/relations', {
     method: 'POST',
+    functionName: 'get-entity-relations',
     body: { entityType: 'project', entityId },
   });
   return entityGraphSchema.parse(data);

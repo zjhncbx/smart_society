@@ -10,7 +10,12 @@ export async function getProjects(params: {
   page?: number;
   pageSize?: number;
 } = {}): Promise<{ projects: Project[]; total: number; hasMore: boolean }> {
-  const data = await apiRequest<unknown>('/projects', { method: 'POST', body: params });
+  // 云侧暂无独立项目列表函数：agc 模式复用 get-all-data 全量数据接口（后续批次细分）
+  const data = await apiRequest<unknown>('/projects', {
+    method: 'POST',
+    functionName: 'get-all-data',
+    body: params,
+  });
   const parsed = z
     .object({
       projects: z.array(projectSchema),
@@ -26,6 +31,7 @@ export async function saveProject(
 ): Promise<Project> {
   const data = await apiRequest<unknown>('/projects/save', {
     method: 'POST',
+    functionName: 'upsert-project',
     idempotencyKey: newIdempotencyKey('save_project'),
     correlationId: newCorrelationId(),
     body: project,
@@ -40,6 +46,7 @@ export async function transitionProject(
 ): Promise<{ id: string; status: number; statusLabel: string }> {
   return apiRequest('/projects/transition', {
     method: 'POST',
+    functionName: 'upsert-project',
     idempotencyKey: newIdempotencyKey('transition_project'),
     correlationId: newCorrelationId(),
     body: { id, action },

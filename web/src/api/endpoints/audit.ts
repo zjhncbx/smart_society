@@ -14,7 +14,11 @@ export interface AuditLogParams {
 export async function getAuditLogs(
   params: AuditLogParams = {},
 ): Promise<{ logs: AuditLog[]; total: number; hasMore: boolean }> {
-  const data = await apiRequest<unknown>('/audit/logs', { method: 'POST', body: params });
+  const data = await apiRequest<unknown>('/audit/logs', {
+    method: 'POST',
+    functionName: 'get-audit-logs',
+    body: params,
+  });
   const parsed = z
     .object({
       logs: z.array(auditLogSchema),
@@ -45,7 +49,11 @@ export async function getEvents(params: {
   page?: number;
   pageSize?: number;
 } = {}): Promise<{ events: BusinessEvent[]; total: number; hasMore: boolean }> {
-  const data = await apiRequest<unknown>('/events', { method: 'POST', body: params });
+  const data = await apiRequest<unknown>('/events', {
+    method: 'POST',
+    functionName: 'get-business-events',
+    body: params,
+  });
   const parsed = z
     .object({
       events: z.array(businessEventSchema),

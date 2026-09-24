@@ -1,12 +1,22 @@
 import { create } from 'zustand';
 
+/** 会话中的组织摘要（来自 get-my-orgs） */
+export interface SessionOrg {
+  orgId: string;
+  name: string;
+  role: string;
+}
+
 /** 会话摘要：只保存客户端状态，服务端数据由 TanStack Query 管理 */
 interface SessionState {
   accessToken: string | null;
   userId: string | null;
   personId: string | null;
   displayName: string | null;
+  /** 当前用户所属组织列表（真实认证链 login → get-my-orgs 写入） */
+  orgs: SessionOrg[];
   currentOrgId: string | null;
+  currentOrgName: string | null;
   roleId: string | null;
   roleName: string | null;
   permissions: string[];
@@ -29,7 +39,9 @@ const initial: Omit<SessionState, 'setSession' | 'setPermission' | 'switchOrg' |
   userId: null,
   personId: null,
   displayName: null,
+  orgs: [],
   currentOrgId: null,
+  currentOrgName: null,
   roleId: null,
   roleName: null,
   permissions: [],
@@ -48,7 +60,11 @@ export const useSession = create<SessionState>((set) => ({
       dataScope: bundle.dataScope,
       isAdmin: bundle.isAdmin,
     }),
-  switchOrg: (orgId) => set({ currentOrgId: orgId }),
+  switchOrg: (orgId) =>
+    set((s) => ({
+      currentOrgId: orgId,
+      currentOrgName: s.orgs.find((o) => o.orgId === orgId)?.name ?? orgId,
+    })),
   clear: () => set({ ...initial }),
 }));
 
@@ -62,7 +78,12 @@ export function clearSession(): void {
   useSession.getState().clear();
 }
 
-/** 当前组织上下文（API Client 自动注入 X-Org-Id） */
+/** 当前组织上下文（API Client 自动注入 X-Org-Id；agc 模式合并进 body） */
 export function getCurrentOrgId(): string | null {
   return useSession.getState().currentOrgId;
+}
+
+/** 当前用户标识（agc 模式下 API Client 合并进 body，供云函数成员校验） */
+export function getCurrentUserId(): string | null {
+  return useSession.getState().userId;
 }

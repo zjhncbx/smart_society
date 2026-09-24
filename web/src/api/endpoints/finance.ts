@@ -11,7 +11,11 @@ export async function getFinanceRecords(params: {
   page?: number;
   pageSize?: number;
 } = {}): Promise<{ records: FinanceRecord[]; total: number; hasMore: boolean }> {
-  const data = await apiRequest<unknown>('/finance/records', { method: 'POST', body: params });
+  const data = await apiRequest<unknown>('/finance/records', {
+    method: 'POST',
+    functionName: 'get-finance-records',
+    body: params,
+  });
   const parsed = z
     .object({
       records: z.array(financeRecordSchema),
@@ -23,7 +27,10 @@ export async function getFinanceRecords(params: {
 }
 
 export async function getFinanceStats(): Promise<FinanceStats> {
-  const data = await apiRequest<unknown>('/finance/stats', { method: 'POST' });
+  const data = await apiRequest<unknown>('/finance/stats', {
+    method: 'POST',
+    functionName: 'get-finance-stats',
+  });
   return financeStatsSchema.parse(data);
 }
 
@@ -38,6 +45,7 @@ export async function submitFinanceRecord(input: {
 }): Promise<{ recordId: string; status: string }> {
   return apiRequest('/finance/submit', {
     method: 'POST',
+    functionName: 'submit-finance-record',
     idempotencyKey: newIdempotencyKey('submit_finance'),
     correlationId: newCorrelationId(),
     body: input,

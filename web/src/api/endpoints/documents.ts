@@ -40,7 +40,11 @@ export async function listDocuments(params: {
   page?: number;
   pageSize?: number;
 } = {}): Promise<{ items: DocumentItem[]; total: number; dataScope: string; hasMore: boolean }> {
-  const data = await apiRequest<unknown>('/documents', { method: 'POST', body: params });
+  const data = await apiRequest<unknown>('/documents', {
+    method: 'POST',
+    functionName: 'list-documents',
+    body: params,
+  });
   const parsed = z
     .object({
       items: z.array(documentSchema),
@@ -69,6 +73,7 @@ export async function initFileUpload(input: {
 }> {
   const data = await apiRequest<unknown>('/documents/init', {
     method: 'POST',
+    functionName: 'init-file-upload',
     idempotencyKey: newIdempotencyKey('file_init'),
     correlationId: newCorrelationId(),
     body: input,
@@ -99,6 +104,7 @@ export async function commitFileUpload(input: {
 }> {
   const data = await apiRequest<unknown>('/documents/commit', {
     method: 'POST',
+    functionName: 'commit-file-upload',
     idempotencyKey: newIdempotencyKey('file_commit'),
     correlationId: input.correlationId ?? newCorrelationId(),
     body: input,
@@ -127,6 +133,7 @@ export async function getDocumentFile(
 }> {
   const data = await apiRequest<unknown>('/documents/download', {
     method: 'POST',
+    functionName: 'get-document-file',
     body: { documentId },
   });
   return z
@@ -148,6 +155,7 @@ export async function deleteDocument(
 ): Promise<{ documentId: string; status: string }> {
   const data = await apiRequest<unknown>('/documents/delete', {
     method: 'POST',
+    functionName: 'delete-document',
     idempotencyKey: newIdempotencyKey('file_delete'),
     correlationId: newCorrelationId(),
     body: { documentId, reason },

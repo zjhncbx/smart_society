@@ -9,7 +9,11 @@ export async function getRisks(params: {
   kind?: 'risk' | 'warning';
   status?: string;
 } = {}): Promise<{ risks: RiskAlert[]; riskCount: number; warningCount: number }> {
-  const data = await apiRequest<unknown>('/risks', { method: 'POST', body: params });
+  const data = await apiRequest<unknown>('/risks', {
+    method: 'POST',
+    functionName: 'get-governance-center',
+    body: params,
+  });
   const parsed = z
     .object({
       risks: z.array(riskAlertSchema),
@@ -26,6 +30,7 @@ export async function actRisk(
 ): Promise<{ id: string; status: string }> {
   return apiRequest('/risks/act', {
     method: 'POST',
+    functionName: 'act-risk-alert',
     idempotencyKey: newIdempotencyKey('act_risk'),
     correlationId: newCorrelationId(),
     body: { id, action },

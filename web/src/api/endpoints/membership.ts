@@ -11,7 +11,12 @@ export async function getMembers(params: {
   page?: number;
   pageSize?: number;
 } = {}): Promise<{ members: Member[]; total: number; hasMore: boolean }> {
-  const data = await apiRequest<unknown>('/members', { method: 'POST', body: params });
+  // 云侧暂无独立成员列表函数：agc 模式复用 get-all-data 全量数据接口（后续批次细分）
+  const data = await apiRequest<unknown>('/members', {
+    method: 'POST',
+    functionName: 'get-all-data',
+    body: params,
+  });
   const parsed = z
     .object({
       members: z.array(memberSchema),
@@ -27,6 +32,7 @@ export async function saveMember(
 ): Promise<Member> {
   const data = await apiRequest<unknown>('/members/save', {
     method: 'POST',
+    functionName: 'upsert-member',
     idempotencyKey: newIdempotencyKey('save_member'),
     correlationId: newCorrelationId(),
     body: member,
@@ -37,6 +43,7 @@ export async function saveMember(
 export async function deleteMember(id: string): Promise<{ ok: boolean }> {
   return apiRequest('/members/delete', {
     method: 'POST',
+    functionName: 'delete-member',
     idempotencyKey: newIdempotencyKey('delete_member'),
     correlationId: newCorrelationId(),
     body: { id },

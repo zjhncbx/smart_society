@@ -11,6 +11,7 @@ export interface SearchResult {
 export async function globalSearch(query: string): Promise<SearchResult[]> {
   const data = await apiRequest<unknown>('/search', {
     method: 'POST',
+    functionName: 'search-all',
     body: { query },
   });
   if (!Array.isArray(data)) return [];

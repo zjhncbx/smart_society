@@ -23,6 +23,7 @@ export async function getWorkItems(params: WorkItemListParams = {}): Promise<{
 }> {
   const data = await apiRequest<unknown>('/work-items', {
     method: 'POST',
+    functionName: 'get-work-items',
     body: params,
   });
   const parsed = paginatedSchema(workItemSchema).extend({
@@ -43,6 +44,7 @@ export async function getWorkItems(params: WorkItemListParams = {}): Promise<{
 export async function refreshWorkItems(): Promise<{ upserted: number; autoClosed: number }> {
   return apiRequest('/work-items/refresh', {
     method: 'POST',
+    functionName: 'refresh-work-items',
     idempotencyKey: newIdempotencyKey('refresh_work_items'),
   });
 }
@@ -55,6 +57,7 @@ export async function actWorkItem(input: {
 }): Promise<{ id: string; status: string }> {
   return apiRequest('/work-items/act', {
     method: 'POST',
+    functionName: 'act-work-item',
     idempotencyKey: newIdempotencyKey('act_work_item'),
     correlationId: input.correlationId,
     body: { id: input.workItemId, action: input.action },

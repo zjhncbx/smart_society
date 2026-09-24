@@ -6,7 +6,10 @@ import { newCorrelationId, newIdempotencyKey } from '@/utils/id';
 import { apiRequest } from '../client';
 
 export async function getApprovals(): Promise<{ approvals: ApprovalInstance[] }> {
-  const data = await apiRequest<unknown>('/approvals', { method: 'POST' });
+  const data = await apiRequest<unknown>('/approvals', {
+    method: 'POST',
+    functionName: 'get-approval-tasks',
+  });
   return z.object({ approvals: z.array(approvalInstanceSchema) }).parse(data);
 }
 
@@ -17,6 +20,7 @@ export async function actApproval(
 ): Promise<{ status: string }> {
   return apiRequest('/approvals/act', {
     method: 'POST',
+    functionName: 'act-finance-node',
     idempotencyKey: newIdempotencyKey('act_approval'),
     correlationId: newCorrelationId(),
     body: { id, action, comment },
@@ -24,7 +28,10 @@ export async function actApproval(
 }
 
 export async function getResolutions(): Promise<{ resolutions: Resolution[] }> {
-  const data = await apiRequest<unknown>('/resolutions', { method: 'POST' });
+  const data = await apiRequest<unknown>('/resolutions', {
+    method: 'POST',
+    functionName: 'get-resolutions',
+  });
   return z.object({ resolutions: z.array(resolutionSchema) }).parse(data);
 }
 
@@ -33,6 +40,7 @@ export async function saveResolution(
 ): Promise<Resolution> {
   const data = await apiRequest<unknown>('/resolutions/save', {
     method: 'POST',
+    functionName: 'save-resolution',
     idempotencyKey: newIdempotencyKey('save_resolution'),
     correlationId: newCorrelationId(),
     body: resolution,
@@ -46,6 +54,7 @@ export async function actResolution(
 ): Promise<{ id: string; status: string }> {
   return apiRequest('/resolutions/act', {
     method: 'POST',
+    functionName: 'act-resolution',
     idempotencyKey: newIdempotencyKey('act_resolution'),
     correlationId: newCorrelationId(),
     body: { id, action },

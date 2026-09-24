@@ -12,7 +12,10 @@ export async function getOrganization(): Promise<{
   profile: OrganizationProfile;
   relationships: OrganizationRelationship[];
 }> {
-  const data = await apiRequest<unknown>('/organization', { method: 'POST' });
+  const data = await apiRequest<unknown>('/organization', {
+    method: 'POST',
+    functionName: 'get-org-settings',
+  });
   return z
     .object({
       profile: organizationProfileSchema,
@@ -26,6 +29,7 @@ export async function saveOrganization(
 ): Promise<OrganizationProfile> {
   const data = await apiRequest<unknown>('/organization/save', {
     method: 'POST',
+    functionName: 'save-org-settings',
     idempotencyKey: newIdempotencyKey('save_org'),
     correlationId: newCorrelationId(),
     body: profile,
@@ -42,6 +46,7 @@ export async function setRelationship(input: {
 }): Promise<{ ok: boolean }> {
   return apiRequest('/organization/relationship/set', {
     method: 'POST',
+    functionName: 'set-org-relationship',
     idempotencyKey: newIdempotencyKey('set_rel'),
     correlationId: newCorrelationId(),
     body: input,

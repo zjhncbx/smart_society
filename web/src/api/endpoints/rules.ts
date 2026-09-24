@@ -6,7 +6,10 @@ import { newCorrelationId, newIdempotencyKey } from '@/utils/id';
 import { apiRequest } from '../client';
 
 export async function getRules(): Promise<{ rules: Rule[] }> {
-  const data = await apiRequest<unknown>('/rules', { method: 'POST' });
+  const data = await apiRequest<unknown>('/rules', {
+    method: 'POST',
+    functionName: 'get-rule-config',
+  });
   return z.object({ rules: z.array(ruleSchema) }).parse(data);
 }
 
@@ -16,6 +19,7 @@ export async function toggleRule(
 ): Promise<{ id: string; enabled: boolean }> {
   return apiRequest('/rules/toggle', {
     method: 'POST',
+    functionName: 'set-rule-enabled',
     idempotencyKey: newIdempotencyKey('toggle_rule'),
     correlationId: newCorrelationId(),
     body: { id, enabled },

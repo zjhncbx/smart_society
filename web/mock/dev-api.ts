@@ -838,6 +838,15 @@ function json(res: ServerResponse, data: unknown, code = 0, message = 'ok'): voi
   res.end(JSON.stringify({ ret: { code, message, data } }));
 }
 
+/**
+ * Mock 用户所属组织（多组织切换数据源，供 /orgs/mine 与组织切换器使用）。
+ * 与会话默认组织保持一致：org_mock 为主组织，org_mock_2 用于切换验证。
+ */
+export const mockMyOrgs: Array<{ orgId: string; name: string; role: string }> = [
+  { orgId: 'org_mock', name: '演示社会组织', role: 'admin' },
+  { orgId: 'org_mock_2', name: '演示志愿者团队', role: 'admin' },
+];
+
 function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve) => {
     let raw = '';
@@ -922,6 +931,14 @@ export async function handleApi(
   res: ServerResponse,
 ): Promise<void> {
   const path = (req.url ?? '').split('?')[0];
+
+  // 错误注入机制：请求携带 X-Mock-Fail: 1 时统一返回业务错误（供错误态/失败反馈断言）
+  const mockFailHeader = (req.headers as Record<string, unknown> | undefined)?.['x-mock-fail'];
+  if (String(mockFailHeader ?? '') === '1') {
+    json(res, null, -1, 'Mock 注入错误（X-Mock-Fail）');
+    return;
+  }
+
   const body = await readBody(req);
   const page = Number(body.page ?? 0);
   const pageSize = Number(body.pageSize ?? 20);

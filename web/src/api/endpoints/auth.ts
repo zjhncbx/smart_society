@@ -15,6 +15,7 @@ export async function ensureIdentity(input: {
 }): Promise<{ userId: string; personId?: string; isNew: boolean }> {
   return apiRequest('/identity/ensure', {
     method: 'POST',
+    functionName: 'ensure-user-identity',
     correlationId: newCorrelationId(),
     body: input,
   });
@@ -24,6 +25,7 @@ export async function ensureIdentity(input: {
 export async function getMyPermissions(): Promise<PermissionBundle> {
   const data = await apiRequest<unknown>('/permissions/mine', {
     method: 'POST',
+    functionName: 'get-my-permissions',
   });
   return permissionBundleSchema.parse(data);
 }

@@ -9,7 +9,10 @@ export async function getAutomation(): Promise<{
   logs: AutomationRunLog[];
   counts: { todayRuns: number; successRate: number; failed: number; retries: number; blocked: number };
 }> {
-  const data = await apiRequest<unknown>('/automation', { method: 'POST' });
+  const data = await apiRequest<unknown>('/automation', {
+    method: 'POST',
+    functionName: 'get-automation-logs',
+  });
   const parsed = z
     .object({
       logs: z.array(automationRunLogSchema),
@@ -32,6 +35,7 @@ export async function runRules(): Promise<{
 }> {
   return apiRequest('/automation/run', {
     method: 'POST',
+    functionName: 'run-governance-rules',
     idempotencyKey: newIdempotencyKey('run_rules'),
     correlationId: newCorrelationId(),
   });
