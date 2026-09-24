@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Button,
   Card,
+  DatePicker,
   Form,
   Input,
   InputNumber,
@@ -14,15 +15,29 @@ import {
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import dayjs, { Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
 
 import { getProjects, saveProject, transitionProject } from '@/api/endpoints/project';
+import { getMembers } from '@/api/endpoints/membership';
 import { getEntityRelations } from '@/api/endpoints/relations';
 import { Project } from '@/models/contract';
 import { EChart } from '@/components/EChart';
+import { ErrorState } from '@/components/ErrorState';
+import { MemberSelect } from '@/components/MemberSelect';
 import type { EChartsOption } from 'echarts';
 
 const statusColor: Record<number, string> = { 0: 'default', 1: 'blue', 2: 'orange', 3: 'green' };
+
+interface ProjectFormValues {
+  id?: string;
+  name: string;
+  description?: string;
+  managerId?: string;
+  budget?: number;
+  startDate?: Dayjs;
+  endDate?: Dayjs;
+}
 
 export function ProjectPage(): React.JSX.Element {
   const queryClient = useQueryClient();
@@ -30,6 +45,11 @@ export function ProjectPage(): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const [relationId, setRelationId] = useState<string | null>(null);
   const projects = useQuery({ queryKey: ['projects'], queryFn: () => getProjects({ pageSize: 100 }) });
+  /** 与 MemberSelect 共享 queryKey，用于负责人 id → 姓名回填 */
+  const memberOptions = useQuery({
+    queryKey: ['members', 'select-options'],
+    queryFn: () => getMembers({ pageSize: 200 }),
+  });
   const relations = useQuery({
     queryKey: ['relations', relationId],
     queryFn: () => getEntityRelations(relationId!),
@@ -42,6 +62,9 @@ export function ProjectPage(): React.JSX.Element {
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '保存失败，请重试');
+    },
   });
   const transition = useMutation({
     mutationFn: (input: { id: string; action: 'start' | 'pause' | 'resume' | 'complete' }) =>
@@ -50,7 +73,42 @@ export function ProjectPage(): React.JSX.Element {
       message.success('状态已更新');
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '状态更新失败，请重试');
+    },
   });
+
+  const openCreate = (): void => {
+    form.resetFields();
+    setOpen(true);
+  };
+
+  const openEdit = (row: Project): void => {
+    form.setFieldsValue({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      managerId: row.managerId || undefined,
+      budget: row.budget,
+      startDate: row.startDate ? dayjs(row.startDate) : undefined,
+      endDate: row.endDate ? dayjs(row.endDate) : undefined,
+    });
+    setOpen(true);
+  };
+
+  const onFinish = (values: ProjectFormValues): void => {
+    const manager = memberOptions.data?.members.find((m) => m.id === values.managerId);
+    save.mutate({
+      id: values.id,
+      name: values.name,
+      description: values.description ?? '',
+      managerId: values.managerId ?? '',
+      managerName: manager?.name ?? '',
+      budget: values.budget ?? 0,
+      startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : '',
+      endDate: values.endDate ? values.endDate.format('YYYY-MM-DD') : '',
+    });
+  };
 
   const columns: ColumnsType<Project> = [
     { title: '项目', dataIndex: 'name', render: (v, r) => `${v}（${r.id}）` },
@@ -74,7 +132,7 @@ export function ProjectPage(): React.JSX.Element {
       width: 280,
       render: (_, row) => (
         <Space>
-          <Button size="small" onClick={() => setOpen(true)}>
+          <Button size="small" onClick={() => openEdit(row)}>
             编辑
           </Button>
           <Button size="small" type="dashed" onClick={() => setRelationId(row.id)}>
@@ -134,25 +192,22 @@ export function ProjectPage(): React.JSX.Element {
   return (
     <div>
       <Typography.Title level={4}>项目与任务</Typography.Title>
-      <Button
-        type="primary"
-        style={{ marginBottom: 12 }}
-        onClick={() => {
-          form.resetFields();
-          setOpen(true);
-        }}
-      >
+      <Button type="primary" style={{ marginBottom: 12 }} onClick={openCreate}>
         创建项目
       </Button>
       <Card>
-        <Table<Project>
-          rowKey="id"
-          size="small"
-          loading={projects.isLoading}
-          dataSource={projects.data?.projects ?? []}
-          columns={columns}
-          pagination={{ pageSize: 10 }}
-        />
+        {projects.isError ? (
+          <ErrorState onRetry={() => void projects.refetch()} />
+        ) : (
+          <Table<Project>
+            rowKey="id"
+            size="small"
+            loading={projects.isLoading}
+            dataSource={projects.data?.projects ?? []}
+            columns={columns}
+            pagination={{ pageSize: 10 }}
+          />
+        )}
       </Card>
       <Modal
         title="项目"
@@ -160,32 +215,35 @@ export function ProjectPage(): React.JSX.Element {
         onCancel={() => setOpen(false)}
         onOk={() => form.submit()}
         confirmLoading={save.isPending}
-        destroyOnClose
+        destroyOnHidden
       >
-        <Form
+        <Form<ProjectFormValues>
           form={form}
           layout="vertical"
-          initialValues={{ status: 0, progress: 0, budget: 0 }}
-          onFinish={(v) => save.mutate(v)}
+          initialValues={{ budget: 0 }}
+          onFinish={onFinish}
         >
-          <Form.Item label="项目名称" name="name" rules={[{ required: true }]}>
+          <Form.Item name="id" hidden>
+            <Input />
+          </Form.Item>
+          <Form.Item label="项目名称" name="name" rules={[{ required: true, message: '请输入项目名称' }]}>
             <Input />
           </Form.Item>
           <Form.Item label="描述" name="description">
             <Input.TextArea rows={2} />
           </Form.Item>
-          <Form.Item label="负责人ID" name="managerId">
-            <Input placeholder="成员ID" />
+          <Form.Item label="负责人" name="managerId">
+            <MemberSelect allowClear />
           </Form.Item>
           <Space size={12}>
             <Form.Item label="预算" name="budget">
               <InputNumber min={0} style={{ width: 160 }} />
             </Form.Item>
             <Form.Item label="开始日期" name="startDate">
-              <Input placeholder="2026-01-01" />
+              <DatePicker style={{ width: 160 }} />
             </Form.Item>
             <Form.Item label="结束日期" name="endDate">
-              <Input placeholder="2026-12-31" />
+              <DatePicker style={{ width: 160 }} />
             </Form.Item>
           </Space>
         </Form>
@@ -197,7 +255,9 @@ export function ProjectPage(): React.JSX.Element {
         footer={null}
         width={760}
       >
-        {relations.data && (
+        {relations.isError ? (
+          <ErrorState onRetry={() => void relations.refetch()} />
+        ) : relations.data ? (
           <>
             <div style={{ marginBottom: 12 }}>
               {Object.entries(relations.data.summary).map(([k, v]) => (
@@ -211,7 +271,7 @@ export function ProjectPage(): React.JSX.Element {
               节点：{relations.data.nodes.map((n) => n.name).join('；')}
             </Typography.Paragraph>
           </>
-        )}
+        ) : null}
       </Modal>
     </div>
   );

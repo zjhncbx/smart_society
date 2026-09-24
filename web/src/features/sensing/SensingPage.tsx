@@ -11,17 +11,26 @@ import { getWorkItems } from '@/api/endpoints/workItems';
 import { getRisks } from '@/api/endpoints/risks';
 import { BusinessEvent } from '@/models/contract';
 import { EChart } from '@/components/EChart';
+import { ErrorState } from '@/components/ErrorState';
 
 export function SensingPage(): React.JSX.Element {
   const posture = useQuery({ queryKey: ['posture'], queryFn: getPosture });
   const events = useQuery({ queryKey: ['events'], queryFn: () => getEvents({ pageSize: 20 }) });
   const risks = useQuery({ queryKey: ['risks'], queryFn: () => getRisks({}) });
   const dq = useQuery({ queryKey: ['data-quality'], queryFn: getDataQuality });
-  const automation = useQuery({ queryKey: ['automation'], queryFn: getAutomation });
+  const automation = useQuery({ queryKey: ['automation'], queryFn: () => getAutomation() });
   const workItems = useQuery({
     queryKey: ['work-items', 'open'],
     queryFn: () => getWorkItems({ status: 'open', pageSize: 1 }),
   });
+
+  /** 运行统计从日志页数据计算（get-automation-logs 不再返回 counts） */
+  const automationLogs = automation.data?.logs ?? [];
+  const automationFailed = automationLogs.filter((l) => l.status === 'failed').length;
+  const automationSuccessRate =
+    automationLogs.length > 0
+      ? Math.round(((automationLogs.length - automationFailed) / automationLogs.length) * 100)
+      : 0;
 
   const riskOption: EChartsOption = {
     tooltip: { trigger: 'item' },
@@ -62,44 +71,76 @@ export function SensingPage(): React.JSX.Element {
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={4}>
           <Card>
-            <Statistic title="组织运行" value={posture.data?.status ?? '—'} loading={posture.isLoading} />
+            {posture.isError ? (
+              <ErrorState description="组织态势加载失败" onRetry={() => void posture.refetch()} />
+            ) : (
+              <Statistic title="组织运行" value={posture.data?.status ?? '—'} loading={posture.isLoading} />
+            )}
           </Card>
         </Col>
         <Col span={4}>
           <Card>
-            <Statistic title="待处理工作项" value={workItems.data?.openCount ?? '—'} />
+            {workItems.isError ? (
+              <ErrorState description="工作项加载失败" onRetry={() => void workItems.refetch()} />
+            ) : (
+              <Statistic title="待处理工作项" value={workItems.data?.openCount ?? '—'} />
+            )}
           </Card>
         </Col>
         <Col span={4}>
           <Card>
-            <Statistic title="数据健康度" value={dq.data?.snapshot.score ?? '—'} suffix="分" />
+            {dq.isError ? (
+              <ErrorState description="数据质量加载失败" onRetry={() => void dq.refetch()} />
+            ) : (
+              <Statistic title="数据健康度" value={dq.data?.snapshot.score ?? '—'} suffix="分" />
+            )}
           </Card>
         </Col>
         <Col span={4}>
           <Card>
-            <Statistic title="自动化成功率" value={automation.data?.counts.successRate ?? '—'} suffix="%" />
+            {automation.isError ? (
+              <ErrorState description="自动化数据加载失败" onRetry={() => void automation.refetch()} />
+            ) : (
+              <Statistic
+                title="自动化成功率"
+                value={automation.isLoading ? '—' : automationSuccessRate}
+                suffix="%"
+              />
+            )}
           </Card>
         </Col>
       </Row>
       <Row gutter={16}>
         <Col span={8}>
           <Card title="风险分布" style={{ marginBottom: 16 }}>
-            <EChart option={riskOption} height={240} />
+            {risks.isError ? (
+              <ErrorState description="风险数据加载失败" onRetry={() => void risks.refetch()} />
+            ) : (
+              <EChart option={riskOption} height={240} />
+            )}
           </Card>
         </Col>
         <Col span={8}>
           <Card title="数据质量维度" style={{ marginBottom: 16 }}>
-            {Object.entries(dq.data?.snapshot.dimensions ?? {}).map(([key, value]) => (
-              <div key={key} style={{ marginBottom: 8 }}>
-                <Typography.Text>{key}</Typography.Text>
-                <Progress percent={value} size="small" />
-              </div>
-            ))}
+            {dq.isError ? (
+              <ErrorState description="数据质量加载失败" onRetry={() => void dq.refetch()} />
+            ) : Object.entries(dq.data?.snapshot.dimensions ?? {}).length > 0 ? (
+              Object.entries(dq.data?.snapshot.dimensions ?? {}).map(([key, value]) => (
+                <div key={key} style={{ marginBottom: 8 }}>
+                  <Typography.Text>{key}</Typography.Text>
+                  <Progress percent={value} size="small" />
+                </div>
+              ))
+            ) : (
+              <Typography.Paragraph type="secondary">暂无数据</Typography.Paragraph>
+            )}
           </Card>
         </Col>
         <Col span={8}>
           <Card title="待关注" style={{ marginBottom: 16 }}>
-            {posture.data?.topConcerns.length ? (
+            {posture.isError ? (
+              <ErrorState description="组织态势加载失败" onRetry={() => void posture.refetch()} />
+            ) : posture.data?.topConcerns.length ? (
               posture.data.topConcerns.map((c, i) => (
                 <Typography.Paragraph key={i} type="secondary" style={{ marginBottom: 8 }}>
                   {c.text}
@@ -112,14 +153,18 @@ export function SensingPage(): React.JSX.Element {
         </Col>
       </Row>
       <Card title="近期事件流">
-        <Table<BusinessEvent>
-          rowKey="id"
-          size="small"
-          loading={events.isLoading}
-          dataSource={events.data?.events ?? []}
-          columns={eventColumns}
-          pagination={{ pageSize: 10 }}
-        />
+        {events.isError ? (
+          <ErrorState description="事件流加载失败" onRetry={() => void events.refetch()} />
+        ) : (
+          <Table<BusinessEvent>
+            rowKey="id"
+            size="small"
+            loading={events.isLoading}
+            dataSource={events.data?.events ?? []}
+            columns={eventColumns}
+            pagination={{ pageSize: 10 }}
+          />
+        )}
       </Card>
     </div>
   );

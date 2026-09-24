@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Button,
   Card,
+  DatePicker,
   Form,
   Input,
   Modal,
@@ -13,6 +14,7 @@ import {
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import type { Dayjs } from 'dayjs';
 import { useState } from 'react';
 
 import {
@@ -23,6 +25,14 @@ import {
   saveResolution,
 } from '@/api/endpoints/approval';
 import { ApprovalInstance, Resolution } from '@/models/contract';
+import { ErrorState } from '@/components/ErrorState';
+
+interface ResolutionFormValues {
+  title: string;
+  content: string;
+  responsibleName?: string;
+  deadline?: Dayjs;
+}
 
 const resolutionStatus: Record<string, { color: string; label: string }> = {
   pending: { color: 'default', label: '待执行' },
@@ -44,6 +54,9 @@ export function ApprovalPage(): React.JSX.Element {
       message.success('已处理');
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
     },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '处理失败，请重试');
+    },
   });
   const saveRes = useMutation({
     mutationFn: saveResolution,
@@ -52,12 +65,18 @@ export function ApprovalPage(): React.JSX.Element {
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: ['resolutions'] });
     },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '创建失败，请重试');
+    },
   });
   const actRes = useMutation({
     mutationFn: (input: { id: string; action: 'start' | 'done' | 'reopen' }) =>
       actResolution(input.id, input.action),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resolutions'] });
+    },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '操作失败，请重试');
     },
   });
 
@@ -143,7 +162,9 @@ export function ApprovalPage(): React.JSX.Element {
             {
               key: 'approval',
               label: `审批（${approvals.data?.approvals.length ?? 0}）`,
-              children: (
+              children: approvals.isError ? (
+                <ErrorState onRetry={() => void approvals.refetch()} />
+              ) : (
                 <Table<ApprovalInstance>
                   rowKey="id"
                   size="small"
@@ -157,7 +178,9 @@ export function ApprovalPage(): React.JSX.Element {
             {
               key: 'resolution',
               label: `决议（${resolutions.data?.resolutions.length ?? 0}）`,
-              children: (
+              children: resolutions.isError ? (
+                <ErrorState onRetry={() => void resolutions.refetch()} />
+              ) : (
                 <>
                   <Button type="primary" style={{ marginBottom: 12 }} onClick={() => setOpen(true)}>
                     创建决议
@@ -184,22 +207,29 @@ export function ApprovalPage(): React.JSX.Element {
         confirmLoading={saveRes.isPending}
         destroyOnClose
       >
-        <Form
+        <Form<ResolutionFormValues>
           form={form}
           layout="vertical"
-          onFinish={(v) => saveRes.mutate(v)}
+          onFinish={(v) =>
+            saveRes.mutate({
+              title: v.title,
+              content: v.content,
+              responsibleName: v.responsibleName ?? '',
+              deadline: v.deadline ? v.deadline.format('YYYY-MM-DD') : '',
+            })
+          }
         >
-          <Form.Item label="标题" name="title" rules={[{ required: true }]}>
+          <Form.Item label="标题" name="title" rules={[{ required: true, message: '请输入标题' }]}>
             <Input />
           </Form.Item>
-          <Form.Item label="内容" name="content" rules={[{ required: true }]}>
+          <Form.Item label="内容" name="content" rules={[{ required: true, message: '请输入内容' }]}>
             <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item label="责任人" name="responsibleName">
             <Input />
           </Form.Item>
           <Form.Item label="期限" name="deadline">
-            <Input placeholder="2026-12-31" />
+            <DatePicker style={{ width: '100%' }} />
           </Form.Item>
         </Form>
       </Modal>

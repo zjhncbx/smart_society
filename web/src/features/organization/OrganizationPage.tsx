@@ -23,6 +23,7 @@ import {
   setRelationship,
 } from '@/api/endpoints/organization';
 import { OrganizationRelationship } from '@/models/contract';
+import { ErrorState } from '@/components/ErrorState';
 
 export function OrganizationPage(): React.JSX.Element {
   const queryClient = useQueryClient();
@@ -39,6 +40,9 @@ export function OrganizationPage(): React.JSX.Element {
       setEditOpen(false);
       queryClient.invalidateQueries({ queryKey: ['organization'] });
     },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '保存失败，请重试');
+    },
   });
   const setRel = useMutation({
     mutationFn: setRelationship,
@@ -46,6 +50,9 @@ export function OrganizationPage(): React.JSX.Element {
       message.success('组织关系已更新');
       setRelOpen(false);
       queryClient.invalidateQueries({ queryKey: ['organization'] });
+    },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '保存失败，请重试');
     },
   });
 
@@ -66,16 +73,20 @@ export function OrganizationPage(): React.JSX.Element {
         loading={org.isLoading}
         extra={<Button onClick={() => setEditOpen(true)}>编辑</Button>}
       >
-        {profile && (
-          <Descriptions column={2} bordered size="small">
-            <Descriptions.Item label="名称">{profile.name}</Descriptions.Item>
-            <Descriptions.Item label="类型">{profile.orgType}</Descriptions.Item>
-            <Descriptions.Item label="统一社会信用代码">{profile.creditCode || '—'}</Descriptions.Item>
-            <Descriptions.Item label="状态">{profile.status}</Descriptions.Item>
-            <Descriptions.Item label="简介" span={2}>
-              {profile.description || '—'}
-            </Descriptions.Item>
-          </Descriptions>
+        {org.isError ? (
+          <ErrorState onRetry={() => void org.refetch()} />
+        ) : (
+          profile && (
+            <Descriptions column={2} bordered size="small">
+              <Descriptions.Item label="名称">{profile.name}</Descriptions.Item>
+              <Descriptions.Item label="类型">{profile.orgType}</Descriptions.Item>
+              <Descriptions.Item label="统一社会信用代码">{profile.creditCode || '—'}</Descriptions.Item>
+              <Descriptions.Item label="状态">{profile.status}</Descriptions.Item>
+              <Descriptions.Item label="简介" span={2}>
+                {profile.description || '—'}
+              </Descriptions.Item>
+            </Descriptions>
+          )
         )}
       </Card>
 
@@ -84,14 +95,18 @@ export function OrganizationPage(): React.JSX.Element {
         title="组织关系"
         extra={<Button onClick={() => setRelOpen(true)}>新增关系</Button>}
       >
-        <Table<OrganizationRelationship>
-          rowKey="relId"
-          size="small"
-          loading={org.isLoading}
-          dataSource={org.data?.relationships ?? []}
-          columns={columns}
-          pagination={false}
-        />
+        {org.isError ? (
+          <ErrorState onRetry={() => void org.refetch()} />
+        ) : (
+          <Table<OrganizationRelationship>
+            rowKey="relId"
+            size="small"
+            loading={org.isLoading}
+            dataSource={org.data?.relationships ?? []}
+            columns={columns}
+            pagination={false}
+          />
+        )}
       </Card>
 
       <Modal

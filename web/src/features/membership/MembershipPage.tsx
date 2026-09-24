@@ -19,6 +19,7 @@ import type { FormInstance } from 'antd/es/form';
 
 import { deleteMember, getMembers, saveMember } from '@/api/endpoints/membership';
 import { Member } from '@/models/contract';
+import { ErrorState } from '@/components/ErrorState';
 
 const roleOptions = [
   { value: 'chairman', label: '会长' },
@@ -47,12 +48,18 @@ export function MembershipPage(): React.JSX.Element {
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: ['members'] });
     },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '保存失败，请重试');
+    },
   });
   const remove = useMutation({
     mutationFn: deleteMember,
     onSuccess: () => {
       message.success('已删除');
       queryClient.invalidateQueries({ queryKey: ['members'] });
+    },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '删除失败，请重试');
     },
   });
 
@@ -116,14 +123,18 @@ export function MembershipPage(): React.JSX.Element {
         </Button>
       </Space>
       <Card>
-        <Table<Member>
-          rowKey="id"
-          size="small"
-          loading={members.isLoading}
-          dataSource={members.data?.members ?? []}
-          columns={columns}
-          pagination={{ pageSize: 10 }}
-        />
+        {members.isError ? (
+          <ErrorState onRetry={() => void members.refetch()} />
+        ) : (
+          <Table<Member>
+            rowKey="id"
+            size="small"
+            loading={members.isLoading}
+            dataSource={members.data?.members ?? []}
+            columns={columns}
+            pagination={{ pageSize: 10 }}
+          />
+        )}
       </Card>
       <Modal
         title={editing ? '编辑成员' : '添加成员'}

@@ -18,6 +18,7 @@ import { Link } from 'react-router';
 import { actWorkItem, getWorkItems, refreshWorkItems } from '@/api/endpoints/workItems';
 import { getPosture } from '@/api/endpoints/sensing';
 import { WorkItem } from '@/models/contract';
+import { ErrorState } from '@/components/ErrorState';
 import { usePermission } from '@/permissions/guard';
 import { newCorrelationId } from '@/utils/id';
 
@@ -51,6 +52,9 @@ export function WorkbenchPage(): React.JSX.Element {
       message.success('工作项已同步');
       invalidate();
     },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '同步失败，请重试');
+    },
   });
   const act = useMutation({
     mutationFn: (input: { id: string; action: 'done' | 'cancel' | 'reopen' }) =>
@@ -60,6 +64,9 @@ export function WorkbenchPage(): React.JSX.Element {
         correlationId: newCorrelationId(),
       }),
     onSuccess: () => invalidate(),
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '操作失败，请重试');
+    },
   });
 
   const columns: ColumnsType<WorkItem> = [
@@ -155,33 +162,37 @@ export function WorkbenchPage(): React.JSX.Element {
         />
       )}
 
-      <Row gutter={16}>
-        <Col span={4}>
-          <Card>
-            <Statistic title="待处理" value={posture.data?.pendingCount ?? '—'} loading={posture.isLoading} />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Statistic title="风险" value={posture.data?.riskCount ?? '—'} valueStyle={{ color: '#cf1322' }} />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Statistic title="预警" value={posture.data?.warningCount ?? '—'} valueStyle={{ color: '#d46b08' }} />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Statistic title="数据问题" value={posture.data?.dqOpenCount ?? '—'} />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Statistic title="流程阻塞" value={posture.data?.escalatedCount ?? '—'} valueStyle={{ color: '#cf1322' }} />
-          </Card>
-        </Col>
-      </Row>
+      {posture.isError ? (
+        <ErrorState description="组织态势加载失败" onRetry={() => void posture.refetch()} />
+      ) : (
+        <Row gutter={16}>
+          <Col span={4}>
+            <Card>
+              <Statistic title="待处理" value={posture.data?.pendingCount ?? '—'} loading={posture.isLoading} />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Statistic title="风险" value={posture.data?.riskCount ?? '—'} valueStyle={{ color: '#cf1322' }} />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Statistic title="预警" value={posture.data?.warningCount ?? '—'} valueStyle={{ color: '#d46b08' }} />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Statistic title="数据问题" value={posture.data?.dqOpenCount ?? '—'} />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Statistic title="流程阻塞" value={posture.data?.escalatedCount ?? '—'} valueStyle={{ color: '#cf1322' }} />
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       <Card
         style={{ marginTop: 16 }}
@@ -192,14 +203,18 @@ export function WorkbenchPage(): React.JSX.Element {
           </Button>
         }
       >
-        <Table<WorkItem>
-          rowKey="id"
-          size="small"
-          loading={workItems.isLoading}
-          dataSource={workItems.data?.items ?? []}
-          columns={columns}
-          pagination={false}
-        />
+        {workItems.isError ? (
+          <ErrorState onRetry={() => void workItems.refetch()} />
+        ) : (
+          <Table<WorkItem>
+            rowKey="id"
+            size="small"
+            loading={workItems.isLoading}
+            dataSource={workItems.data?.items ?? []}
+            columns={columns}
+            pagination={false}
+          />
+        )}
       </Card>
     </div>
   );

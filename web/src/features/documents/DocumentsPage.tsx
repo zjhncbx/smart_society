@@ -30,6 +30,7 @@ import {
   listDocuments,
   saveBase64File,
 } from '@/api/endpoints/documents';
+import { ErrorState } from '@/components/ErrorState';
 
 const DOMAIN_OPTIONS = Object.entries(DOMAIN_LABELS).map(([value, label]) => ({
   value,
@@ -221,23 +222,27 @@ export function DocumentsPage(): React.JSX.Element {
             数据范围：{docs.data?.dataScope ?? '…'} · 共 {docs.data?.total ?? 0} 个
           </Typography.Text>
         </Space>
-        <Table<DocumentItem>
-          rowKey="id"
-          size="small"
-          loading={docs.isLoading}
-          dataSource={items}
-          columns={columns}
-          pagination={{
-            current: page + 1,
-            pageSize,
-            total: docs.data?.total ?? 0,
-            showSizeChanger: true,
-            onChange: (p, ps) => {
-              setPage(p - 1);
-              setPageSize(ps);
-            },
-          }}
-        />
+        {docs.isError ? (
+          <ErrorState onRetry={() => void docs.refetch()} />
+        ) : (
+          <Table<DocumentItem>
+            rowKey="id"
+            size="small"
+            loading={docs.isLoading}
+            dataSource={items}
+            columns={columns}
+            pagination={{
+              current: page + 1,
+              pageSize,
+              total: docs.data?.total ?? 0,
+              showSizeChanger: true,
+              onChange: (p, ps) => {
+                setPage(p - 1);
+                setPageSize(ps);
+              },
+            }}
+          />
+        )}
       </Card>
       <UploadModal
         open={uploadOpen}

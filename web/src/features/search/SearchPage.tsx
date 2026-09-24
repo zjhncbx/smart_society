@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { SearchResult, globalSearch } from '@/api/endpoints/search';
+import { ErrorState } from '@/components/ErrorState';
 
 const typeLabel: Record<string, string> = {
   work_item: '工作项',
@@ -50,6 +51,8 @@ export function SearchPage(): React.JSX.Element {
       <Card style={{ marginTop: 16 }}>
         {debounced.trim().length === 0 ? (
           <Empty description="输入关键词开始检索" />
+        ) : results.isError ? (
+          <ErrorState onRetry={() => void results.refetch()} />
         ) : results.isLoading ? (
           <Empty description="检索中…" />
         ) : (results.data?.length ?? 0) === 0 ? (

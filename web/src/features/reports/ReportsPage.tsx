@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { getReportData } from '@/api/endpoints/reports';
 import { getTrendStats } from '@/api/endpoints/trends';
 import { EChart } from '@/components/EChart';
+import { ErrorState } from '@/components/ErrorState';
 import { exportCsv } from '@/utils/exportCsv';
 
 export function ReportsPage(): React.JSX.Element {
@@ -86,68 +87,80 @@ export function ReportsPage(): React.JSX.Element {
           description={trendData.anomalies.join('；')}
         />
       )}
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={4}>
-          <Card>
-            <Statistic title="成员/会员" value={data?.totals.members ?? '—'} loading={reports.isLoading} />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Statistic title="项目" value={data?.totals.projects ?? '—'} />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Statistic title="待处理工作项" value={data?.totals.pendingWorkItems ?? '—'} />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Statistic title="数据健康度" value={data?.totals.dqScore ?? '—'} suffix="分" />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Statistic title="自动化成功率" value={data?.totals.successRate ?? '—'} suffix="%" />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Statistic
-              title="审批平均耗时"
-              value={trendData?.approvalAvgHours ?? '—'}
-              suffix="h"
-              valueStyle={{ color: '#d46b08' }}
-            />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card>
-            <Button onClick={exportReport}>导出报表 CSV</Button>
-          </Card>
-        </Col>
-      </Row>
+      {reports.isError ? (
+        <ErrorState description="报表数据加载失败" onRetry={() => void reports.refetch()} />
+      ) : (
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col span={4}>
+            <Card>
+              <Statistic title="成员/会员" value={data?.totals.members ?? '—'} loading={reports.isLoading} />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Statistic title="项目" value={data?.totals.projects ?? '—'} />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Statistic title="待处理工作项" value={data?.totals.pendingWorkItems ?? '—'} />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Statistic title="数据健康度" value={data?.totals.dqScore ?? '—'} suffix="分" />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Statistic title="自动化成功率" value={data?.totals.successRate ?? '—'} suffix="%" />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Statistic
+                title="审批平均耗时"
+                value={trendData?.approvalAvgHours ?? '—'}
+                suffix="h"
+                valueStyle={{ color: '#d46b08' }}
+              />
+            </Card>
+          </Col>
+          <Col span={4}>
+            <Card>
+              <Button onClick={exportReport}>导出报表 CSV</Button>
+            </Card>
+          </Col>
+        </Row>
+      )}
       <Row gutter={16}>
         <Col span={12}>
           <Card title="近 7 天事件与风险趋势" style={{ marginBottom: 16 }}>
-            <EChart option={eventTrendOption} height={280} />
+            {trends.isError ? (
+              <ErrorState description="趋势数据加载失败" onRetry={() => void trends.refetch()} />
+            ) : (
+              <EChart option={eventTrendOption} height={280} />
+            )}
           </Card>
         </Col>
         <Col span={12}>
           <Card title="自动化运行趋势" style={{ marginBottom: 16 }}>
-            <EChart
-              option={{
-                tooltip: { trigger: 'axis' },
-                xAxis: { type: 'category', data: trendData?.automationTrend.map((t) => t.date.slice(5)) ?? [] },
-                yAxis: { type: 'value', max: 100 },
-                series: [
-                  { name: '成功率%', type: 'line', smooth: true, data: trendData?.automationTrend.map((t) => t.successRate) ?? [] },
-                  { name: '运行次数', type: 'bar', data: trendData?.automationTrend.map((t) => t.runs) ?? [] },
-                ],
-              }}
-              height={280}
-            />
+            {trends.isError ? (
+              <ErrorState description="趋势数据加载失败" onRetry={() => void trends.refetch()} />
+            ) : (
+              <EChart
+                option={{
+                  tooltip: { trigger: 'axis' },
+                  xAxis: { type: 'category', data: trendData?.automationTrend.map((t) => t.date.slice(5)) ?? [] },
+                  yAxis: { type: 'value', max: 100 },
+                  series: [
+                    { name: '成功率%', type: 'line', smooth: true, data: trendData?.automationTrend.map((t) => t.successRate) ?? [] },
+                    { name: '运行次数', type: 'bar', data: trendData?.automationTrend.map((t) => t.runs) ?? [] },
+                  ],
+                }}
+                height={280}
+              />
+            )}
           </Card>
         </Col>
         <Col span={12}>

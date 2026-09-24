@@ -16,6 +16,7 @@ import type { ColumnsType } from 'antd/es/table';
 
 import { actIssue, getDataQuality, runDataQuality } from '@/api/endpoints/dataQuality';
 import { DataQualityIssue } from '@/models/contract';
+import { ErrorState } from '@/components/ErrorState';
 
 export function DataQualityPage(): React.JSX.Element {
   const queryClient = useQueryClient();
@@ -26,12 +27,18 @@ export function DataQualityPage(): React.JSX.Element {
       message.success(`数据质量检查完成，健康度 ${r.score} 分`);
       queryClient.invalidateQueries({ queryKey: ['data-quality'] });
     },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '检查运行失败，请重试');
+    },
   });
   const act = useMutation({
     mutationFn: (input: { id: string; action: 'resolve' | 'ignore' | 'reopen' }) =>
       actIssue(input.id, input.action),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-quality'] });
+    },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '操作失败，请重试');
     },
   });
 
@@ -110,14 +117,18 @@ export function DataQualityPage(): React.JSX.Element {
         </Card>
       )}
       <Card style={{ marginTop: 16 }} title="问题清单">
-        <Table<DataQualityIssue>
-          rowKey="id"
-          size="small"
-          loading={dq.isLoading}
-          dataSource={dq.data?.issues ?? []}
-          columns={columns}
-          pagination={false}
-        />
+        {dq.isError ? (
+          <ErrorState onRetry={() => void dq.refetch()} />
+        ) : (
+          <Table<DataQualityIssue>
+            rowKey="id"
+            size="small"
+            loading={dq.isLoading}
+            dataSource={dq.data?.issues ?? []}
+            columns={columns}
+            pagination={false}
+          />
+        )}
       </Card>
     </div>
   );

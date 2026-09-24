@@ -26,6 +26,7 @@ import {
   submitFinanceRecord,
 } from '@/api/endpoints/finance';
 import { FinanceRecord } from '@/models/contract';
+import { ErrorState } from '@/components/ErrorState';
 
 const statusColor: Record<string, string> = {
   approved: 'green',
@@ -46,6 +47,9 @@ export function FinancePage(): React.JSX.Element {
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: ['finance-records'] });
       queryClient.invalidateQueries({ queryKey: ['finance-stats'] });
+    },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '提交失败，请重试');
     },
   });
 
@@ -76,39 +80,47 @@ export function FinancePage(): React.JSX.Element {
   return (
     <div>
       <Typography.Title level={4}>财务管理</Typography.Title>
-      <Row gutter={16}>
-        <Col span={6}>
-          <Card>
-            <Statistic title="收入" value={stats.data?.income ?? '—'} prefix="¥" valueStyle={{ color: '#3f8600' }} />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic title="支出" value={stats.data?.expense ?? '—'} prefix="¥" valueStyle={{ color: '#cf1322' }} />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic title="结余" value={stats.data?.balance ?? '—'} prefix="¥" />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Button type="primary" onClick={() => setOpen(true)}>
-              提交单据
-            </Button>
-          </Card>
-        </Col>
-      </Row>
+      {stats.isError ? (
+        <ErrorState description="财务统计加载失败" onRetry={() => void stats.refetch()} />
+      ) : (
+        <Row gutter={16}>
+          <Col span={6}>
+            <Card>
+              <Statistic title="收入" value={stats.data?.income ?? '—'} prefix="¥" valueStyle={{ color: '#3f8600' }} />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic title="支出" value={stats.data?.expense ?? '—'} prefix="¥" valueStyle={{ color: '#cf1322' }} />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic title="结余" value={stats.data?.balance ?? '—'} prefix="¥" />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Button type="primary" onClick={() => setOpen(true)}>
+                提交单据
+              </Button>
+            </Card>
+          </Col>
+        </Row>
+      )}
       <Card style={{ marginTop: 16 }} title="单据列表">
-        <Table<FinanceRecord>
-          rowKey="id"
-          size="small"
-          loading={records.isLoading}
-          dataSource={records.data?.records ?? []}
-          columns={columns}
-          pagination={{ pageSize: 10 }}
-        />
+        {records.isError ? (
+          <ErrorState onRetry={() => void records.refetch()} />
+        ) : (
+          <Table<FinanceRecord>
+            rowKey="id"
+            size="small"
+            loading={records.isLoading}
+            dataSource={records.data?.records ?? []}
+            columns={columns}
+            pagination={{ pageSize: 10 }}
+          />
+        )}
       </Card>
       <Modal
         title="提交财务单据"

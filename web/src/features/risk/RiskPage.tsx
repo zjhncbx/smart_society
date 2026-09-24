@@ -4,6 +4,7 @@ import type { ColumnsType } from 'antd/es/table';
 
 import { actRisk, getRisks } from '@/api/endpoints/risks';
 import { RiskAlert } from '@/models/contract';
+import { ErrorState } from '@/components/ErrorState';
 
 export function RiskPage(): React.JSX.Element {
   const queryClient = useQueryClient();
@@ -14,6 +15,9 @@ export function RiskPage(): React.JSX.Element {
     onSuccess: () => {
       message.success('已更新');
       queryClient.invalidateQueries({ queryKey: ['risks'] });
+    },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '操作失败，请重试');
     },
   });
 
@@ -84,14 +88,18 @@ export function RiskPage(): React.JSX.Element {
         </Col>
       </Row>
       <Card style={{ marginTop: 16 }} title="列表">
-        <Table<RiskAlert>
-          rowKey="id"
-          size="small"
-          loading={risks.isLoading}
-          dataSource={risks.data?.risks ?? []}
-          columns={columns}
-          pagination={false}
-        />
+        {risks.isError ? (
+          <ErrorState onRetry={() => void risks.refetch()} />
+        ) : (
+          <Table<RiskAlert>
+            rowKey="id"
+            size="small"
+            loading={risks.isLoading}
+            dataSource={risks.data?.risks ?? []}
+            columns={columns}
+            pagination={false}
+          />
+        )}
       </Card>
     </div>
   );

@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { getAuditLogs, getEvents } from '@/api/endpoints/audit';
 import { AuditLog, BusinessEvent } from '@/models/contract';
+import { ErrorState } from '@/components/ErrorState';
 
 export function AuditLogPage(): React.JSX.Element {
   const [correlationFilter, setCorrelationFilter] = useState('');
@@ -92,7 +93,9 @@ export function AuditLogPage(): React.JSX.Element {
             {
               key: 'audit',
               label: `审计日志（${filteredAudit.length}）`,
-              children: (
+              children: audit.isError ? (
+                <ErrorState onRetry={() => void audit.refetch()} />
+              ) : (
                 <Table<AuditLog>
                   rowKey="id"
                   size="small"
@@ -106,7 +109,9 @@ export function AuditLogPage(): React.JSX.Element {
             {
               key: 'events',
               label: `事件流（${filteredEvents.length}）`,
-              children: (
+              children: events.isError ? (
+                <ErrorState onRetry={() => void events.refetch()} />
+              ) : (
                 <Table<BusinessEvent>
                   rowKey="id"
                   size="small"
