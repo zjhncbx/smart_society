@@ -75,7 +75,10 @@
 - **变化感知与业务血缘（P1）**：get-trend-stats 提供近 7 天事件/风险/自动化/审批时长趋势与环比异常判断；get-entity-relations 以项目为根聚合决议（Resolution.projectId）/负责人/财务/审批/风险/自动任务血缘图；Web 报表页新增趋势图、项目页新增关系图（ECharts graph）
 - **核心表统一字段迁移**：Member / Project / Notice 三张核心主数据表补齐统一字段（code/status/createdAt/createdBy/updatedBy/version/sourceType/sourceId），云函数模型与 Flutter 模型同步，upsert 时自动生成编码与版本号
 - **Flutter DTO 统一字段对齐**：FinanceRecord / ApprovalInstance / ApprovalFlow / AutoTask / RiskAlert / DataQualityIssue / DataQualitySnapshot 等移动端模型补齐统一字段（code/status/createdBy/updatedBy/version/sourceType/sourceId），与云数据契约一致
-- **Web 管理端（W0~W3）**：React19+TS strict+Vite7+AntD5+TanStack Query+Zustand 单页应用，统一 API Client（{ ret } 契约、idempotencyKey/correlationId、Zod 校验）；已实现核心工作台（WorkItem/组织态势/全域检索/风险/数据质量/自动化/审计事件链）、组织业务（组织治理/成员档案/项目/审批决议/财务）、高级治理（规则管理/报表 ECharts/CSV 导出/全域感知）；开发态 Mock 可完整跑通，接 AGC 网关后替换（详见 `web/README.md`）
+- **Web 管理端（W0~W4）**：React19+TS strict+Vite7+AntD5+TanStack Query+Zustand 单页应用，统一 API Client（{ ret } 契约、idempotencyKey/correlationId、Zod 校验）；已实现核心工作台（WorkItem/组织态势/全域检索/风险/数据质量/自动化/审计事件链）、组织业务（组织治理/成员档案/项目/审批决议/财务）、高级治理（规则管理/报表 ECharts/CSV 导出/全域感知）、设置中心（组织设置/角色 RBAC 配置/数据范围/用户偏好）、治理对象（证照/合规事项/任期）、财务高级（期初余额/总账明细账/期末结账与反结账/会计报表）、公告管理与**真实认证链**（账号密码登录 login-user → 组织列表 get-my-orgs → 组织切换 → 权限 get-my-permissions）与统一错误处理（ErrorState/请求级错误映射/Mock 错误注入）；开发态 Mock 可完整跑通（68 项冒烟断言），接 AGC 网关后替换（详见 `web/README.md` 与 `docs/AGC部署联调.md`）
+- **治理规则启停配置（云端）**：`OrgSettings.ruleConfig` 存储组织级禁用规则集合（`{"disabled":["GR-xx"]}`）；`get-rule-config` 返回 GR-01~12 规则定义与启停状态，`set-rule-enabled`（仅管理员、强制幂等键、审计+事件+correlationId 贯通）维护启停；`run-governance-rules` 运行时跳过被禁用规则并在结果 `skippedRules` 与日志中记录；Web 规则管理页与移动端引擎共用同一配置
+- **全域检索与治理报表（云端）**：`search-all` 跨工作项/风险/自动任务/事件/成员/项目/公告七类对象统一关键词检索（每类上限 20 条、空关键词防全表扫描）；`get-automation-logs` 自动化运行日志分页；`get-report-stats` 聚合收支月度趋势/风险分布/数据质量维度/项目状态与汇总指标
+- **移动端缺陷清零**：widget 冒烟测试重写（5 Tab 骨架 + MultiProvider/GoRouter 真实初始化，Hive 等真实 IO 包 `tester.runAsync`）、models/providers/页面层空 catch 全量治理（日志+用户提示，控制流不变）、main 全局错误兜底（FlutterError.onError + PlatformDispatcher.onError）、路由 `:id` 参数缺失重定向首页、`/settings/roles` 独立可达、移除未使用依赖；`flutter analyze` 0 error/0 warning，`flutter test` 通过
 - **成员数据管理**：支持 CSV 导出与粘贴导入（钉钉托管组织仅可导出）；财务支持反结账（撤销结转凭证，恢复年度录入）
 - **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
 
@@ -119,9 +122,9 @@ smart_society/                     # 仓库根目录
 │       ├── cloud-config.json
 │       ├── clouddb/
 │       │   ├── db-config.json
-│       │   ├── objecttype/         # 28 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化/审计/身份/幂等/工作项/权限/决议等）
+│       │   ├── objecttype/         # 32 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化/审计/身份/幂等/工作项/权限/决议/治理对象/文件等）
 │       │   └── dataentry/          # 种子数据
-│       └── cloudfunctions/         # 70 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计、身份、权限、决议、治理对象、趋势/血缘等）
+│       └── cloudfunctions/         # 80 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计、身份、权限、决议、治理对象、文件中心、趋势/血缘、全域检索、规则配置/报表等；common/ 为共享模型模块）
 └── web/                            # 网页端（W0~W3 已实现，见 web/README.md）
     ├── src/                        # React + TS strict + AntD5 + 统一 API Client
     ├── mock/                       # 开发态 Mock API（{ ret } 契约）
@@ -175,7 +178,7 @@ flutter run --debug -d <deviceId>
 
 ### 3. 云数据库
 
-31 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
+32 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
 
 | 对象类型 | 主键 | 说明 |
 |----------|------|------|
@@ -185,8 +188,10 @@ flutter run --debug -d <deviceId>
 | Organization | orgId | 组织信息 |
 | OrganizationRelationship | relId | 组织间关系 |
 | UserOrganization | id | 用户-组织关联 |
-| OrgSettings | orgId | 组织级设置（roleLabels 为 JSON 字符串、钉钉凭证与同步记录） |
+| OrgSettings | orgId | 组织级设置（roleLabels 为 JSON 字符串、ruleConfig 规则启停配置、钉钉凭证与同步记录） |
 | UserSettings | userId | 用户级设置（主题序号、昵称） |
+| AppUser | id | 账号（手机号/邮箱密码登录，scrypt 加盐哈希） |
+| Document | id | 云存储文件元数据（domain/refType/size/status，软删） |
 | FinanceRecord | id | 财务单据（收支单/记账凭证，含借贷分录、审批状态） |
 | ApprovalFlow | id | 审批流程定义（节点含审批/办理/抄送） |
 | ApprovalInstance | id | 审批实例（当前节点、处理记录，抄送/完成生成通知） |
@@ -214,7 +219,7 @@ flutter run --debug -d <deviceId>
 
 ### 4. 云函数
 
-70 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。
+80 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。部署步骤与验收清单见 `docs/AGC部署联调.md`。
 
 **数据 CRUD（7 个，按 orgId 隔离）**：
 
@@ -244,7 +249,7 @@ flutter run --debug -d <deviceId>
 
 | 函数 | 说明 |
 |------|------|
-| `run-governance-rules` | 规则引擎批量运行（逾期升级/进度偏差/审批SLA/数据质量任务/预算超支），生成任务与风险并写审计日志 |
+| `run-governance-rules` | 规则引擎批量运行（逾期升级/进度偏差/审批SLA/数据质量任务/预算超支），读取 `OrgSettings.ruleConfig` 跳过被禁用规则，生成任务与风险并写审计日志 |
 | `get-governance-center` | 自动任务 + 风险/预警 + 自动化运行记录汇总 |
 | `act-auto-task` | 自动任务处理（完成/取消/重开），结果写入事件流 |
 | `act-risk-alert` | 风险/预警处理（标记解决/确认监控/重开），结果写入事件流 |
@@ -285,13 +290,14 @@ flutter run --debug -d <deviceId>
 | `get-approval-tasks` | 我的待办（当前节点处理人） |
 | `save-approval-flow` / `get-approval-flows` | 审批流程定义保存（仅管理员）与列表 |
 
-**财务结账与报表（5 个）**：
+**财务结账与报表（6 个）**：
 | 函数 | 说明 |
 |------|------|
 | `save-opening-balances` / `get-opening-balances` | 期初余额录入（仅管理员），支持从上期期末一键结转 |
 | `get-accounting-reports` | 科目余额表、资产负债表、业务活动表（限定/非限定）、现金流量表 |
 | `get-ledger` | 总账/明细账（按科目，含期初与逐笔余额） |
 | `close-period` | 期末结账：收入/费用结转至净资产，生成结转凭证并通知（仅管理员） |
+| `unclose-period` | 反结账：撤销结转凭证，恢复年度录入（仅管理员，强制幂等键） |
 
 **设置（4 个，新增）**：
 
@@ -301,6 +307,68 @@ flutter run --debug -d <deviceId>
 | `save-org-settings` | 保存组织设置（仅管理员）；roleLabels 以 JSON 字符串存储 |
 | `get-user-settings` | 读取用户设置（主题/昵称） |
 | `save-user-settings` | 保存用户设置 |
+
+**身份与认证（3 个）**：
+
+| 函数 | 说明 |
+|------|------|
+| `register-user` / `login-user` | 手机号/邮箱密码注册 / 登录（scrypt 加盐哈希校验，返回内部 userId） |
+| `ensure-user-identity` | 外部身份映射（provider+providerSubject → 稳定内部 userId，幂等） |
+
+**权限 RBAC（4 个）**：
+
+| 函数 | 说明 |
+|------|------|
+| `get-my-permissions` | 云端计算当前用户角色/权限/数据范围（回退兼容旧 admin/member） |
+| `get-roles` / `save-role` / `save-data-scope` | 角色列表（内置+自定义）/ 角色保存 / 数据范围配置（仅管理员） |
+
+**统一工作项（3 个）**：
+
+| 函数 | 说明 |
+|------|------|
+| `refresh-work-items` | 从审批/自动任务/项目任务/风险/数据治理物化工作项，自动关闭已消失项 |
+| `get-work-items` / `act-work-item` | 统一工作项查询 / 处理（完成/取消/重开，同步来源系统） |
+
+**审计（2 个）**：
+
+| 函数 | 说明 |
+|------|------|
+| `record-audit-log` / `get-audit-logs` | 审计写入 / 按对象/动作/操作人筛选分页查询 |
+
+**决议与治理对象（12 个）**：
+
+| 函数 | 说明 |
+|------|------|
+| `save-resolution` / `get-resolutions` / `act-resolution` | 决议保存（强制幂等键）/ 查询 / 状态迁移（开始执行/完成/重开） |
+| `save-license` / `get-licenses` / `act-license` | 证照保存 / 查询 / 动作（续期/过期/重开） |
+| `save-compliance-item` / `get-compliance-items` / `act-compliance-item` | 合规事项保存 / 查询 / 动作（开始/完成/重开） |
+| `save-term` / `get-terms` / `act-term` | 任期保存 / 查询 / 动作（换届准备/生效/归档） |
+
+**感知与血缘（2 个）**：
+
+| 函数 | 说明 |
+|------|------|
+| `get-trend-stats` | 近 7 天事件/风险/自动化/审批时长趋势与环比异常判断 |
+| `get-entity-relations` | 业务血缘：项目根节点聚合决议/负责人/财务/审批/风险/任务 |
+
+**文件中心（5 个）**：
+
+| 函数 | 说明 |
+|------|------|
+| `init-file-upload` / `commit-file-upload` | 上传初始化（强制幂等键）/ 提交（SDK 直传 move 或代理写入 ≤5MB） |
+| `list-documents` | 按 DataScope 分页查询文件（分类/状态/关键词/只看我的） |
+| `get-document-file` | 服务端代理下载（base64，≤10MB） |
+| `delete-document` | 软删 + 存储删除（强制幂等键） |
+
+**检索、规则配置与报表（5 个，新增）**：
+
+| 函数 | 说明 |
+|------|------|
+| `search-all` | 全域检索：工作项/风险/自动任务/事件/成员/项目/公告七类关键词统一搜索（每类≤20 条，空关键词防全表扫描） |
+| `get-rule-config` | 治理规则 GR-01~12 定义（WHEN/IF/THEN）与启停状态查询 |
+| `set-rule-enabled` | 治理规则启停（仅管理员，强制幂等键，审计+事件+correlationId 贯通） |
+| `get-automation-logs` | 自动化运行日志分页查询（runAt 倒序，pageSize≤100） |
+| `get-report-stats` | 治理报表聚合：收支月度趋势/风险分布/数据质量维度/项目状态/汇总指标 |
 
 ## 混合通信
 
@@ -343,7 +411,7 @@ flutter run --debug -d <deviceId>
 | 端云一体化工程结构 | ✅ | mobile/Application/ + mobile/CloudProgram/ |
 | 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
-| 云函数部署 + 真机联调 | ✅ | 70 个云函数 + 31 张表部署至 AGC |
+| 云函数部署 + 真机联调 | ✅ | 80 个云函数 + 32 张表部署至 AGC |
 | 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
 | **设置数据上云（V3.2）** | ✅ | 角色名/钉钉配置/主题/昵称云端存储，按组织隔离，凭证仅管理员可见 |
 | **事件中心（V4.1）** | ✅ | 统一业务事件模型 + 云函数自动落事件 + 组织事件流页 |
@@ -352,6 +420,8 @@ flutter run --debug -d <deviceId>
 | **组织态势总览（V4.1）** | ✅ | 工作台从“统计卡片”升级为“从数据到结论”的管理驾驶舱 |
 | **移动端体验（V4.1）** | ✅ | 全域检索 + 统一待办 + 风险钻取 + 同步中心 |
 | **组织数字画像（V4.1）** | ✅ | 管理健康度评分 + 规模/会员/项目/财务/流程/风险/数据钻取 |
+| **Web 管理端（W0~W4）** | ✅ | React19 管理台：认证链/组织切换/核心工作台/组织业务/高级治理/设置中心/治理对象/财务高级/公告；Mock 68 项冒烟断言全绿 |
+| **治理规则启停与收尾（V4.2）** | ✅ | OrgSettings.ruleConfig 规则启停、全域检索/自动化日志/报表聚合等 5 个新云函数（共 80 个）、AGC 部署联调文档、移动端缺陷清零（analyze 0 error / test 通过） |
 | 测试优化 | ⏳ | 功能回归、性能、兼容性 |
 | 打包上架 | ⏳ | 签名证书、隐私政策、上架审核 |
 
@@ -372,6 +442,9 @@ flutter run --debug -d <deviceId>
 | 设置保存报"保存失败" | 设置保存必须先云端成功后本地生效，检查网络与云函数是否已部署（get/save-org-settings、get/save-user-settings） |
 | 设置页点击"保存"无反应 / 设置数据不上云 | 事件回调中误用 `context.labels`（内部为 `context.watch`，只能在 build 方法中调用）会在调试模式抛错且被吞掉；事件回调应使用 `context.labelsRead`（`read` 版本）。已修复设置页与成员/项目/公告表单页 |
 | 登录后保存设置报"缺少 orgId/userId 参数" | Provider 的 userId 原仅在启动时初始化，冷启动未登录、之后再登录时仍为空；已增加登录态监听，登录后自动同步 userId 并重新拉取云端用户/组织设置 |
+| 想用命令行部署云函数 | 当前工具链不可行：`devecocli` 无云函数部署通道、`hvigor` 构建仅覆盖 Application 模块；需用 DevEco Studio 右键 Deploy 或 AGC 控制台在线编辑器，步骤见 `docs/AGC部署联调.md` |
+| Web 如何对接真实 AGC 网关 | `VITE_API_MODE=agc` + `VITE_API_BASE_URL=云函数 HTTP 触发器域名`；认证链 `login-user → get-my-orgs → get-my-permissions`；联调步骤与验收清单见 `docs/AGC部署联调.md` |
+| `flutter test` 挂起无输出 | 测试内真实 IO（如 `Hive.openBox`）必须包在 `tester.runAsync()` 中执行：FakeAsync 区域不派发真实事件循环完成事件，裸 `await` 会永久挂起（连 `--timeout` 都不触发） |
 
 ## 关键资源
 

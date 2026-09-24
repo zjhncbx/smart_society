@@ -43,6 +43,10 @@
 | get-entity-relations | `get-entity-relations` | 业务血缘：项目根节点聚合决议/负责人/财务/审批/风险/任务 |
 | init/commit-file | `init-file-upload` / `commit-file-upload` | 文件上传：初始化（幂等）+ 提交（SDK 直传 move 或代理写入，事件+审计） |
 | list/get/delete-document | `list-documents` / `get-document-file` / `delete-document` | 文件中心：按 DataScope 分页查询 / 服务端代理下载（base64，≤10MB）/ 软删+存储删除（强制幂等键） |
+| get/set-rule-config | `get-rule-config` / `set-rule-enabled` | 治理规则配置查询（GR-01~12 定义+启停状态）/ 规则启停（仅管理员，**强制幂等键**，事件+审计） |
+| get-automation-logs | `get-automation-logs` | 自动化运行日志分页查询（runAt 倒序，pageSize≤100） |
+| get-report-stats | `get-report-stats` | 治理报表聚合：收支月度趋势/风险分布/数据质量维度/项目状态/汇总指标 |
+| search-all | `search-all` | 全域检索：工作项/风险/自动任务/事件/成员/项目/公告七类关键词统一搜索 |
 
 > 成员/项目/公告的普通增删改仍走 `upsert-*` / `delete-*`（离线队列），但**状态机与高风险迁移**必须走动作型接口；新增动作（决议执行、项目进度上报等）一律按本规范命名。
 
@@ -52,7 +56,7 @@
 
 ## 3.1 原则
 
-以下动作**强制要求幂等**（缺失 `idempotencyKey` 直接拒绝执行）：`submit-finance-record`、`act-finance-node`、`close-period`、`unclose-period`、`act-auto-task`、`act-risk-alert`、`resolve-data-quality-issue`、`init-file-upload`、`commit-file-upload`、`delete-document`。
+以下动作**强制要求幂等**（缺失 `idempotencyKey` 直接拒绝执行）：`submit-finance-record`、`act-finance-node`、`close-period`、`unclose-period`、`act-auto-task`、`act-risk-alert`、`resolve-data-quality-issue`、`init-file-upload`、`commit-file-upload`、`delete-document`、`set-rule-enabled`。
 
 ## 3.2 调用约定
 
@@ -98,3 +102,48 @@
 1. Web / Android / HarmonyOS 使用同一套动作函数与幂等契约，不得另起业务逻辑。
 2. 客户端重试（超时/网络失败）复用同一 `idempotencyKey`。
 3. 高风险操作（结账、反结账、删除、权限变更、治理任命）服务端二次校验权限并落审计。
+
+---
+
+# 六、治理规则与查询函数契约（本轮新增 5 个）
+
+> 五个函数均按 §一 总体约定执行：成员校验失败返回「您不是该组织成员」；缺 `orgId`/`userId` 直接拒绝。契约与 `mobile/CloudProgram/cloudfunctions/<函数名>/index.ts` 实现一致。
+
+## 6.1 search-all（全域检索）
+
+- **入参**：`orgId`、`userId` 必填；`keyword`（兼容 `query` 字段，两端统一）；`limit` 可选（默认 140，上限 140）。
+- **行为**：关键词转小写对七类对象做多字段包含匹配——工作项（标题/描述）、风险（标题/描述）、自动任务（标题/描述）、事件（实体名/事件类型）、成员（姓名/手机号/邮箱/部门/学号）、项目（名称/描述）、公告（标题/内容）；每类命中上限 20 条，超出截断。
+- **出参**：`data.results: [{ type, id, title, subtitle, updatedAt }]`，`type ∈ work_item/risk/task/event/member/project/notice`。
+- **约束**：空关键词返回空 `results`（避免全表扫描）；查询按 `orgId` 等值过滤分页拉取（单页 1000、上限 50 页）。
+
+## 6.2 get-rule-config（规则配置查询）
+
+- **入参**：`orgId`、`userId` 必填（组织成员即可，只读）。
+- **行为**：读取 `OrgSettings.ruleConfig` 的 `disabled` 集合，与内置 GR-01~12 静态定义（id/name/category/whenText/ifText/thenText，语义与 `run-governance-rules` 引擎一致）合并。
+- **出参**：`data.rules: [{ id, name, category, whenText, ifText, thenText, enabled }]`，恒为 12 条；`ruleConfig` 为空/损坏时按全部启用兜底。
+
+## 6.3 set-rule-enabled（规则启停，写操作）
+
+- **入参**：`orgId`、`userId`、`ruleId`（兼容 `id` 字段，合法值 GR-01~12）、`enabled`（布尔）、`idempotencyKey`（**强制**）、`correlationId`（建议必传）。
+- **权限**：组织成员且 `role === 'admin'`，否则拒绝（「仅组织管理员可以启停治理规则」）。
+- **幂等**：按 §三 原子认领协议执行（`IDEM_TIMEOUT_MS=120s`，`requestHash` 含 orgId/ruleId/enabled）；`done`→返回首次结果，`processing` 窗口内→拒绝，失败置 `failed` 可重领。
+- **行为**：维护 `OrgSettings.ruleConfig.disabled` 集合增删（`enabled=true` 移除、`false` 加入）；同步写 `AuditLog`（action=set-rule-enabled，before/after 含 enabled 变化）与 `BusinessEvent`（entityType=rule），携带同一 `correlationId`。
+- **出参**：`data: { id, enabled }`；幂等命中时 `message: ok（幂等返回）`。
+- **联动**：停用后的规则在 `run-governance-rules` 运行时被跳过，结果 `actions.skippedRules` 与运行日志记录被跳过规则编号。
+
+## 6.4 get-automation-logs（自动化运行日志）
+
+- **入参**：`orgId`、`userId` 必填；`page`（默认 0）、`pageSize`（默认 20，**上限 100**）。
+- **行为**：`AutomationRunLog` 按 `orgId` 过滤、`runAt` 倒序分页；`actions` 字段为 JSON 字符串，服务端解析失败时置 `{}`。
+- **出参**：`data: { logs: [{ id, orgId, ruleId, ruleName, status, actions, runBy, runAt, durationMs, errorMessage }], total, page, pageSize, hasMore }`。
+
+## 6.5 get-report-stats（治理报表聚合）
+
+- **入参**：`orgId`、`userId` 必填（组织成员即可，只读）。
+- **出参**：`data` 包含五组聚合结果：
+  - `financeTrend: [{ month, income, expense }]`——已批准（status=approved）财务单据按月（YYYY-MM）聚合，升序；
+  - `riskDistribution: [{ name, value }]`——未关闭（status=open）风险/预警按 kind 计数（风险/预警）；
+  - `dqDimensions: [{ name, value }]`——最新 `DataQualitySnapshot` 的维度分（无快照时为空数组、总分按 100）；
+  - `projectStatus: [{ name, value }]`——项目按状态展示名计数（筹备中/进行中/已暂停/已完成）；
+  - `totals: { members, projects, pendingWorkItems, dqScore, successRate }`——成员数/项目数/未关闭工作项数/数据质量总分/自动化近 20 次运行成功率（无记录按 100）。
+- **约束**：明细查询按 `orgId` 等值过滤分页拉取（单页 1000、上限 50 页），服务端聚合，禁止端侧全量拉取。

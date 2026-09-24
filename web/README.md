@@ -290,8 +290,10 @@ API Base URL、认证配置、静态资源地址全部通过环境变量注入�
 Web 真实接入步骤：
 1. AGC 控制台「云开发 > 云函数」为云函数配置 HTTP 触发器，获取访问域名。
 2. 将访问域名填入 `VITE_API_BASE_URL`（见 `.env.production.example`），无需在 Web 端使用 client_secret（避免暴露凭据）。
-3. 认证链：Web 获取 Access Token → `ensure-user-identity` 映射内部 userId → `get-my-permissions` 写入会话。
+3. 认证链：`login-user(account, password)` → 内部 userId → `get-my-orgs` → 组织切换 → `get-my-permissions` 写入会话（华为账号等外部身份经 `ensure-user-identity` 映射，见 `docs/跨端统一用户身份与唯一标识规范.md`）。
 4. 替换 Mock：`mock/dev-api.ts` 仅 dev 生效（`apply: 'serve'`），生产构建不包含。
+
+> 完整部署清单（含 5 个新函数与 `OrgSettings.ruleConfig` 控制台同步）、CLI 不可用说明与联调验收清单见 **`docs/AGC部署联调.md`**。
 
 ## 9. 性能要求
 
@@ -399,7 +401,7 @@ DataTable、Form、WorkItem、Permission Guard、状态组件、Drawer/Modal。
 
 > **Web 基础工程：🟢 GO**
 >
-> **Web 核心业务：🟢 进入开发阶段。** AGC 部署、认证链、幂等并发、`correlationId` 全链路作为集成验收门禁；统一字段契约按模块并行迁移，不阻塞 Web 工程建设。
+> **Web 核心业务：🟢 W0~W4 全部完成**（认证链/组织切换/核心工作台/组织业务/高级治理/设置中心/治理对象/财务高级/公告/统一错误处理，Mock 68 项冒烟断言全绿）。剩余集成验收门禁：真实 AGC 网关部署与联调（见 `docs/AGC部署联调.md`）、幂等并发、`correlationId` 全链路验证。
 >
 > Web 端不是重新设计一套业务系统，而是 SmartSociety 统一业务能力在大屏、键鼠和高数据密度场景下的管理工作台实现。
 
@@ -476,6 +478,23 @@ ECharts 采用 `echarts/core` 按需引入（Line/Bar/Pie + Grid/Tooltip/Legend 
 
 本地验证：`pnpm smoke`（W1/W2/W3 + 趋势/血缘 + 文件中心共 29 项断言 ✅）、`pnpm typecheck` ✅、`pnpm lint`（0 error）✅、`pnpm test`（6/6）✅、`pnpm build` ✅（exit 0，无告警）。
 
+### W4 收尾（已完成 ✅）
+
+```text
+认证链            ✅ 账号密码登录（login-user/register-user 契约，错误密码拒绝）→ get-my-orgs → 组织切换（org_mock_2 独立数据）→ get-my-permissions（roleId/permissions/dataScope 写入会话）
+设置中心          ✅ /settings：组织设置读取/保存/回显 + 角色列表（内置 6 角色）与自定义角色保存（get-roles/save-role 契约）+ 用户偏好（darkMode 等）读取/保存
+治理对象          ✅ 证照（列表/创建返回 id+code+status/expire 动作）、合规事项（start→executing/done/reopen）、任期（activate→active），均走 save/get/act 动作型契约
+财务高级          ✅ 期初余额录入/回显/上期结转、总账明细查询、期末结账（生成结转凭证、重复结账幂等返回）、反结账（移除凭证恢复录入）
+公告管理          ✅ 列表（重要标记）/发布置顶/编辑回显/删除（upsert-notice/delete-notice 契约）
+规则启停          ✅ GR-01~12 规则列表（get-rule-config 契约）+ 启停（set-rule-enabled 强制幂等键）+ 状态持久化回读；云端 run-governance-rules 按 OrgSettings.ruleConfig 跳过被禁用规则
+报表聚合          ✅ get-report-stats 契约：收支月度趋势/风险分布/数据质量维度/项目状态/汇总指标
+错误处理          ✅ 统一 ErrorState 错误态 + 请求级错误映射（401/403/超时/业务码）+ X-Mock-Fail 错误注入验证
+```
+
+当前 Mock 冒烟共 **68 项断言全绿**（`pnpm smoke`，或直接 `node scripts/dev-smoke.ts`）。
+
+本地验证：`pnpm smoke`（68 项断言 ✅）、`pnpm typecheck` ✅、`pnpm lint`（0 error）✅、`pnpm test` ✅、`pnpm build` ✅。
+
 ### 下一步
 
-接入真实 AGC 网关（`VITE_API_BASE_URL`）替换 Mock，并按 `docs/业务API契约.md` / `docs/云数据契约.md` 对齐真实接口；云存储按 `docs/云存储安全策略.md` 配置安全规则与 `CLOUD_STORAGE_BUCKET` 环境变量；Web 与移动端/云端联调后完成三端验收。
+按 `docs/AGC部署联调.md` 接入真实 AGC 网关：云函数 HTTP 触发器域名填入 `VITE_API_BASE_URL`（`VITE_API_MODE=agc`），按部署清单部署 5 个新函数并同步 `OrgSettings.ruleConfig` 字段，走认证链（login-user → get-my-orgs → get-my-permissions）替换 Mock，按验收清单（403/幂等重试/correlationId 贯通/规则停用联动）完成三端联调；云存储按 `docs/云存储安全策略.md` 配置安全规则与 `CLOUD_STORAGE_BUCKET` 环境变量。
