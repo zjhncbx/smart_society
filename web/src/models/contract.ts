@@ -129,13 +129,17 @@ export interface DataQualitySnapshot {
 
 export interface AutomationRunLog {
   id: string;
+  orgId?: string;
   ruleId: string;
   ruleName: string;
+  triggerEventType?: string;
   status: 'success' | 'failed';
+  /** 动作计数（云侧以 JSON 字符串存储，endpoint 已解析为对象） */
   actions: Record<string, number>;
   runBy: string;
   runAt: string;
   durationMs: number;
+  errorMessage?: string;
   correlationId?: string;
 }
 
@@ -251,16 +255,15 @@ export interface FinanceStats {
   balance: number;
 }
 
+/** 治理规则（get-rule-config 契约：GR-01~12 静态定义 + 组织级启停状态） */
 export interface Rule {
   id: string;
-  ruleId: string;
-  ruleName: string;
-  category: 'project' | 'approval' | 'finance' | 'governance' | 'data-quality' | 'member' | 'org';
+  name: string;
+  category: string;
+  whenText: string;
+  ifText: string;
+  thenText: string;
   enabled: boolean;
-  trigger: string;
-  condition: string;
-  action: string;
-  description?: string;
 }
 
 export interface ReportData {
@@ -305,4 +308,169 @@ export interface EntityGraph {
   nodes: EntityGraphNode[];
   edges: EntityGraphEdge[];
   summary: Record<string, number>;
+}
+
+// ---- 设置中心 ----
+
+export interface OrgSettings {
+  orgId: string;
+  themeIndex: number;
+  /** 角色显示名映射（roleCode → 显示名）；云侧以 JSON 字符串存储，读取端解析 */
+  roleLabels: Record<string, string>;
+  dingtalk: {
+    configured: boolean;
+    lastSyncAt: number | null;
+    lastResult: string | null;
+    /** 凭证仅组织管理员可见 */
+    clientId?: string;
+    clientSecret?: string;
+  };
+}
+
+export interface RoleDef {
+  id: string;
+  code: string;
+  name: string;
+  builtin: boolean;
+  permissions: string[];
+  dataScope: string;
+  status: string;
+}
+
+export interface UserSettings {
+  nickname: string | null;
+  darkMode: boolean | null;
+}
+
+// ---- 治理对象（证照 / 合规事项 / 任期） ----
+
+export interface License {
+  id: string;
+  orgId: string;
+  code: string;
+  name: string;
+  licenseNo: string;
+  issuer: string;
+  issuedAt: string | null;
+  expireAt: string | null;
+  status: string;
+  ownerId: string;
+  ownerName: string;
+}
+
+export interface ComplianceItem {
+  id: string;
+  orgId: string;
+  code: string;
+  name: string;
+  itemType: string;
+  deadline: string | null;
+  status: string;
+  responsibleMemberId: string;
+  responsibleName: string;
+}
+
+export interface Term {
+  id: string;
+  orgId: string;
+  code: string;
+  title: string;
+  governanceBody: string;
+  startDate: string | null;
+  endDate: string | null;
+  status: string;
+}
+
+// ---- 财务扩展（审批流 / 期初余额 / 总账 / 结账） ----
+
+export interface ApprovalFlowNode {
+  id: string;
+  name: string;
+  type: 'approve' | 'handle' | 'cc';
+  roleIds?: string[];
+  userIds?: string[];
+}
+
+export interface ApprovalFlow {
+  id: string;
+  orgId: string;
+  name: string;
+  bizType: string;
+  /** 云侧以 JSON 字符串存储的 ApprovalFlowNode[] */
+  nodes: string;
+  enabled: boolean;
+  isDefault: boolean;
+}
+
+export interface OpeningBalance {
+  id?: string;
+  orgId: string;
+  year: string;
+  accountCode: string;
+  accountName: string;
+  debit: number;
+  credit: number;
+}
+
+export interface LedgerEntry {
+  date: string;
+  voucherNo: string;
+  summary: string;
+  debit: number;
+  credit: number;
+  runningDebit: number;
+  runningCredit: number;
+}
+
+export interface TrialBalanceRow {
+  code: string;
+  name: string;
+  category: string;
+  openDebit: number;
+  openCredit: number;
+  curDebit: number;
+  curCredit: number;
+  endDebit: number;
+  endCredit: number;
+}
+
+export interface AccountingReports {
+  year: string;
+  closingExists: boolean;
+  trialBalance: {
+    rows: TrialBalanceRow[];
+    totals: {
+      openDebit: number;
+      openCredit: number;
+      curDebit: number;
+      curCredit: number;
+      endDebit: number;
+      endCredit: number;
+    };
+  };
+}
+
+/** close-period 返回（三种分支：已结账 / 无可结转 / 结转成功） */
+export interface ClosePeriodResult {
+  alreadyClosed: boolean;
+  voucherId: string;
+  /** 结转成功分支返回 */
+  income?: number;
+  expense?: number;
+  entries?: number;
+  /** 本年度无已生效收支凭证分支 */
+  nothingToClose?: boolean;
+}
+
+// ---- 公告 ----
+
+export interface NoticeItem {
+  id: string;
+  orgId: string;
+  title: string;
+  content: string;
+  publisher: string;
+  publishTime: string;
+  isImportant: boolean;
+  status: string;
 }

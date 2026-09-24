@@ -128,13 +128,16 @@ export const dataQualitySnapshotSchema = z.object({
 
 export const automationRunLogSchema = z.object({
   id: z.string(),
+  orgId: z.string().optional(),
   ruleId: z.string(),
   ruleName: z.string(),
+  triggerEventType: z.string().optional(),
   status: z.enum(['success', 'failed']),
   actions: z.record(z.string(), z.number()),
   runBy: z.string(),
   runAt: z.string(),
   durationMs: z.number(),
+  errorMessage: z.string().optional(),
   correlationId: z.string().optional(),
 });
 
@@ -271,24 +274,15 @@ export const financeStatsSchema = z.object({
   balance: z.number(),
 });
 
+/** 治理规则（get-rule-config 契约：GR-01~12 静态定义 + 组织级启停状态） */
 export const ruleSchema = z.object({
   id: z.string(),
-  ruleId: z.string(),
-  ruleName: z.string(),
-  category: z.enum([
-    'project',
-    'approval',
-    'finance',
-    'governance',
-    'data-quality',
-    'member',
-    'org',
-  ]),
+  name: z.string(),
+  category: z.string(),
+  whenText: z.string(),
+  ifText: z.string(),
+  thenText: z.string(),
   enabled: z.boolean(),
-  trigger: z.string(),
-  condition: z.string(),
-  action: z.string(),
-  description: z.string().optional(),
 });
 
 export const reportDataSchema = z.object({
@@ -329,4 +323,157 @@ export const entityGraphSchema = z.object({
   nodes: z.array(z.object({ id: z.string(), type: z.string(), name: z.string() })),
   edges: z.array(z.object({ from: z.string(), to: z.string(), label: z.string() })),
   summary: z.record(z.string(), z.number()),
+});
+
+// ---- 设置中心（get/save-org-settings、get-roles/save-role、get/save-user-settings）----
+
+export const orgSettingsSchema = z.object({
+  orgId: z.string(),
+  themeIndex: z.number(),
+  /** 角色显示名映射（roleCode → 显示名），云侧以 JSON 字符串存储、读取时已解析 */
+  roleLabels: z.record(z.string(), z.string()),
+  dingtalk: z.object({
+    configured: z.boolean(),
+    lastSyncAt: z.number().nullable(),
+    lastResult: z.string().nullable(),
+    clientId: z.string().optional(),
+    clientSecret: z.string().optional(),
+  }),
+});
+
+export const roleSchema = z.object({
+  id: z.string(),
+  code: z.string(),
+  name: z.string(),
+  builtin: z.boolean(),
+  /** 权限码列表（云侧 JSON 字符串，读取端已解析） */
+  permissions: z.array(z.string()),
+  dataScope: z.string(),
+  status: z.string(),
+});
+
+export const userSettingsSchema = z.object({
+  nickname: z.string().nullable(),
+  darkMode: z.boolean().nullable(),
+});
+
+// ---- 治理对象（证照 / 合规事项 / 任期） ----
+
+export const licenseSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  code: z.string(),
+  name: z.string(),
+  licenseNo: z.string(),
+  issuer: z.string(),
+  issuedAt: z.string().nullable(),
+  expireAt: z.string().nullable(),
+  status: z.string(),
+  ownerId: z.string(),
+  ownerName: z.string(),
+});
+
+export const complianceItemSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  code: z.string(),
+  name: z.string(),
+  itemType: z.string(),
+  deadline: z.string().nullable(),
+  status: z.string(),
+  responsibleMemberId: z.string(),
+  responsibleName: z.string(),
+});
+
+export const termSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  code: z.string(),
+  title: z.string(),
+  governanceBody: z.string(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  status: z.string(),
+});
+
+// ---- 财务扩展 ----
+
+export const approvalFlowNodeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(['approve', 'handle', 'cc']),
+  roleIds: z.array(z.string()).optional(),
+  userIds: z.array(z.string()).optional(),
+});
+
+export const approvalFlowSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  name: z.string(),
+  bizType: z.string(),
+  /** 云侧以 JSON 字符串存储的节点数组 */
+  nodes: z.string(),
+  enabled: z.boolean(),
+  isDefault: z.boolean(),
+});
+
+export const openingBalanceSchema = z.object({
+  id: z.string().optional(),
+  orgId: z.string(),
+  year: z.string(),
+  accountCode: z.string(),
+  accountName: z.string(),
+  debit: z.number(),
+  credit: z.number(),
+});
+
+export const ledgerEntrySchema = z.object({
+  date: z.string(),
+  voucherNo: z.string(),
+  summary: z.string(),
+  debit: z.number(),
+  credit: z.number(),
+  runningDebit: z.number(),
+  runningCredit: z.number(),
+});
+
+export const trialBalanceRowSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  category: z.string(),
+  openDebit: z.number(),
+  openCredit: z.number(),
+  curDebit: z.number(),
+  curCredit: z.number(),
+  endDebit: z.number(),
+  endCredit: z.number(),
+});
+
+export const accountingReportsSchema = z.object({
+  year: z.string(),
+  closingExists: z.boolean(),
+  trialBalance: z.object({
+    rows: z.array(trialBalanceRowSchema),
+    totals: z.object({
+      openDebit: z.number(),
+      openCredit: z.number(),
+      curDebit: z.number(),
+      curCredit: z.number(),
+      endDebit: z.number(),
+      endCredit: z.number(),
+    }),
+  }),
+});
+
+// ---- 公告 ----
+
+export const noticeSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  title: z.string(),
+  content: z.string(),
+  publisher: z.string(),
+  publishTime: z.string(),
+  isImportant: z.boolean(),
+  status: z.string(),
 });

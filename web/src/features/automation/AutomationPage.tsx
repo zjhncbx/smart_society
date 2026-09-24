@@ -21,6 +21,7 @@ import { useState } from 'react';
 import { AutomationRunLog, Rule } from '@/models/contract';
 import { getAutomation, runRules } from '@/api/endpoints/automation';
 import { getRules, toggleRule } from '@/api/endpoints/rules';
+import { ErrorState } from '@/components/ErrorState';
 import { exportCsv } from '@/utils/exportCsv';
 
 const categoryLabel: Record<string, string> = {
@@ -36,7 +37,7 @@ const categoryLabel: Record<string, string> = {
 export function AutomationPage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const [detail, setDetail] = useState<Rule | null>(null);
-  const automation = useQuery({ queryKey: ['automation'], queryFn: getAutomation });
+  const automation = useQuery({ queryKey: ['automation'], queryFn: () => getAutomation({ pageSize: 50 }) });
   const rules = useQuery({ queryKey: ['rules'], queryFn: getRules });
   const run = useMutation({
     mutationFn: runRules,
@@ -44,11 +45,18 @@ export function AutomationPage(): React.JSX.Element {
       message.success('规则引擎运行完成');
       queryClient.invalidateQueries({ queryKey: ['automation'] });
     },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '规则引擎运行失败，请重试');
+    },
   });
   const toggle = useMutation({
-    mutationFn: (input: { id: string; enabled: boolean }) => toggleRule(input.id, input.enabled),
+    mutationFn: (input: { ruleId: string; enabled: boolean }) =>
+      toggleRule(input.ruleId, input.enabled),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rules'] });
+    },
+    onError: (error: Error) => {
+      message.error(error instanceof Error ? error.message : '规则启停失败，请重试');
     },
   });
 
@@ -63,7 +71,8 @@ export function AutomationPage(): React.JSX.Element {
     {
       title: '动作',
       dataIndex: 'actions',
-      render: (v: Record<string, number>) => Object.entries(v).map(([k, n]) => `${k}: ${n}`).join(' · '),
+      render: (v: Record<string, number>) =>
+        Object.entries(v).map(([k, n]) => `${k}: ${n}`).join(' · ') || '—',
     },
     { title: '耗时(ms)', dataIndex: 'durationMs', width: 110 },
     {
@@ -81,16 +90,16 @@ export function AutomationPage(): React.JSX.Element {
   ];
 
   const ruleColumns: ColumnsType<Rule> = [
-    { title: '规则', dataIndex: 'ruleName', render: (v: string, r) => `${r.ruleId} ${v}` },
+    { title: '规则', dataIndex: 'name', render: (v: string, r) => `${r.id} ${v}` },
     {
       title: '分类',
       dataIndex: 'category',
       width: 110,
       render: (v: string) => <Tag>{categoryLabel[v] ?? v}</Tag>,
     },
-    { title: '触发', dataIndex: 'trigger', width: 130 },
-    { title: '条件', dataIndex: 'condition', ellipsis: true },
-    { title: '动作', dataIndex: 'action', ellipsis: true },
+    { title: '触发', dataIndex: 'whenText', width: 200, ellipsis: true },
+    { title: '条件', dataIndex: 'ifText', ellipsis: true },
+    { title: '动作', dataIndex: 'thenText', ellipsis: true },
     {
       title: '启用',
       dataIndex: 'enabled',
@@ -99,7 +108,8 @@ export function AutomationPage(): React.JSX.Element {
         <Switch
           size="small"
           checked={v}
-          onChange={(checked) => toggle.mutate({ id: r.id, enabled: checked })}
+          loading={toggle.isPending && toggle.variables?.ruleId === r.id}
+          onChange={(checked) => toggle.mutate({ ruleId: r.id, enabled: checked })}
         />
       ),
     },
@@ -114,9 +124,14 @@ export function AutomationPage(): React.JSX.Element {
     },
   ];
 
-  const counts = automation.data?.counts;
+  /** 运行统计从日志页数据计算（get-automation-logs 不再返回 counts） */
+  const logs = automation.data?.logs ?? [];
+  const today = new Date().toISOString().slice(0, 10);
+  const todayRuns = logs.filter((l) => l.runAt.slice(0, 10) === today).length;
+  const failedRuns = logs.filter((l) => l.status === 'failed').length;
+  const successRate = logs.length > 0 ? Math.round(((logs.length - failedRuns) / logs.length) * 100) : 0;
+
   const exportLogs = () => {
-    const logs = automation.data?.logs ?? [];
     exportCsv(
       `自动化运行记录-${new Date().toISOString().slice(0, 10)}.csv`,
       ['规则', '状态', '耗时(ms)', '运行时间', '关联ID'],
@@ -133,32 +148,34 @@ export function AutomationPage(): React.JSX.Element {
             {
               key: 'monitor',
               label: '运行监控',
-              children: (
+              children: automation.isError ? (
+                <ErrorState onRetry={() => void automation.refetch()} />
+              ) : (
                 <>
                   <Row gutter={16} style={{ marginBottom: 16 }}>
                     <Col span={4}>
                       <Card>
-                        <Statistic title="今日执行" value={counts?.todayRuns ?? '—'} loading={automation.isLoading} />
+                        <Statistic title="今日执行" value={automation.isLoading ? '—' : todayRuns} />
                       </Card>
                     </Col>
                     <Col span={4}>
                       <Card>
-                        <Statistic title="成功率" value={counts?.successRate ?? '—'} suffix="%" valueStyle={{ color: '#3f8600' }} />
+                        <Statistic title="成功率" value={successRate} suffix="%" valueStyle={{ color: '#3f8600' }} />
                       </Card>
                     </Col>
                     <Col span={4}>
                       <Card>
-                        <Statistic title="失败" value={counts?.failed ?? '—'} valueStyle={{ color: '#cf1322' }} />
+                        <Statistic title="失败" value={failedRuns} valueStyle={{ color: '#cf1322' }} />
                       </Card>
                     </Col>
                     <Col span={4}>
                       <Card>
-                        <Statistic title="重试" value={counts?.retries ?? '—'} />
+                        <Statistic title="总记录" value={automation.data?.total ?? '—'} />
                       </Card>
                     </Col>
                     <Col span={4}>
                       <Card>
-                        <Statistic title="卡住流程" value={counts?.blocked ?? '—'} valueStyle={{ color: '#d46b08' }} />
+                        <Statistic title="更多页" value={automation.data?.hasMore ? '有' : '无'} />
                       </Card>
                     </Col>
                     <Col span={4}>
@@ -179,7 +196,7 @@ export function AutomationPage(): React.JSX.Element {
                     rowKey="id"
                     size="small"
                     loading={automation.isLoading}
-                    dataSource={automation.data?.logs ?? []}
+                    dataSource={logs}
                     columns={logColumns}
                     pagination={false}
                   />
@@ -189,7 +206,9 @@ export function AutomationPage(): React.JSX.Element {
             {
               key: 'rules',
               label: `规则管理（${rules.data?.rules.length ?? 0}）`,
-              children: (
+              children: rules.isError ? (
+                <ErrorState onRetry={() => void rules.refetch()} />
+              ) : (
                 <Table<Rule>
                   rowKey="id"
                   size="small"
@@ -204,21 +223,20 @@ export function AutomationPage(): React.JSX.Element {
         />
       </Card>
       <Drawer
-        title={`规则详情：${detail?.ruleId ?? ''}`}
+        title={`规则详情：${detail?.id ?? ''}`}
         open={detail != null}
         onClose={() => setDetail(null)}
-        width={420}
+        width={480}
       >
         {detail && (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="规则ID">{detail.ruleId}</Descriptions.Item>
-            <Descriptions.Item label="名称">{detail.ruleName}</Descriptions.Item>
+            <Descriptions.Item label="规则ID">{detail.id}</Descriptions.Item>
+            <Descriptions.Item label="名称">{detail.name}</Descriptions.Item>
             <Descriptions.Item label="分类">{categoryLabel[detail.category] ?? detail.category}</Descriptions.Item>
             <Descriptions.Item label="状态">{detail.enabled ? '已启用' : '已停用'}</Descriptions.Item>
-            <Descriptions.Item label="触发">{detail.trigger}</Descriptions.Item>
-            <Descriptions.Item label="条件">{detail.condition}</Descriptions.Item>
-            <Descriptions.Item label="动作">{detail.action}</Descriptions.Item>
-            {detail.description && <Descriptions.Item label="说明">{detail.description}</Descriptions.Item>}
+            <Descriptions.Item label="触发（When）">{detail.whenText}</Descriptions.Item>
+            <Descriptions.Item label="条件（If）">{detail.ifText}</Descriptions.Item>
+            <Descriptions.Item label="动作（Then）">{detail.thenText}</Descriptions.Item>
           </Descriptions>
         )}
       </Drawer>

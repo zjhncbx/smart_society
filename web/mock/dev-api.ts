@@ -55,6 +55,54 @@ interface MockDocument {
 const now = Date.now();
 const iso = (offsetMs: number): string => new Date(now + offsetMs).toISOString();
 
+/** org_mock_2（演示志愿者团队）独立工作项数据集：验证组织切换后数据按 orgId 隔离刷新 */
+const workItemsOrg2: MockWorkItem[] = [
+  {
+    id: 'wi_org2_1',
+    orgId: 'org_mock_2',
+    workItemType: 'auto_task',
+    originType: 'rule',
+    originId: 'rule_org2_1',
+    title: '志愿者值班表更新',
+    description: '本周值班表需要更新并同步全体志愿者',
+    ownerId: 'u_demo_1',
+    ownerName: '张三',
+    priority: 'medium',
+    status: 'open',
+    deadline: iso(3 * 86400000).slice(0, 10),
+    slaDeadline: iso(2 * 86400000),
+    escalationLevel: 0,
+    completionCondition: '值班表已更新并通知全员',
+    sourceRuleId: 'GR-ORG2-01',
+    sourceRuleName: '值班表周期检查',
+    correlationId: 'c_org2_1',
+    createdAt: iso(-86400000),
+    updatedAt: iso(-3600000),
+  },
+  {
+    id: 'wi_org2_2',
+    orgId: 'org_mock_2',
+    workItemType: 'compliance',
+    originType: 'rule',
+    originId: 'rule_org2_2',
+    title: '志愿活动保险到期提醒',
+    description: '团体意外险即将到期，需联系保险公司续保',
+    ownerId: 'u_demo_1',
+    ownerName: '张三',
+    priority: 'high',
+    status: 'open',
+    deadline: iso(5 * 86400000).slice(0, 10),
+    slaDeadline: iso(4 * 86400000),
+    escalationLevel: 0,
+    completionCondition: '保险续保完成',
+    sourceRuleId: 'GR-ORG2-02',
+    sourceRuleName: '保险到期预警',
+    correlationId: 'c_org2_2',
+    createdAt: iso(-2 * 86400000),
+    updatedAt: iso(-86400000),
+  },
+];
+
 const workItems: MockWorkItem[] = [
   {
     id: 'wi_demo_approval_1',
@@ -739,99 +787,91 @@ const financeRecords = [
   },
 ];
 
-const rules = [
+/** 治理规则静态定义（与云函数 get-rule-config 的 GR-01~12 完全一致） */
+const RULE_DEFS: Array<{
+  id: string;
+  name: string;
+  category: string;
+  whenText: string;
+  ifText: string;
+  thenText: string;
+}> = [
   {
-    id: 'rule_GR-01',
-    ruleId: 'GR-01',
-    ruleName: '任务逾期自动升级',
-    category: 'project',
-    enabled: true,
-    trigger: '任务逾期',
-    condition: '逾期 >= 7 天升级，>= 14 天进入风险',
-    action: '升级自动任务并生成风险',
-    description: '按逾期天数自动升级并通知负责人。',
+    id: 'GR-01', name: '任务逾期自动升级', category: 'project',
+    whenText: '项目任务设置了截止日期',
+    ifText: '任务超过截止日期未完成（逾期 7 天预警、14 天升级为风险）',
+    thenText: '生成自动任务，并按逾期天数升级优先级与风险等级',
   },
   {
-    id: 'rule_GR-02',
-    ruleId: 'GR-02',
-    ruleName: '项目进度偏差',
-    category: 'project',
-    enabled: true,
-    trigger: '项目进度更新',
-    condition: '执行时间占比 > 60% 且完成率 < 40%',
-    action: '生成进度落后预警',
+    id: 'GR-02', name: '项目进度偏差', category: 'project',
+    whenText: '项目处于未完结状态',
+    ifText: '已超过计划结束日期，或时间进度过半（60%）而完成率不足 40%',
+    thenText: '登记风险/预警并生成项目处理任务',
   },
   {
-    id: 'rule_GR-03',
-    ruleId: 'GR-03',
-    ruleName: '审批SLA超时',
-    category: 'approval',
-    enabled: true,
-    trigger: '审批停留',
-    condition: '停留 >= 3 天预警，>= 7 天风险',
-    action: '生成审批阻塞预警/风险',
+    id: 'GR-03', name: '审批SLA超时', category: 'approval',
+    whenText: '审批流程处于运行中',
+    ifText: '审批停留超过 3 天未处理',
+    thenText: '登记预警，停留 7 天以上升级为风险',
   },
   {
-    id: 'rule_GR-04',
-    ruleId: 'GR-04',
-    ruleName: '数据质量自动任务',
-    category: 'data-quality',
-    enabled: true,
-    trigger: '数据质量检查',
-    condition: '存在 open 的中/高严重度问题',
-    action: '自动生成修复任务',
+    id: 'GR-04', name: '数据质量自动任务', category: 'data-quality',
+    whenText: '数据质量检查发现问题',
+    ifText: '问题严重级别为 medium/high 且未关闭',
+    thenText: '自动生成修复任务并指派给问题责任人',
   },
   {
-    id: 'rule_GR-05',
-    ruleId: 'GR-05',
-    ruleName: '预算执行异常',
-    category: 'finance',
-    enabled: true,
-    trigger: '财务记录更新',
-    condition: '项目支出 > 预算',
-    action: '生成预算超支预警',
+    id: 'GR-05', name: '预算执行异常', category: 'finance',
+    whenText: '项目设置了预算',
+    ifText: '已批准支出累计超过项目预算',
+    thenText: '登记财务异常预警并生成预算处理任务',
   },
   {
-    id: 'rule_GR-06',
-    ruleId: 'GR-06',
-    ruleName: '关键治理职位空缺',
-    category: 'governance',
-    enabled: true,
-    trigger: '成员任职变化',
-    condition: '关键职位（会长/秘书长/监事长）无在职',
-    action: '生成职位空缺风险',
+    id: 'GR-06', name: '关键治理职位空缺', category: 'org',
+    whenText: '组织类型定义了关键治理职位（会长/秘书长/监事长等）',
+    ifText: '关键职位当前无在职成员',
+    thenText: '登记高风险并生成任职安排任务',
   },
   {
-    id: 'rule_DQ-001',
-    ruleId: 'DQ-001',
-    ruleName: '成员必填缺失',
-    category: 'data-quality',
-    enabled: true,
-    trigger: '数据质量检查',
-    condition: '姓名/联系方式缺失',
-    action: '登记数据问题',
+    id: 'GR-07', name: '审批驳回异常', category: 'approval',
+    whenText: '审批流程存在处理历史',
+    ifText: '同一流程被驳回 2 次及以上',
+    thenText: '登记预警并生成整改任务给发起人',
   },
   {
-    id: 'rule_DQ-007',
-    ruleId: 'DQ-007',
-    ruleName: '任务逾期未完成',
-    category: 'project',
-    enabled: true,
-    trigger: '数据质量检查',
-    condition: '任务逾期且未完成',
-    action: '登记数据问题',
+    id: 'GR-08', name: '项目长时间未更新', category: 'project',
+    whenText: '项目未完结',
+    ifText: '项目超过 60 天未更新',
+    thenText: '登记预警并生成进度更新任务给项目负责人',
   },
   {
-    id: 'rule_DQ-010',
-    ruleId: 'DQ-010',
-    ruleName: '预算执行异常',
-    category: 'finance',
-    enabled: true,
-    trigger: '数据质量检查',
-    condition: '项目支出超过预算',
-    action: '登记财务异常问题',
+    id: 'GR-09', name: '决议逾期未执行', category: 'governance',
+    whenText: '决议未完成',
+    ifText: '决议超过截止日期仍未执行',
+    thenText: '登记预警并生成推进任务给责任人',
+  },
+  {
+    id: 'GR-10', name: '证照到期提醒', category: 'governance',
+    whenText: '证照未过期且未删除',
+    ifText: '距到期日 ≤90/30 天或已过期',
+    thenText: '分级登记预警并生成续期任务',
+  },
+  {
+    id: 'GR-11', name: '任期届满提醒', category: 'governance',
+    whenText: '任期未归档',
+    ifText: '距届满日 ≤180/90/30 天或已届满',
+    thenText: '分级登记预警并生成换届准备任务',
+  },
+  {
+    id: 'GR-12', name: '合规事项逾期', category: 'governance',
+    whenText: '合规事项未完成',
+    ifText: '超过截止日期未完成',
+    thenText: '登记预警并生成完成整改任务',
   },
 ];
+
+/** 组织级停用规则集合（set-rule-enabled 写入，get-rule-config 读取） */
+const disabledRules = new Set<string>();
 
 function json(res: ServerResponse, data: unknown, code = 0, message = 'ok'): void {
   res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -846,6 +886,382 @@ export const mockMyOrgs: Array<{ orgId: string; name: string; role: string }> = 
   { orgId: 'org_mock', name: '演示社会组织', role: 'admin' },
   { orgId: 'org_mock_2', name: '演示志愿者团队', role: 'admin' },
 ];
+
+/** 设置中心 Mock 状态（与云函数 get/save-org-settings、get-roles/save-role、get/save-user-settings 契约一致） */
+const orgSettingsState = {
+  themeIndex: 0,
+  roleLabels: {
+    chairman: '会长',
+    secretary_general: '秘书长',
+    finance_lead: '财务负责人',
+    director: '理事',
+    supervisor: '监事',
+  } as Record<string, string>,
+  dingtalkClientId: '',
+  dingtalkClientSecret: '',
+  dingtalkLastSyncAt: null as number | null,
+  dingtalkLastResult: null as string | null,
+};
+
+const roleState: Array<{
+  id: string;
+  code: string;
+  name: string;
+  builtin: boolean;
+  permissions: string[];
+  dataScope: string;
+  status: string;
+}> = [
+  {
+    id: 'role_org_mock_org_admin',
+    code: 'org_admin',
+    name: '组织管理员',
+    builtin: true,
+    permissions: ['*'],
+    dataScope: 'org',
+    status: 'active',
+  },
+  {
+    id: 'role_org_mock_finance_lead',
+    code: 'finance_lead',
+    name: '财务负责人',
+    builtin: true,
+    permissions: ['finance:read', 'finance:write', 'approval:act'],
+    dataScope: 'org',
+    status: 'active',
+  },
+  {
+    id: 'role_org_mock_member',
+    code: 'member',
+    name: '会员',
+    builtin: true,
+    permissions: ['project:read'],
+    dataScope: 'self',
+    status: 'active',
+  },
+];
+
+const userSettingsState = { nickname: '', darkMode: false };
+
+/** 治理对象 Mock 状态（与云函数 get/save/act-license、get/save/act-compliance-item、get/save/act-term 契约一致） */
+const licenseState: Array<{
+  id: string;
+  orgId: string;
+  code: string;
+  name: string;
+  licenseNo: string;
+  issuer: string;
+  issuedAt: string | null;
+  expireAt: string | null;
+  status: string;
+  ownerId: string;
+  ownerName: string;
+}> = [
+  {
+    id: 'lic_mock_1',
+    orgId: 'org_mock',
+    code: 'LIC-2025-0001',
+    name: '社会团体法人登记证书',
+    licenseNo: '社证字第0001号',
+    issuer: '市民政局',
+    issuedAt: '2025-01-10T00:00:00.000Z',
+    expireAt: '2029-01-09T00:00:00.000Z',
+    status: 'active',
+    ownerId: 'u1',
+    ownerName: '张管理',
+  },
+  {
+    id: 'lic_mock_2',
+    orgId: 'org_mock',
+    code: 'LIC-2026-0002',
+    name: '餐饮服务许可证',
+    licenseNo: '餐证字第0002号',
+    issuer: '市市场监管局',
+    issuedAt: '2023-06-01T00:00:00.000Z',
+    // 到期数据样例：30 天内到期，前端到期列高亮
+    expireAt: new Date(Date.now() + 20 * 24 * 3600 * 1000).toISOString(),
+    status: 'active',
+    ownerId: 'u1',
+    ownerName: '张管理',
+  },
+  {
+    id: 'lic_mock_3',
+    orgId: 'org_mock',
+    code: 'LIC-2021-0003',
+    name: '消防验收合格证',
+    licenseNo: '消验字第0003号',
+    issuer: '市消防救援支队',
+    issuedAt: '2021-03-15T00:00:00.000Z',
+    expireAt: '2025-03-14T00:00:00.000Z',
+    status: 'expired',
+    ownerId: 'u2',
+    ownerName: '李理事',
+  },
+];
+
+const complianceState: Array<{
+  id: string;
+  orgId: string;
+  code: string;
+  name: string;
+  itemType: string;
+  deadline: string | null;
+  status: string;
+  responsibleMemberId: string;
+  responsibleName: string;
+}> = [
+  {
+    id: 'comp_mock_1',
+    orgId: 'org_mock',
+    code: 'CMP-2026-0001',
+    name: '年度工作报告报送',
+    itemType: 'report',
+    deadline: new Date(Date.now() + 45 * 24 * 3600 * 1000).toISOString(),
+    status: 'pending',
+    responsibleMemberId: 'u1',
+    responsibleName: '张管理',
+  },
+  {
+    id: 'comp_mock_2',
+    orgId: 'org_mock',
+    code: 'CMP-2025-0002',
+    name: '年检资料补交',
+    itemType: 'inspection',
+    // 逾期数据样例：截止日已过但未完成
+    deadline: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(),
+    status: 'executing',
+    responsibleMemberId: 'u2',
+    responsibleName: '李理事',
+  },
+  {
+    id: 'comp_mock_3',
+    orgId: 'org_mock',
+    code: 'CMP-2025-0003',
+    name: '税务申报',
+    itemType: 'tax',
+    deadline: '2025-12-15T00:00:00.000Z',
+    status: 'done',
+    responsibleMemberId: 'u3',
+    responsibleName: '王财务',
+  },
+];
+
+const termState: Array<{
+  id: string;
+  orgId: string;
+  code: string;
+  title: string;
+  governanceBody: string;
+  startDate: string | null;
+  endDate: string | null;
+  status: string;
+}> = [
+  {
+    id: 'term_mock_1',
+    orgId: 'org_mock',
+    code: 'TERM-2024-01',
+    title: '第三届理事会（2024-2028）',
+    governanceBody: '理事会',
+    startDate: '2024-06-01T00:00:00.000Z',
+    endDate: '2028-05-31T00:00:00.000Z',
+    status: 'active',
+  },
+  {
+    id: 'term_mock_2',
+    orgId: 'org_mock',
+    code: 'TERM-2020-01',
+    title: '第二届理事会（2020-2024）',
+    governanceBody: '理事会',
+    startDate: '2020-06-01T00:00:00.000Z',
+    endDate: '2024-05-31T00:00:00.000Z',
+    status: 'archived',
+  },
+  {
+    id: 'term_mock_3',
+    orgId: 'org_mock',
+    code: 'TERM-2026-01',
+    title: '第三届监事会（2026-2030）',
+    governanceBody: '监事会',
+    startDate: '2026-01-01T00:00:00.000Z',
+    endDate: '2030-12-31T00:00:00.000Z',
+    status: 'preparing',
+  },
+];
+
+/** 财务扩展 Mock 状态（与云函数 get/save-approval-flow、get/save-opening-balances、get-ledger、close/unclose-period 契约一致） */
+const approvalFlowState: Array<{
+  id: string;
+  orgId: string;
+  name: string;
+  bizType: string;
+  nodes: string;
+  enabled: boolean;
+  isDefault: boolean;
+}> = [
+  {
+    id: 'flow_mock_1',
+    orgId: 'org_mock',
+    name: '财务报销默认审批流',
+    bizType: 'finance',
+    nodes: JSON.stringify([
+      { id: 'n1', name: '财务初审', type: 'approve', roleIds: ['finance_lead'] },
+      { id: 'n2', name: '管理员终审', type: 'approve', roleIds: ['org_admin'] },
+      { id: 'n3', name: '出纳付款', type: 'handle', roleIds: ['finance_lead'] },
+      { id: 'n4', name: '抄送秘书处', type: 'cc', roleIds: ['secretary_general'] },
+    ]),
+    enabled: true,
+    isDefault: true,
+  },
+  {
+    id: 'flow_mock_2',
+    orgId: 'org_mock',
+    name: '大额支出审批流',
+    bizType: 'finance',
+    nodes: JSON.stringify([
+      { id: 'n1', name: '秘书长审核', type: 'approve', roleIds: ['secretary_general'] },
+      { id: 'n2', name: '会长审批', type: 'approve', roleIds: ['chairman'] },
+    ]),
+    enabled: false,
+    isDefault: false,
+  },
+];
+
+const openingBalanceState: Array<{
+  id: string;
+  orgId: string;
+  year: string;
+  accountCode: string;
+  accountName: string;
+  debit: number;
+  credit: number;
+}> = [
+  { id: 'ob_org_mock_2026_1001', orgId: 'org_mock', year: '2026', accountCode: '1001', accountName: '现金', debit: 5000, credit: 0 },
+  { id: 'ob_org_mock_2026_1002', orgId: 'org_mock', year: '2026', accountCode: '1002', accountName: '银行存款', debit: 50000, credit: 0 },
+  { id: 'ob_org_mock_2026_3101', orgId: 'org_mock', year: '2026', accountCode: '3101', accountName: '非限定性净资产', debit: 0, credit: 55000 },
+];
+
+/** 期末结账 Mock 状态：某年度一旦结账即生成结转记录（income/expense 为当年已生效收支合计） */
+const closingState: Array<{ voucherId: string; year: string; income: number; expense: number }> = [];
+
+/** 与云函数 get-ledger / get-accounting-reports 一致的内置科目表 */
+const ACCOUNTS: Array<{ code: string; name: string; category: string }> = [
+  { code: '1001', name: '现金', category: '资产' },
+  { code: '1002', name: '银行存款', category: '资产' },
+  { code: '1101', name: '短期投资', category: '资产' },
+  { code: '1201', name: '应收款项', category: '资产' },
+  { code: '1301', name: '存货', category: '资产' },
+  { code: '1401', name: '待摊费用', category: '资产' },
+  { code: '1501', name: '长期股权投资', category: '资产' },
+  { code: '1502', name: '长期债权投资', category: '资产' },
+  { code: '1601', name: '固定资产', category: '资产' },
+  { code: '1602', name: '累计折旧', category: '资产' },
+  { code: '1701', name: '无形资产', category: '资产' },
+  { code: '1801', name: '受托代理资产', category: '资产' },
+  { code: '2101', name: '借入款项', category: '负债' },
+  { code: '2201', name: '应付款项', category: '负债' },
+  { code: '2301', name: '应付工资', category: '负债' },
+  { code: '2302', name: '应交税金', category: '负债' },
+  { code: '2401', name: '预收账款', category: '负债' },
+  { code: '2501', name: '预提费用', category: '负债' },
+  { code: '2601', name: '预计负债', category: '负债' },
+  { code: '2701', name: '长期应付款', category: '负债' },
+  { code: '2801', name: '受托代理负债', category: '负债' },
+  { code: '3101', name: '非限定性净资产', category: '净资产' },
+  { code: '3201', name: '限定性净资产', category: '净资产' },
+  { code: '4101', name: '捐赠收入', category: '收入' },
+  { code: '4102', name: '会费收入', category: '收入' },
+  { code: '4103', name: '提供服务收入', category: '收入' },
+  { code: '4104', name: '政府补助收入', category: '收入' },
+  { code: '4105', name: '投资收益', category: '收入' },
+  { code: '4106', name: '商品销售收入', category: '收入' },
+  { code: '4109', name: '其他收入', category: '收入' },
+  { code: '5101', name: '业务活动成本', category: '费用' },
+  { code: '5201', name: '管理费用', category: '费用' },
+  { code: '5301', name: '筹资费用', category: '费用' },
+  { code: '5401', name: '其他费用', category: '费用' },
+];
+
+/** 公告 Mock 状态（与云函数 upsert-notice/delete-notice/get-all-data(Notice) 契约一致） */
+const noticeState: Array<{
+  id: string;
+  orgId: string;
+  title: string;
+  content: string;
+  publisher: string;
+  publishTime: string;
+  isImportant: boolean;
+  status: string;
+}> = [
+  {
+    id: 'n_mock_1',
+    orgId: 'org_mock',
+    title: '关于召开 2026 年度会员大会的通知',
+    content: '定于 2026 年 11 月 8 日召开年度会员大会，请各位会员准时出席。',
+    publisher: '秘书处',
+    publishTime: iso(-2 * 86400000),
+    isImportant: true,
+    status: 'active',
+  },
+  {
+    id: 'n_mock_2',
+    orgId: 'org_mock',
+    title: '会费缴纳通道已开启',
+    content: '2026 年度会费线上缴纳通道已开启，请于 10 月底前完成缴纳。',
+    publisher: '财务部',
+    publishTime: iso(-9 * 86400000),
+    isImportant: false,
+    status: 'active',
+  },
+  {
+    id: 'n_mock_3',
+    orgId: 'org_mock',
+    title: '数据治理专项工作组招募成员',
+    content: '为推进数据质量专项治理，现招募工作组成员，欢迎报名。',
+    publisher: '秘书处',
+    publishTime: iso(-21 * 86400000),
+    isImportant: false,
+    status: 'active',
+  },
+];
+
+interface MockLedgerEntry {
+  account: string;
+  debit: number;
+  credit: number;
+  date: string;
+  voucherNo: string;
+  summary: string;
+}
+
+/** 已生效收支凭证 → 复式分录（income: 借 1002 / 贷 4102；expense: 借 5201 / 贷 1002），结账后追加结转分录 */
+function approvedEntriesForYear(year: string): MockLedgerEntry[] {
+  const entries: MockLedgerEntry[] = [];
+  for (const r of financeRecords) {
+    if (r.status !== 'approved' || !r.date.startsWith(year)) continue;
+    const base = { date: r.date, voucherNo: r.id, summary: r.summary };
+    if (r.type === 'income') {
+      entries.push({ account: '1002', debit: r.amount, credit: 0, ...base });
+      entries.push({ account: '4102', debit: 0, credit: r.amount, ...base });
+    } else {
+      entries.push({ account: '5201', debit: r.amount, credit: 0, ...base });
+      entries.push({ account: '1002', debit: 0, credit: r.amount, ...base });
+    }
+  }
+  const closing = closingState.find((c) => c.year === year);
+  if (closing) {
+    if (closing.income > 0) {
+      const base = { date: `${year}-12-31`, voucherNo: `结-${year}`, summary: `期末结转${year}年度收入` };
+      entries.push({ account: '4102', debit: closing.income, credit: 0, ...base });
+      entries.push({ account: '3101', debit: 0, credit: closing.income, ...base });
+    }
+    if (closing.expense > 0) {
+      const base = { date: `${year}-12-31`, voucherNo: `结-${year}`, summary: `期末结转${year}年度费用` };
+      entries.push({ account: '3101', debit: closing.expense, credit: 0, ...base });
+      entries.push({ account: '5201', debit: 0, credit: closing.expense, ...base });
+    }
+  }
+  return entries;
+}
 
 function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve) => {
@@ -887,6 +1303,23 @@ function posture() {
         .slice(0, 2)
         .map((i) => ({ level: 'data' as const, text: `${i.ruleName}：${i.entityName}` })),
     ],
+  };
+}
+
+/** org_mock_2 独立态势：仅有本组织工作项，无风险/数据问题（验证组织切换数据隔离） */
+function postureOrg2() {
+  const openItems = workItemsOrg2.filter((w) => w.status === 'open');
+  return {
+    status: '正常',
+    pendingCount: openItems.length,
+    riskCount: 0,
+    warningCount: 0,
+    dqOpenCount: 0,
+    escalatedCount: openItems.filter((w) => w.escalationLevel > 0).length,
+    topConcerns: openItems.slice(0, 2).map((w) => ({
+      level: 'warning' as const,
+      text: w.title,
+    })),
   };
 }
 
@@ -943,6 +1376,38 @@ export async function handleApi(
   const page = Number(body.page ?? 0);
   const pageSize = Number(body.pageSize ?? 20);
 
+  // ---- 认证链（与云函数 login-user / get-my-orgs 契约一致）----
+  if (path === '/auth/login') {
+    const account = String(body.account ?? '');
+    const password = String(body.password ?? '');
+    if (account !== '13800000000' || password !== 'admin123') {
+      json(res, null, -1, '账号或密码错误');
+      return;
+    }
+    json(res, {
+      userId: 'u_demo_1',
+      displayName: '张三',
+      phone: '13800000000',
+      email: 'admin@demo.org',
+    });
+    return;
+  }
+  if (path === '/orgs/mine') {
+    const userId = String(body.userId ?? 'u_demo_1');
+    json(
+      res,
+      mockMyOrgs.map((o) => ({
+        orgId: o.orgId,
+        name: o.name,
+        userRole: o.role,
+        role: o.role,
+        joinedAt: `${new Date().getFullYear()}-01-01`,
+        userId,
+      })),
+    );
+    return;
+  }
+
   if (path === '/permissions/mine') {
     json(res, {
       roleId: 'org_admin',
@@ -953,12 +1418,576 @@ export async function handleApi(
     });
     return;
   }
+
+  // ---- 设置中心 ----
+  if (path === '/settings/org') {
+    json(res, {
+      orgId: 'org_mock',
+      themeIndex: orgSettingsState.themeIndex,
+      roleLabels: orgSettingsState.roleLabels,
+      dingtalk: {
+        configured: Boolean(orgSettingsState.dingtalkClientId && orgSettingsState.dingtalkClientSecret),
+        lastSyncAt: orgSettingsState.dingtalkLastSyncAt,
+        lastResult: orgSettingsState.dingtalkLastResult,
+        clientId: orgSettingsState.dingtalkClientId,
+        clientSecret: orgSettingsState.dingtalkClientSecret,
+      },
+    });
+    return;
+  }
+  if (path === '/settings/org/save') {
+    if (body.themeIndex !== undefined) orgSettingsState.themeIndex = Number(body.themeIndex) || 0;
+    if (body.roleLabels !== undefined && body.roleLabels !== null && typeof body.roleLabels === 'object') {
+      orgSettingsState.roleLabels = { ...(body.roleLabels as Record<string, string>) };
+    }
+    if (body.dingtalkClientId !== undefined) {
+      orgSettingsState.dingtalkClientId = String(body.dingtalkClientId ?? '');
+    }
+    if (body.dingtalkClientSecret !== undefined) {
+      orgSettingsState.dingtalkClientSecret = String(body.dingtalkClientSecret ?? '');
+    }
+    orgSettingsState.dingtalkLastSyncAt = Date.now();
+    orgSettingsState.dingtalkLastResult = 'ok';
+    json(res, { ok: true });
+    return;
+  }
+  if (path === '/settings/roles') {
+    json(res, {
+      roles: roleState,
+      builtins: ['org_admin', 'chairman', 'secretary_general', 'finance_lead', 'director', 'supervisor'],
+    });
+    return;
+  }
+  if (path === '/settings/roles/save') {
+    const roleId = String(body.roleId ?? '');
+    if (!roleId || !body.name) {
+      json(res, null, -1, '缺少 roleId/name 参数');
+      return;
+    }
+    const existing = roleState.find((r) => r.code === roleId);
+    if (existing) {
+      existing.name = String(body.name);
+      if (Array.isArray(body.permissions)) existing.permissions = [...(body.permissions as string[])];
+      if (body.dataScope !== undefined) existing.dataScope = String(body.dataScope);
+      json(res, { id: existing.id });
+    } else {
+      const id = `role_org_mock_${roleId}`;
+      roleState.push({
+        id,
+        code: roleId,
+        name: String(body.name),
+        builtin: false,
+        permissions: Array.isArray(body.permissions) ? [...(body.permissions as string[])] : [],
+        dataScope: String(body.dataScope ?? 'org'),
+        status: 'active',
+      });
+      json(res, { id });
+    }
+    return;
+  }
+  if (path === '/settings/user') {
+    json(res, {
+      nickname: userSettingsState.nickname || null,
+      darkMode: userSettingsState.darkMode,
+    });
+    return;
+  }
+  if (path === '/settings/user/save') {
+    if (body.nickname !== undefined) userSettingsState.nickname = String(body.nickname ?? '');
+    if (body.darkMode !== undefined) userSettingsState.darkMode = body.darkMode === true;
+    json(res, { ok: true });
+    return;
+  }
+
+  // ---- 治理对象：证照 / 合规事项 / 任期 ----
+  if (path === '/governance/licenses') {
+    const filtered = licenseState.filter((l) => !body.status || l.status === body.status);
+    const licenses = filtered.slice(page * pageSize, (page + 1) * pageSize);
+    json(res, {
+      licenses,
+      total: filtered.length,
+      hasMore: (page + 1) * pageSize < filtered.length,
+    });
+    return;
+  }
+  if (path === '/governance/licenses/save') {
+    const name = String(body.name ?? '').trim();
+    if (!name) {
+      json(res, null, -1, '缺少 orgId/userId/name 参数');
+      return;
+    }
+    const id = String(body.id ?? '');
+    const existing = id ? licenseState.find((l) => l.id === id) : undefined;
+    if (existing) {
+      existing.name = name;
+      existing.licenseNo = String(body.licenseNo ?? existing.licenseNo);
+      existing.issuer = String(body.issuer ?? existing.issuer);
+      if (body.issuedAt !== undefined) existing.issuedAt = body.issuedAt ? String(body.issuedAt) : null;
+      if (body.expireAt !== undefined) existing.expireAt = body.expireAt ? String(body.expireAt) : null;
+      json(res, { id: existing.id, code: existing.code, status: existing.status });
+    } else {
+      const newId = `lic_mock_${Date.now()}`;
+      const now = new Date();
+      licenseState.unshift({
+        id: newId,
+        orgId: 'org_mock',
+        code: `LIC-${now.getFullYear()}-${String(now.getTime()).slice(-4)}`,
+        name,
+        licenseNo: String(body.licenseNo ?? ''),
+        issuer: String(body.issuer ?? ''),
+        issuedAt: body.issuedAt ? String(body.issuedAt) : null,
+        expireAt: body.expireAt ? String(body.expireAt) : null,
+        status: 'active',
+        ownerId: 'u1',
+        ownerName: '张管理',
+      });
+      json(res, { id: newId, code: licenseState[0].code, status: 'active' });
+    }
+    return;
+  }
+  if (path === '/governance/licenses/act') {
+    const id = String(body.id ?? '');
+    const action = String(body.action ?? 'renew');
+    const row = licenseState.find((l) => l.id === id);
+    if (!row) {
+      json(res, null, -1, '证照不存在');
+      return;
+    }
+    if (!['renew', 'expire', 'reopen'].includes(action)) {
+      json(res, null, -1, 'action 不合法');
+      return;
+    }
+    if (action === 'renew') {
+      row.status = 'active';
+      if (body.expireAt) row.expireAt = String(body.expireAt);
+    } else if (action === 'expire') {
+      row.status = 'expired';
+    } else {
+      row.status = 'active';
+    }
+    json(res, { id: row.id, status: row.status });
+    return;
+  }
+  if (path === '/governance/compliance') {
+    const filtered = complianceState.filter((c) => !body.status || c.status === body.status);
+    const items = filtered.slice(page * pageSize, (page + 1) * pageSize);
+    json(res, {
+      items,
+      total: filtered.length,
+      hasMore: (page + 1) * pageSize < filtered.length,
+    });
+    return;
+  }
+  if (path === '/governance/compliance/save') {
+    const name = String(body.name ?? '').trim();
+    if (!name) {
+      json(res, null, -1, '缺少 orgId/userId/name 参数');
+      return;
+    }
+    const id = String(body.id ?? '');
+    const existing = id ? complianceState.find((c) => c.id === id) : undefined;
+    if (existing) {
+      existing.name = name;
+      existing.itemType = String(body.itemType ?? existing.itemType);
+      if (body.deadline !== undefined) existing.deadline = body.deadline ? String(body.deadline) : null;
+      existing.responsibleMemberId = String(body.responsibleMemberId ?? existing.responsibleMemberId);
+      existing.responsibleName = String(body.responsibleName ?? existing.responsibleName);
+      json(res, { id: existing.id, code: existing.code, status: existing.status });
+    } else {
+      const newId = `comp_mock_${Date.now()}`;
+      const now = new Date();
+      complianceState.unshift({
+        id: newId,
+        orgId: 'org_mock',
+        code: `CMP-${now.getFullYear()}-${String(now.getTime()).slice(-4)}`,
+        name,
+        itemType: String(body.itemType ?? 'other'),
+        deadline: body.deadline ? String(body.deadline) : null,
+        status: 'pending',
+        responsibleMemberId: String(body.responsibleMemberId ?? ''),
+        responsibleName: String(body.responsibleName ?? ''),
+      });
+      json(res, { id: newId, code: complianceState[0].code, status: 'pending' });
+    }
+    return;
+  }
+  if (path === '/governance/compliance/act') {
+    const id = String(body.id ?? '');
+    const action = String(body.action ?? 'start');
+    const row = complianceState.find((c) => c.id === id);
+    if (!row) {
+      json(res, null, -1, '合规事项不存在');
+      return;
+    }
+    if (!['start', 'done', 'reopen'].includes(action)) {
+      json(res, null, -1, 'action 不合法');
+      return;
+    }
+    row.status = action === 'start' ? 'executing' : action === 'done' ? 'done' : 'pending';
+    json(res, { id: row.id, status: row.status });
+    return;
+  }
+  if (path === '/governance/terms') {
+    const filtered = termState.filter((t) => !body.status || t.status === body.status);
+    const terms = filtered.slice(page * pageSize, (page + 1) * pageSize);
+    json(res, {
+      terms,
+      total: filtered.length,
+      hasMore: (page + 1) * pageSize < filtered.length,
+    });
+    return;
+  }
+  if (path === '/governance/terms/save') {
+    const title = String(body.title ?? '').trim();
+    if (!title) {
+      json(res, null, -1, '缺少 orgId/userId/title 参数');
+      return;
+    }
+    const id = String(body.id ?? '');
+    const existing = id ? termState.find((t) => t.id === id) : undefined;
+    if (existing) {
+      existing.title = title;
+      existing.governanceBody = String(body.governanceBody ?? existing.governanceBody);
+      if (body.startDate !== undefined) existing.startDate = body.startDate ? String(body.startDate) : null;
+      if (body.endDate !== undefined) existing.endDate = body.endDate ? String(body.endDate) : null;
+      json(res, { id: existing.id, code: existing.code, status: existing.status });
+    } else {
+      const newId = `term_mock_${Date.now()}`;
+      const now = new Date();
+      termState.unshift({
+        id: newId,
+        orgId: 'org_mock',
+        code: `TERM-${now.getFullYear()}-${String(now.getTime()).slice(-4)}`,
+        title,
+        governanceBody: String(body.governanceBody ?? ''),
+        startDate: body.startDate ? String(body.startDate) : null,
+        endDate: body.endDate ? String(body.endDate) : null,
+        status: 'preparing',
+      });
+      json(res, { id: newId, code: termState[0].code, status: 'preparing' });
+    }
+    return;
+  }
+  if (path === '/governance/terms/act') {
+    const id = String(body.id ?? '');
+    const action = String(body.action ?? 'prepare');
+    const row = termState.find((t) => t.id === id);
+    if (!row) {
+      json(res, null, -1, '任期不存在');
+      return;
+    }
+    if (!['prepare', 'activate', 'archive'].includes(action)) {
+      json(res, null, -1, 'action 不合法');
+      return;
+    }
+    row.status = action === 'prepare' ? 'preparing' : action === 'activate' ? 'active' : 'archived';
+    json(res, { id: row.id, status: row.status });
+    return;
+  }
+
+  // ---- 财务扩展：审批流 / 期初余额 / 总账 / 期末结账 ----
+  if (path === '/finance/flows') {
+    const bizType = body.bizType === 'project' ? 'project' : 'finance';
+    json(res, { flows: approvalFlowState.filter((f) => f.bizType === bizType) });
+    return;
+  }
+  if (path === '/finance/flows/save') {
+    const flow = body.flow as
+      | { id?: string; name?: string; bizType?: string; nodes?: string; enabled?: boolean; isDefault?: boolean }
+      | undefined;
+    if (!flow || !flow.name || typeof flow.nodes !== 'string') {
+      json(res, null, -1, '缺少 orgId/userId/flow 参数');
+      return;
+    }
+    let nodes: unknown;
+    try {
+      nodes = JSON.parse(flow.nodes);
+    } catch {
+      nodes = null;
+    }
+    if (!Array.isArray(nodes) || nodes.length === 0) {
+      json(res, null, -1, '流程节点不合法（需至少一个节点，类型为审批/办理/抄送）');
+      return;
+    }
+    const existing = flow.id ? approvalFlowState.find((f) => f.id === flow.id) : undefined;
+    if (existing) {
+      existing.name = flow.name;
+      existing.nodes = flow.nodes;
+      existing.enabled = flow.enabled !== false;
+      existing.isDefault = flow.isDefault === true;
+      json(res, { flowId: existing.id });
+    } else {
+      const flowId = `flow_mock_${Date.now()}`;
+      approvalFlowState.push({
+        id: flowId,
+        orgId: 'org_mock',
+        name: flow.name,
+        bizType: String(flow.bizType ?? 'finance'),
+        nodes: flow.nodes,
+        enabled: flow.enabled !== false,
+        isDefault: flow.isDefault === true,
+      });
+      json(res, { flowId });
+    }
+    return;
+  }
+  if (path === '/finance/opening') {
+    const year = String(body.year ?? '');
+    if (!/^\d{4}$/.test(year)) {
+      json(res, null, -1, '缺少 orgId/userId/year 参数');
+      return;
+    }
+    json(res, { balances: openingBalanceState.filter((b) => b.year === year) });
+    return;
+  }
+  if (path === '/finance/opening/save') {
+    const year = String(body.year ?? '');
+    if (!/^\d{4}$/.test(year)) {
+      json(res, null, -1, '缺少 orgId/userId/year 参数');
+      return;
+    }
+    if (body.carryFromPrevious === true) {
+      // 从上年期末自动结转：上年期初 + 上年全部已生效凭证 = 上年期末（只结转资产负债类科目）
+      const prevYear = String(Number(year) - 1);
+      const nets = new Map<string, number>();
+      for (const ob of openingBalanceState.filter((b) => b.year === prevYear)) {
+        nets.set(ob.accountCode, (nets.get(ob.accountCode) ?? 0) + ob.debit - ob.credit);
+      }
+      for (const e of approvedEntriesForYear(prevYear)) {
+        nets.set(e.account, (nets.get(e.account) ?? 0) + e.debit - e.credit);
+      }
+      const balances: typeof openingBalanceState = [];
+      nets.forEach((net, code) => {
+        if (!/^[123]/.test(code)) return;
+        balances.push({
+          id: `ob_org_mock_${year}_${code}`,
+          orgId: 'org_mock',
+          year,
+          accountCode: code,
+          accountName: ACCOUNTS.find((a) => a.code === code)?.name ?? code,
+          debit: net > 0 ? net : 0,
+          credit: net < 0 ? -net : 0,
+        });
+      });
+      for (const b of balances) {
+        const idx = openingBalanceState.findIndex((o) => o.year === year && o.accountCode === b.accountCode);
+        if (idx >= 0) openingBalanceState[idx] = b;
+        else openingBalanceState.push(b);
+      }
+      json(res, { balances, carried: balances.length });
+      return;
+    }
+    const list = Array.isArray(body.balances)
+      ? (body.balances as Array<{ accountCode?: string; accountName?: string; debit?: number; credit?: number }>)
+      : [];
+    const balances: typeof openingBalanceState = [];
+    for (const b of list) {
+      const code = String(b.accountCode ?? '');
+      if (!code) continue;
+      const row = {
+        id: `ob_org_mock_${year}_${code}`,
+        orgId: 'org_mock',
+        year,
+        accountCode: code,
+        accountName: String(b.accountName ?? ACCOUNTS.find((a) => a.code === code)?.name ?? code),
+        debit: Math.max(0, Number(b.debit) || 0),
+        credit: Math.max(0, Number(b.credit) || 0),
+      };
+      const idx = openingBalanceState.findIndex((o) => o.year === year && o.accountCode === code);
+      if (idx >= 0) openingBalanceState[idx] = row;
+      else openingBalanceState.push(row);
+      balances.push(row);
+    }
+    json(res, { balances, carried: 0 });
+    return;
+  }
+  if (path === '/finance/ledger') {
+    const year = String(body.year ?? '');
+    const accountCode = String(body.accountCode ?? '');
+    if (!/^\d{4}$/.test(year) || !accountCode) {
+      json(res, null, -1, '缺少 orgId/userId/year/accountCode 参数');
+      return;
+    }
+    const account = ACCOUNTS.find((a) => a.code === accountCode) ?? {
+      code: accountCode,
+      name: accountCode,
+      category: '',
+    };
+    const ob = openingBalanceState.find((b) => b.year === year && b.accountCode === accountCode);
+    const openDebit = ob ? ob.debit : 0;
+    const openCredit = ob ? ob.credit : 0;
+    const debitSide = account.category === '资产' || account.category === '费用';
+    let running = openDebit - openCredit;
+    const entries = approvedEntriesForYear(year)
+      .filter((e) => e.account === accountCode)
+      .sort((a, b) => {
+        const d = new Date(a.date).getTime() - new Date(b.date).getTime();
+        return d !== 0 ? d : a.voucherNo.localeCompare(b.voucherNo);
+      })
+      .map((e) => {
+        running += e.debit - e.credit;
+        return {
+          date: e.date,
+          voucherNo: e.voucherNo,
+          summary: e.summary,
+          debit: e.debit,
+          credit: e.credit,
+          runningDebit: debitSide ? Math.max(0, running) : Math.max(0, -running),
+          runningCredit: debitSide ? Math.max(0, -running) : Math.max(0, running),
+        };
+      });
+    json(res, { account, year, openDebit, openCredit, entries });
+    return;
+  }
+  if (path === '/finance/reports') {
+    const year = String(body.year ?? '');
+    if (!/^\d{4}$/.test(year)) {
+      json(res, null, -1, '缺少 orgId/userId/year 参数');
+      return;
+    }
+    const yearEntries = approvedEntriesForYear(year);
+    const rows = ACCOUNTS.map((a) => {
+      const ob = openingBalanceState.find((b) => b.year === year && b.accountCode === a.code);
+      const openDebit = ob ? ob.debit : 0;
+      const openCredit = ob ? ob.credit : 0;
+      let curDebit = 0;
+      let curCredit = 0;
+      for (const e of yearEntries.filter((x) => x.account === a.code)) {
+        curDebit += e.debit;
+        curCredit += e.credit;
+      }
+      const netOpen = openDebit - openCredit;
+      const netEnd = netOpen + curDebit - curCredit;
+      return {
+        code: a.code,
+        name: a.name,
+        category: a.category,
+        openDebit: Math.max(0, netOpen),
+        openCredit: Math.max(0, -netOpen),
+        curDebit,
+        curCredit,
+        endDebit: Math.max(0, netEnd),
+        endCredit: Math.max(0, -netEnd),
+      };
+    });
+    const sum = (key: 'openDebit' | 'openCredit' | 'curDebit' | 'curCredit' | 'endDebit' | 'endCredit') =>
+      rows.reduce((acc, r) => acc + r[key], 0);
+    json(res, {
+      year,
+      closingExists: closingState.some((c) => c.year === year),
+      trialBalance: {
+        rows,
+        totals: {
+          openDebit: sum('openDebit'),
+          openCredit: sum('openCredit'),
+          curDebit: sum('curDebit'),
+          curCredit: sum('curCredit'),
+          endDebit: sum('endDebit'),
+          endCredit: sum('endCredit'),
+        },
+      },
+    });
+    return;
+  }
+  if (path === '/finance/close') {
+    const year = String(body.year ?? '');
+    if (!/^\d{4}$/.test(year)) {
+      json(res, null, -1, '缺少 orgId/userId/year 参数');
+      return;
+    }
+    const existing = closingState.find((c) => c.year === year);
+    if (existing) {
+      json(res, { alreadyClosed: true, voucherId: existing.voucherId });
+      return;
+    }
+    const approved = financeRecords.filter((r) => r.status === 'approved' && r.date.startsWith(year));
+    const income = approved.filter((r) => r.type === 'income').reduce((acc, r) => acc + r.amount, 0);
+    const expense = approved.filter((r) => r.type === 'expense').reduce((acc, r) => acc + r.amount, 0);
+    if (income === 0 && expense === 0) {
+      json(res, { nothingToClose: true });
+      return;
+    }
+    const voucherId = `f_close_${year}`;
+    closingState.push({ voucherId, year, income, expense });
+    json(res, {
+      alreadyClosed: false,
+      voucherId,
+      income,
+      expense,
+      entries: (income > 0 ? 2 : 0) + (expense > 0 ? 2 : 0),
+    });
+    return;
+  }
+  if (path === '/finance/unclose') {
+    const year = String(body.year ?? '');
+    if (!/^\d{4}$/.test(year)) {
+      json(res, null, -1, '缺少 orgId/userId/year 参数');
+      return;
+    }
+    const idx = closingState.findIndex((c) => c.year === year);
+    if (idx < 0) {
+      json(res, { removed: 0 });
+      return;
+    }
+    closingState.splice(idx, 1);
+    json(res, { removed: 1 });
+    return;
+  }
+
+  // ---- 通知公告 ----
+  if (path === '/notices') {
+    const notices = [...noticeState].sort((a, b) => (a.publishTime < b.publishTime ? 1 : -1));
+    json(res, { notices });
+    return;
+  }
+  if (path === '/notices/save') {
+    const id = String(body.id ?? '');
+    const title = String(body.title ?? '').trim();
+    if (!id) {
+      json(res, null, -1, '缺少 id 字段');
+      return;
+    }
+    if (!title) {
+      json(res, null, -1, '公告标题不能为空');
+      return;
+    }
+    const existing = noticeState.find((n) => n.id === id);
+    const record = {
+      id,
+      orgId: String(body.orgId ?? 'org_mock'),
+      title,
+      content: String(body.content ?? ''),
+      publisher: String(body.publisher ?? '秘书处'),
+      publishTime: body.publishTime ? String(body.publishTime) : new Date().toISOString(),
+      isImportant: body.isImportant === true,
+      status: String(body.status ?? 'active'),
+    };
+    if (existing) {
+      Object.assign(existing, record);
+    } else {
+      noticeState.unshift(record);
+    }
+    json(res, null, 0, 'ok');
+    return;
+  }
+  if (path === '/notices/delete') {
+    const id = String(body.id ?? '');
+    if (!id) {
+      json(res, null, -1, '缺少 id 字段');
+      return;
+    }
+    const idx = noticeState.findIndex((n) => n.id === id);
+    if (idx >= 0) noticeState.splice(idx, 1);
+    json(res, null, 0, 'ok');
+    return;
+  }
   if (path === '/sensing/posture') {
-    json(res, posture());
+    json(res, body.orgId === 'org_mock_2' ? postureOrg2() : posture());
     return;
   }
   if (path === '/work-items') {
-    const filtered = workItems.filter(
+    const source = body.orgId === 'org_mock_2' ? workItemsOrg2 : workItems;
+    const filtered = source.filter(
       (w) =>
         (!body.status || w.status === body.status) &&
         (!body.workItemType || w.workItemType === body.workItemType),
@@ -967,7 +1996,7 @@ export async function handleApi(
     json(res, {
       items,
       total: filtered.length,
-      openCount: workItems.filter((w) => w.status === 'open').length,
+      openCount: source.filter((w) => w.status === 'open').length,
       dataScope: 'org',
       hasMore: (page + 1) * pageSize < filtered.length,
     });
@@ -978,7 +2007,9 @@ export async function handleApi(
     return;
   }
   if (path === '/work-items/act') {
-    const item = workItems.find((w) => w.id === body.id);
+    const item =
+      workItems.find((w) => w.id === body.id) ??
+      workItemsOrg2.find((w) => w.id === body.id);
     if (!item) {
       json(res, null, -1, '工作项不存在');
       return;
@@ -1036,16 +2067,9 @@ export async function handleApi(
     return;
   }
   if (path === '/automation') {
-    json(res, {
-      logs: automationLogs,
-      counts: {
-        todayRuns: 12,
-        successRate: 98,
-        failed: 1,
-        retries: 2,
-        blocked: 0,
-      },
-    });
+    const total = automationLogs.length;
+    const logs = automationLogs.slice(page * pageSize, (page + 1) * pageSize);
+    json(res, { logs, total, page, pageSize, hasMore: (page + 1) * pageSize < total });
     return;
   }
   if (path === '/automation/run') {
@@ -1413,17 +2437,24 @@ export async function handleApi(
     return;
   }
   if (path === '/rules') {
-    json(res, { rules });
+    json(res, {
+      rules: RULE_DEFS.map((r) => ({ ...r, enabled: !disabledRules.has(r.id) })),
+    });
     return;
   }
   if (path === '/rules/toggle') {
-    const rule = rules.find((r) => r.id === body.id);
+    const ruleId = String(body.ruleId ?? body.id ?? '');
+    const rule = RULE_DEFS.find((r) => r.id === ruleId);
     if (!rule) {
-      json(res, null, -1, '规则不存在');
+      json(res, null, -1, `规则编号无效：${ruleId}`);
       return;
     }
-    rule.enabled = body.enabled === true;
-    json(res, { id: rule.id, enabled: rule.enabled });
+    if (body.enabled === true) {
+      disabledRules.delete(rule.id);
+    } else {
+      disabledRules.add(rule.id);
+    }
+    json(res, { id: rule.id, enabled: !disabledRules.has(rule.id) });
     return;
   }
   if (path === '/reports') {
