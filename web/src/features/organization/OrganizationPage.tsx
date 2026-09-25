@@ -11,7 +11,6 @@ import {
   Switch,
   Table,
   Tag,
-  Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -24,6 +23,7 @@ import {
 } from '@/api/endpoints/organization';
 import { OrganizationRelationship } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 export function OrganizationPage(): React.JSX.Element {
   const queryClient = useQueryClient();
@@ -66,8 +66,7 @@ export function OrganizationPage(): React.JSX.Element {
 
   const profile = org.data?.profile;
   return (
-    <div>
-      <Typography.Title level={4}>组织治理</Typography.Title>
+    <PageContainer title="组织治理" description="组织档案、组织关系与共享配置">
       <Card
         title="组织档案"
         loading={org.isLoading}
@@ -90,11 +89,7 @@ export function OrganizationPage(): React.JSX.Element {
         )}
       </Card>
 
-      <Card
-        style={{ marginTop: 16 }}
-        title="组织关系"
-        extra={<Button onClick={() => setRelOpen(true)}>新增关系</Button>}
-      >
+      <Card title="组织关系" extra={<Button onClick={() => setRelOpen(true)}>新增关系</Button>}>
         {org.isError ? (
           <ErrorState onRetry={() => void org.refetch()} />
         ) : (
@@ -129,7 +124,7 @@ export function OrganizationPage(): React.JSX.Element {
       >
         <RelForm onFinish={(v) => setRel.mutate(v)} />
       </Modal>
-    </div>
+    </PageContainer>
   );
 }
 

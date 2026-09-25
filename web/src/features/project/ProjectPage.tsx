@@ -25,6 +25,7 @@ import { Project } from '@/models/contract';
 import { EChart } from '@/components/EChart';
 import { ErrorState } from '@/components/ErrorState';
 import { MemberSelect } from '@/components/MemberSelect';
+import { PageContainer } from '@/components/PageContainer';
 import type { EChartsOption } from 'echarts';
 
 const statusColor: Record<number, string> = { 0: 'default', 1: 'blue', 2: 'orange', 3: 'green' };
@@ -190,11 +191,15 @@ export function ProjectPage(): React.JSX.Element {
   }, [relations.data]);
 
   return (
-    <div>
-      <Typography.Title level={4}>项目与任务</Typography.Title>
-      <Button type="primary" style={{ marginBottom: 12 }} onClick={openCreate}>
-        创建项目
-      </Button>
+    <PageContainer
+      title="项目与任务"
+      description="项目立项、任务分解与业务关系血缘"
+      extra={
+        <Button type="primary" onClick={openCreate}>
+          创建项目
+        </Button>
+      }
+    >
       <Card>
         {projects.isError ? (
           <ErrorState onRetry={() => void projects.refetch()} />
@@ -273,6 +278,6 @@ export function ProjectPage(): React.JSX.Element {
           </>
         ) : null}
       </Modal>
-    </div>
+    </PageContainer>
   );
 }

@@ -5,6 +5,8 @@ import type { ColumnsType } from 'antd/es/table';
 import { actRisk, getRisks } from '@/api/endpoints/risks';
 import { RiskAlert } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
+import { colors } from '@/theme/tokens';
 
 export function RiskPage(): React.JSX.Element {
   const queryClient = useQueryClient();
@@ -73,21 +75,20 @@ export function RiskPage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>风险与预警</Typography.Title>
+    <PageContainer title="风险与预警" description="组织运行风险清单与处置跟踪">
       <Row gutter={16}>
         <Col span={6}>
           <Card>
-            <Statistic title="风险" value={risks.data?.riskCount ?? '—'} valueStyle={{ color: '#cf1322' }} />
+            <Statistic title="风险" value={risks.data?.riskCount ?? '—'} valueStyle={{ color: colors.error }} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="预警" value={risks.data?.warningCount ?? '—'} valueStyle={{ color: '#d46b08' }} />
+            <Statistic title="预警" value={risks.data?.warningCount ?? '—'} valueStyle={{ color: colors.warning }} />
           </Card>
         </Col>
       </Row>
-      <Card style={{ marginTop: 16 }} title="列表">
+      <Card title="列表">
         {risks.isError ? (
           <ErrorState onRetry={() => void risks.refetch()} />
         ) : (
@@ -101,6 +102,6 @@ export function RiskPage(): React.JSX.Element {
           />
         )}
       </Card>
-    </div>
+    </PageContainer>
   );
 }

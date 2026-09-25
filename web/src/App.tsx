@@ -6,20 +6,11 @@ import { QueryClientProvider } from '@tanstack/react-query';
 
 import { queryClient } from '@/app/query';
 import { router } from '@/app/router';
+import { antdTheme } from '@/theme/antdTheme';
 
 export function App(): React.JSX.Element {
   return (
-    <ConfigProvider
-      locale={zhCN}
-      theme={{
-        token: {
-          colorPrimary: '#3370ff',
-          borderRadius: 8,
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif",
-        },
-      }}
-    >
+    <ConfigProvider locale={zhCN} theme={antdTheme}>
       <AntdApp>
         <QueryClientProvider client={queryClient}>
           <RouterProvider router={router} />

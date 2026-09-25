@@ -10,7 +10,6 @@ import {
   Space,
   Table,
   Tag,
-  Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -20,6 +19,7 @@ import type { FormInstance } from 'antd/es/form';
 import { deleteMember, getMembers, saveMember } from '@/api/endpoints/membership';
 import { Member } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 const roleOptions = [
   { value: 'chairman', label: '会长' },
@@ -96,32 +96,36 @@ export function MembershipPage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>成员与档案</Typography.Title>
-      <Space style={{ marginBottom: 12 }} wrap>
-        <Input.Search
-          placeholder="搜索姓名/编号/部门"
-          allowClear
-          style={{ width: 240 }}
-          onSearch={setKeyword}
-        />
-        <Select
-          placeholder="按职务筛选"
-          allowClear
-          style={{ width: 160 }}
-          options={roleOptions}
-          onChange={(v) => setRoleId(v)}
-        />
-        <Button
-          type="primary"
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-        >
-          添加成员
-        </Button>
-      </Space>
+    <PageContainer
+      title="成员与档案"
+      description="组织成员名册、职务与档案管理"
+      extra={
+        <>
+          <Input.Search
+            placeholder="搜索姓名/编号/部门"
+            allowClear
+            style={{ width: 240 }}
+            onSearch={setKeyword}
+          />
+          <Select
+            placeholder="按职务筛选"
+            allowClear
+            style={{ width: 160 }}
+            options={roleOptions}
+            onChange={(v) => setRoleId(v)}
+          />
+          <Button
+            type="primary"
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
+            添加成员
+          </Button>
+        </>
+      }
+    >
       <Card>
         {members.isError ? (
           <ErrorState onRetry={() => void members.refetch()} />
@@ -151,7 +155,7 @@ export function MembershipPage(): React.JSX.Element {
           onFinish={(v) => save.mutate({ ...v, id: editing?.id })}
         />
       </Modal>
-    </div>
+    </PageContainer>
   );
 }
 

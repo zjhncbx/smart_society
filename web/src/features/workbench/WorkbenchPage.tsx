@@ -19,7 +19,9 @@ import { actWorkItem, getWorkItems, refreshWorkItems } from '@/api/endpoints/wor
 import { getPosture } from '@/api/endpoints/sensing';
 import { WorkItem } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 import { usePermission } from '@/permissions/guard';
+import { colors } from '@/theme/tokens';
 import { newCorrelationId } from '@/utils/id';
 
 const typeColor: Record<string, string> = {
@@ -125,34 +127,37 @@ export function WorkbenchPage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>工作台</Typography.Title>
-      <Space style={{ marginBottom: 12 }} wrap>
-        <Typography.Text type="secondary">
+    <PageContainer
+      title="工作台"
+      description={
+        <>
           角色：{roleName ?? '未登录'} · 数据范围：{dataScope} · {isAdmin ? '管理员' : '普通成员'}
-        </Typography.Text>
-        <Link to="/search">
-          <Button size="small">全域检索</Button>
-        </Link>
-        <Link to="/risk">
-          <Button size="small">风险与预警</Button>
-        </Link>
-        <Link to="/data-quality">
-          <Button size="small">数据治理</Button>
-        </Link>
-        <Link to="/automation">
-          <Button size="small">自动化治理</Button>
-        </Link>
-        <Link to="/audit">
-          <Button size="small">审计与事件</Button>
-        </Link>
-      </Space>
-
+        </>
+      }
+      extra={
+        <>
+          <Link to="/search">
+            <Button size="small">全域检索</Button>
+          </Link>
+          <Link to="/risk">
+            <Button size="small">风险与预警</Button>
+          </Link>
+          <Link to="/data-quality">
+            <Button size="small">数据治理</Button>
+          </Link>
+          <Link to="/automation">
+            <Button size="small">自动化治理</Button>
+          </Link>
+          <Link to="/audit">
+            <Button size="small">审计与事件</Button>
+          </Link>
+        </>
+      }
+    >
       {posture.data && posture.data.status !== '正常' && (
         <Alert
           type={posture.data.status === '需介入' ? 'error' : 'warning'}
           showIcon
-          style={{ marginBottom: 12 }}
           message={`组织运行：${posture.data.status}`}
           description={
             posture.data.topConcerns.length > 0
@@ -173,12 +178,12 @@ export function WorkbenchPage(): React.JSX.Element {
           </Col>
           <Col span={4}>
             <Card>
-              <Statistic title="风险" value={posture.data?.riskCount ?? '—'} valueStyle={{ color: '#cf1322' }} />
+              <Statistic title="风险" value={posture.data?.riskCount ?? '—'} valueStyle={{ color: colors.error }} />
             </Card>
           </Col>
           <Col span={4}>
             <Card>
-              <Statistic title="预警" value={posture.data?.warningCount ?? '—'} valueStyle={{ color: '#d46b08' }} />
+              <Statistic title="预警" value={posture.data?.warningCount ?? '—'} valueStyle={{ color: colors.warning }} />
             </Card>
           </Col>
           <Col span={4}>
@@ -188,14 +193,13 @@ export function WorkbenchPage(): React.JSX.Element {
           </Col>
           <Col span={4}>
             <Card>
-              <Statistic title="流程阻塞" value={posture.data?.escalatedCount ?? '—'} valueStyle={{ color: '#cf1322' }} />
+              <Statistic title="流程阻塞" value={posture.data?.escalatedCount ?? '—'} valueStyle={{ color: colors.error }} />
             </Card>
           </Col>
         </Row>
       )}
 
       <Card
-        style={{ marginTop: 16 }}
         title="我的 WorkItem"
         extra={
           <Button size="small" loading={refresh.isPending} onClick={() => refresh.mutate()}>
@@ -216,6 +220,6 @@ export function WorkbenchPage(): React.JSX.Element {
           />
         )}
       </Card>
-    </div>
+    </PageContainer>
   );
 }

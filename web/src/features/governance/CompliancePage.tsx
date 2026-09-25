@@ -22,6 +22,7 @@ import { getMembers } from '@/api/endpoints/membership';
 import { ComplianceItem } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
 import { MemberSelect } from '@/components/MemberSelect';
+import { PageContainer } from '@/components/PageContainer';
 
 interface ComplianceFormValues {
   id?: string;
@@ -174,11 +175,15 @@ export function CompliancePage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>合规事项</Typography.Title>
-      <Button type="primary" style={{ marginBottom: 12 }} onClick={openCreate}>
-        登记合规事项
-      </Button>
+    <PageContainer
+      title="合规事项"
+      description="年检 / 评估 / 整改等合规任务登记与跟踪"
+      extra={
+        <Button type="primary" onClick={openCreate}>
+          登记合规事项
+        </Button>
+      }
+    >
       <Card>
         {items.isError ? (
           <ErrorState description="合规事项加载失败" onRetry={() => void items.refetch()} />
@@ -219,6 +224,6 @@ export function CompliancePage(): React.JSX.Element {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </PageContainer>
   );
 }

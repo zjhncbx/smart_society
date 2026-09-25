@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { closePeriod, getAccountingReports, unclosePeriod } from '@/api/endpoints/financeExt';
 import { ClosePeriodResult } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 import { usePermission } from '@/permissions/guard';
 
 export function ClosingPage(): React.JSX.Element {
@@ -65,13 +66,11 @@ export function ClosingPage(): React.JSX.Element {
   const closed = reports.data?.closingExists === true;
 
   return (
-    <div>
-      <Typography.Title level={4}>期末结账</Typography.Title>
+    <PageContainer title="期末结账" description="年度期末结转凭证生成与反结账">
       {!isAdmin && (
         <Alert
           type="warning"
           showIcon
-          style={{ marginBottom: 12 }}
           message="仅组织管理员可以执行期末结账与反结账"
         />
       )}
@@ -165,6 +164,6 @@ export function ClosingPage(): React.JSX.Element {
           )}
         </Space>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

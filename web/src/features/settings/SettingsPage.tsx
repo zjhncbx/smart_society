@@ -23,6 +23,7 @@ import {
   saveUserSettings,
 } from '@/api/endpoints/settings';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 import { RoleDef } from '@/models/contract';
 import { usePermission } from '@/permissions/guard';
 
@@ -337,5 +338,9 @@ export function SettingsPage(): React.JSX.Element {
       : []),
     { key: 'user', label: '用户偏好', children: <UserSettingsTab /> },
   ];
-  return <Tabs defaultActiveKey={isAdmin ? 'org' : 'user'} items={items} />;
+  return (
+    <PageContainer title="系统设置" description="组织设置、角色权限与用户偏好">
+      <Tabs defaultActiveKey={isAdmin ? 'org' : 'user'} items={items} />
+    </PageContainer>
+  );
 }

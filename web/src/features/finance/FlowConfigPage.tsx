@@ -25,6 +25,7 @@ import {
 } from '@/api/endpoints/financeExt';
 import { ApprovalFlowNode } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 const nodeTypeOptions = [
   { value: 'approve', label: '审批' },
@@ -146,11 +147,15 @@ export function FlowConfigPage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>审批流配置</Typography.Title>
-      <Button type="primary" style={{ marginBottom: 12 }} onClick={openCreate}>
-        新建审批流
-      </Button>
+    <PageContainer
+      title="审批流配置"
+      description="财务单据审批流（审批 / 办理 / 抄送节点）"
+      extra={
+        <Button type="primary" onClick={openCreate}>
+          新建审批流
+        </Button>
+      }
+    >
       <Card>
         {flows.isError ? (
           <ErrorState description="审批流加载失败" onRetry={() => void flows.refetch()} />
@@ -258,6 +263,6 @@ export function FlowConfigPage(): React.JSX.Element {
           </Space>
         )}
       </Drawer>
-    </div>
+    </PageContainer>
   );
 }

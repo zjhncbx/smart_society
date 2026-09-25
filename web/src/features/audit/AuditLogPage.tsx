@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { getAuditLogs, getEvents } from '@/api/endpoints/audit';
 import { AuditLog, BusinessEvent } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 export function AuditLogPage(): React.JSX.Element {
   const [correlationFilter, setCorrelationFilter] = useState('');
@@ -79,14 +80,18 @@ export function AuditLogPage(): React.JSX.Element {
     : (audit.data?.logs ?? []);
 
   return (
-    <div>
-      <Typography.Title level={4}>审计与事件链</Typography.Title>
-      {correlationFilter && (
-        <Space style={{ marginBottom: 12 }}>
-          <Tag color="blue">按关联ID筛选：{correlationFilter}</Tag>
-          <Typography.Link onClick={() => setCorrelationFilter('')}>清除</Typography.Link>
-        </Space>
-      )}
+    <PageContainer
+      title="审计与事件链"
+      description="全量审计日志与业务事件流，支持按关联 ID 串联追踪"
+      extra={
+        correlationFilter ? (
+          <Space>
+            <Tag color="blue">按关联ID筛选：{correlationFilter}</Tag>
+            <Typography.Link onClick={() => setCorrelationFilter('')}>清除</Typography.Link>
+          </Space>
+        ) : undefined
+      }
+    >
       <Card>
         <Tabs
           items={[
@@ -125,6 +130,6 @@ export function AuditLogPage(): React.JSX.Element {
           ]}
         />
       </Card>
-    </div>
+    </PageContainer>
   );
 }

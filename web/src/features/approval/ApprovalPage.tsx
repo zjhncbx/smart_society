@@ -10,7 +10,6 @@ import {
   Table,
   Tabs,
   Tag,
-  Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -26,6 +25,7 @@ import {
 } from '@/api/endpoints/approval';
 import { ApprovalInstance, Resolution } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 interface ResolutionFormValues {
   title: string;
@@ -154,8 +154,7 @@ export function ApprovalPage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>审批与决议</Typography.Title>
+    <PageContainer title="审批与决议" description="审批事项流转与理事会决议管理">
       <Card>
         <Tabs
           items={[
@@ -233,6 +232,6 @@ export function ApprovalPage(): React.JSX.Element {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </PageContainer>
   );
 }

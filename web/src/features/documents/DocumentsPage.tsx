@@ -31,6 +31,7 @@ import {
   saveBase64File,
 } from '@/api/endpoints/documents';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 const DOMAIN_OPTIONS = Object.entries(DOMAIN_LABELS).map(([value, label]) => ({
   value,
@@ -162,8 +163,7 @@ export function DocumentsPage(): React.JSX.Element {
 
   const items = docs.data?.items ?? [];
   return (
-    <div>
-      <Typography.Title level={4}>文件中心</Typography.Title>
+    <PageContainer title="文件中心" description="组织文件云端存储与共享">
       <Card
         title="组织文件（Cloud Storage）"
         extra={
@@ -254,7 +254,7 @@ export function DocumentsPage(): React.JSX.Element {
           invalidate();
         }}
       />
-    </div>
+    </PageContainer>
   );
 }
 

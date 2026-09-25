@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router';
 
 import { SearchResult, globalSearch } from '@/api/endpoints/search';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 const typeLabel: Record<string, string> = {
   work_item: '工作项',
@@ -39,8 +40,7 @@ export function SearchPage(): React.JSX.Element {
   };
 
   return (
-    <div>
-      <Typography.Title level={4}>全域检索</Typography.Title>
+    <PageContainer title="全域检索" description="跨工作项 / 风险 / 事件 / 成员 / 项目的全局关键词检索">
       <Input.Search
         placeholder="搜索工作项 / 风险 / 事件 / 成员 / 项目…"
         allowClear
@@ -48,7 +48,7 @@ export function SearchPage(): React.JSX.Element {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
-      <Card style={{ marginTop: 16 }}>
+      <Card>
         {debounced.trim().length === 0 ? (
           <Empty description="输入关键词开始检索" />
         ) : results.isError ? (
@@ -76,6 +76,6 @@ export function SearchPage(): React.JSX.Element {
           />
         )}
       </Card>
-    </div>
+    </PageContainer>
   );
 }

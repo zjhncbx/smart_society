@@ -13,7 +13,6 @@ import {
   Statistic,
   Table,
   Tag,
-  Typography,
   message,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -27,6 +26,8 @@ import {
 } from '@/api/endpoints/finance';
 import { FinanceRecord } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
+import { colors } from '@/theme/tokens';
 
 const statusColor: Record<string, string> = {
   approved: 'green',
@@ -78,20 +79,19 @@ export function FinancePage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>财务管理</Typography.Title>
+    <PageContainer title="财务管理" description="收支单据、统计与审批流">
       {stats.isError ? (
         <ErrorState description="财务统计加载失败" onRetry={() => void stats.refetch()} />
       ) : (
         <Row gutter={16}>
           <Col span={6}>
             <Card>
-              <Statistic title="收入" value={stats.data?.income ?? '—'} prefix="¥" valueStyle={{ color: '#3f8600' }} />
+              <Statistic title="收入" value={stats.data?.income ?? '—'} prefix="¥" valueStyle={{ color: colors.success }} />
             </Card>
           </Col>
           <Col span={6}>
             <Card>
-              <Statistic title="支出" value={stats.data?.expense ?? '—'} prefix="¥" valueStyle={{ color: '#cf1322' }} />
+              <Statistic title="支出" value={stats.data?.expense ?? '—'} prefix="¥" valueStyle={{ color: colors.error }} />
             </Card>
           </Col>
           <Col span={6}>
@@ -108,7 +108,7 @@ export function FinancePage(): React.JSX.Element {
           </Col>
         </Row>
       )}
-      <Card style={{ marginTop: 16 }} title="单据列表">
+      <Card title="单据列表">
         {records.isError ? (
           <ErrorState onRetry={() => void records.refetch()} />
         ) : (
@@ -175,6 +175,6 @@ export function FinancePage(): React.JSX.Element {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </PageContainer>
   );
 }

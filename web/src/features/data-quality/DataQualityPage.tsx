@@ -17,6 +17,8 @@ import type { ColumnsType } from 'antd/es/table';
 import { actIssue, getDataQuality, runDataQuality } from '@/api/endpoints/dataQuality';
 import { DataQualityIssue } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
+import { colors } from '@/theme/tokens';
 
 export function DataQualityPage(): React.JSX.Element {
   const queryClient = useQueryClient();
@@ -78,8 +80,7 @@ export function DataQualityPage(): React.JSX.Element {
 
   const snapshot = dq.data?.snapshot;
   return (
-    <div>
-      <Typography.Title level={4}>数据治理</Typography.Title>
+    <PageContainer title="数据治理" description="数据健康度评分、维度体检与问题清单">
       <Row gutter={16}>
         <Col span={6}>
           <Card>
@@ -93,7 +94,7 @@ export function DataQualityPage(): React.JSX.Element {
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="待处理问题" value={dq.data?.openTotal ?? '—'} valueStyle={{ color: '#cf1322' }} />
+            <Statistic title="待处理问题" value={dq.data?.openTotal ?? '—'} valueStyle={{ color: colors.error }} />
           </Card>
         </Col>
         <Col span={6}>
@@ -105,7 +106,7 @@ export function DataQualityPage(): React.JSX.Element {
         </Col>
       </Row>
       {snapshot && (
-        <Card style={{ marginTop: 16 }} title="维度健康度">
+        <Card title="维度健康度">
           <Row gutter={24}>
             {Object.entries(snapshot.dimensions).map(([key, value]) => (
               <Col span={6} key={key}>
@@ -116,7 +117,7 @@ export function DataQualityPage(): React.JSX.Element {
           </Row>
         </Card>
       )}
-      <Card style={{ marginTop: 16 }} title="问题清单">
+      <Card title="问题清单">
         {dq.isError ? (
           <ErrorState onRetry={() => void dq.refetch()} />
         ) : (
@@ -130,6 +131,6 @@ export function DataQualityPage(): React.JSX.Element {
           />
         )}
       </Card>
-    </div>
+    </PageContainer>
   );
 }

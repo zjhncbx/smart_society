@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { deleteNotice, getNotices, upsertNotice } from '@/api/endpoints/notice';
 import { NoticeItem } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 interface NoticeFormValues {
   id?: string;
@@ -133,11 +134,15 @@ export function NoticePage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>通知公告</Typography.Title>
-      <Button type="primary" style={{ marginBottom: 12 }} onClick={openCreate}>
-        发布公告
-      </Button>
+    <PageContainer
+      title="通知公告"
+      description="面向组织成员的公告发布与浏览"
+      extra={
+        <Button type="primary" onClick={openCreate}>
+          发布公告
+        </Button>
+      }
+    >
       <Card>
         {notices.isError ? (
           <ErrorState description="公告加载失败" onRetry={() => void notices.refetch()} />
@@ -200,6 +205,6 @@ export function NoticePage(): React.JSX.Element {
           </Space>
         )}
       </Modal>
-    </div>
+    </PageContainer>
   );
 }

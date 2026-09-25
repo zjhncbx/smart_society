@@ -22,6 +22,8 @@ import { AutomationRunLog, Rule } from '@/models/contract';
 import { getAutomation, runRules } from '@/api/endpoints/automation';
 import { getRules, toggleRule } from '@/api/endpoints/rules';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
+import { colors } from '@/theme/tokens';
 import { exportCsv } from '@/utils/exportCsv';
 
 const categoryLabel: Record<string, string> = {
@@ -140,8 +142,7 @@ export function AutomationPage(): React.JSX.Element {
   };
 
   return (
-    <div>
-      <Typography.Title level={4}>自动化治理</Typography.Title>
+    <PageContainer title="自动化治理" description="自动化规则运行监控与执行记录">
       <Card>
         <Tabs
           items={[
@@ -160,12 +161,12 @@ export function AutomationPage(): React.JSX.Element {
                     </Col>
                     <Col span={4}>
                       <Card>
-                        <Statistic title="成功率" value={successRate} suffix="%" valueStyle={{ color: '#3f8600' }} />
+                        <Statistic title="成功率" value={successRate} suffix="%" valueStyle={{ color: colors.success }} />
                       </Card>
                     </Col>
                     <Col span={4}>
                       <Card>
-                        <Statistic title="失败" value={failedRuns} valueStyle={{ color: '#cf1322' }} />
+                        <Statistic title="失败" value={failedRuns} valueStyle={{ color: colors.error }} />
                       </Card>
                     </Col>
                     <Col span={4}>
@@ -240,6 +241,6 @@ export function AutomationPage(): React.JSX.Element {
           </Descriptions>
         )}
       </Drawer>
-    </div>
+    </PageContainer>
   );
 }

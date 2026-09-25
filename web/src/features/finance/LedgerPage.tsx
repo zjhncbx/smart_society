@@ -25,6 +25,7 @@ import {
 } from '@/api/endpoints/financeExt';
 import { LedgerEntry, TrialBalanceRow } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 /** 内置科目表（与云函数 get-ledger 一致），用于期初录入与明细账切换 */
 const ACCOUNTS: Array<{ code: string; name: string; category: string }> = [
@@ -166,29 +167,32 @@ export function LedgerPage(): React.JSX.Element {
   const totals = reports.data?.trialBalance.totals;
 
   return (
-    <div>
-      <Typography.Title level={4}>总账与期初</Typography.Title>
-      <Space style={{ marginBottom: 12 }} wrap>
-        <DatePicker
-          picker="year"
-          value={year}
-          onChange={(v) => v && setYear(v)}
-          allowClear={false}
-        />
-        <Radio.Group value={view} onChange={(e) => setView(e.target.value as 'trial' | 'detail')}>
-          <Radio.Button value="trial">总账（科目余额表）</Radio.Button>
-          <Radio.Button value="detail">明细账</Radio.Button>
-        </Radio.Group>
-        <Button onClick={() => void openOpeningModal()}>期初录入</Button>
-        <Button
-          type="dashed"
-          loading={saveOpening.isPending}
-          onClick={() => saveOpening.mutate({ year: yearStr, carryFromPrevious: true })}
-        >
-          上期结转
-        </Button>
-      </Space>
-
+    <PageContainer
+      title="总账与期初"
+      description="科目余额表、明细账与期初余额管理"
+      extra={
+        <>
+          <DatePicker
+            picker="year"
+            value={year}
+            onChange={(v) => v && setYear(v)}
+            allowClear={false}
+          />
+          <Radio.Group value={view} onChange={(e) => setView(e.target.value as 'trial' | 'detail')}>
+            <Radio.Button value="trial">总账（科目余额表）</Radio.Button>
+            <Radio.Button value="detail">明细账</Radio.Button>
+          </Radio.Group>
+          <Button onClick={() => void openOpeningModal()}>期初录入</Button>
+          <Button
+            type="dashed"
+            loading={saveOpening.isPending}
+            onClick={() => saveOpening.mutate({ year: yearStr, carryFromPrevious: true })}
+          >
+            上期结转
+          </Button>
+        </>
+      }
+    >
       {view === 'trial' ? (
         <Card
           title={`科目余额表（${yearStr} 年度）`}
@@ -352,6 +356,6 @@ export function LedgerPage(): React.JSX.Element {
           </Button>
         </Space>
       </Modal>
-    </div>
+    </PageContainer>
   );
 }

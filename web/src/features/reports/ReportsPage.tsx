@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, Card, Col, Row, Statistic, Typography } from 'antd';
+import { Alert, Button, Card, Col, Row, Statistic } from 'antd';
 import type { EChartsOption } from 'echarts';
 import { useMemo } from 'react';
 
@@ -7,6 +7,8 @@ import { getReportData } from '@/api/endpoints/reports';
 import { getTrendStats } from '@/api/endpoints/trends';
 import { EChart } from '@/components/EChart';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
+import { colors } from '@/theme/tokens';
 import { exportCsv } from '@/utils/exportCsv';
 
 export function ReportsPage(): React.JSX.Element {
@@ -40,7 +42,7 @@ export function ReportsPage(): React.JSX.Element {
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: data?.dqDimensions.map((d) => d.name) ?? [] },
     yAxis: { type: 'value', max: 100 },
-    series: [{ type: 'bar', data: data?.dqDimensions.map((d) => d.value) ?? [], itemStyle: { color: '#3370ff' } }],
+    series: [{ type: 'bar', data: data?.dqDimensions.map((d) => d.value) ?? [], itemStyle: { color: colors.primary } }],
   };
   const projectOption: EChartsOption = {
     tooltip: { trigger: 'item' },
@@ -76,21 +78,14 @@ export function ReportsPage(): React.JSX.Element {
   };
 
   return (
-    <div>
-      <Typography.Title level={4}>报表与分析</Typography.Title>
+    <PageContainer title="报表与分析" description="组织运行核心指标与趋势一览">
       {trendData && trendData.anomalies.length > 0 && (
-        <Alert
-          type="warning"
-          showIcon
-          style={{ marginBottom: 12 }}
-          message="变化感知"
-          description={trendData.anomalies.join('；')}
-        />
+        <Alert type="warning" showIcon message="变化感知" description={trendData.anomalies.join('；')} />
       )}
       {reports.isError ? (
         <ErrorState description="报表数据加载失败" onRetry={() => void reports.refetch()} />
       ) : (
-        <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Row gutter={16}>
           <Col span={4}>
             <Card>
               <Statistic title="成员/会员" value={data?.totals.members ?? '—'} loading={reports.isLoading} />
@@ -122,7 +117,7 @@ export function ReportsPage(): React.JSX.Element {
                 title="审批平均耗时"
                 value={trendData?.approvalAvgHours ?? '—'}
                 suffix="h"
-                valueStyle={{ color: '#d46b08' }}
+                valueStyle={{ color: colors.warning }}
               />
             </Card>
           </Col>
@@ -135,7 +130,7 @@ export function ReportsPage(): React.JSX.Element {
       )}
       <Row gutter={16}>
         <Col span={12}>
-          <Card title="近 7 天事件与风险趋势" style={{ marginBottom: 16 }}>
+          <Card title="近 7 天事件与风险趋势">
             {trends.isError ? (
               <ErrorState description="趋势数据加载失败" onRetry={() => void trends.refetch()} />
             ) : (
@@ -144,7 +139,7 @@ export function ReportsPage(): React.JSX.Element {
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="自动化运行趋势" style={{ marginBottom: 16 }}>
+          <Card title="自动化运行趋势">
             {trends.isError ? (
               <ErrorState description="趋势数据加载失败" onRetry={() => void trends.refetch()} />
             ) : (
@@ -164,26 +159,26 @@ export function ReportsPage(): React.JSX.Element {
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="收支趋势" style={{ marginBottom: 16 }}>
+          <Card title="收支趋势">
             <EChart option={financeOption} height={280} />
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="风险分布" style={{ marginBottom: 16 }}>
+          <Card title="风险分布">
             <EChart option={riskOption} height={280} />
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="数据质量维度" style={{ marginBottom: 16 }}>
+          <Card title="数据质量维度">
             <EChart option={dqOption} height={280} />
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="项目状态分布" style={{ marginBottom: 16 }}>
+          <Card title="项目状态分布">
             <EChart option={projectOption} height={280} />
           </Card>
         </Col>
       </Row>
-    </div>
+    </PageContainer>
   );
 }

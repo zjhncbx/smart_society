@@ -20,6 +20,7 @@ import { useState } from 'react';
 import { actTerm, getTerms, saveTerm } from '@/api/endpoints/governance';
 import { Term } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 interface TermFormValues {
   id?: string;
@@ -153,11 +154,15 @@ export function TermPage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>任期管理</Typography.Title>
-      <Button type="primary" style={{ marginBottom: 12 }} onClick={openCreate}>
-        登记任期
-      </Button>
+    <PageContainer
+      title="任期管理"
+      description="理事会 / 监事会届次登记与在任状态跟踪"
+      extra={
+        <Button type="primary" onClick={openCreate}>
+          登记任期
+        </Button>
+      }
+    >
       <Card>
         {terms.isError ? (
           <ErrorState description="任期数据加载失败" onRetry={() => void terms.refetch()} />
@@ -200,6 +205,6 @@ export function TermPage(): React.JSX.Element {
           </Space>
         </Form>
       </Modal>
-    </div>
+    </PageContainer>
   );
 }

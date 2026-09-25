@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { actLicense, getLicenses, saveLicense } from '@/api/endpoints/governance';
 import { License } from '@/models/contract';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 interface LicenseFormValues {
   id?: string;
@@ -149,11 +150,15 @@ export function LicensePage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>证照管理</Typography.Title>
-      <Button type="primary" style={{ marginBottom: 12 }} onClick={openCreate}>
-        登记证照
-      </Button>
+    <PageContainer
+      title="证照管理"
+      description="组织证照登记、到期预警与续期"
+      extra={
+        <Button type="primary" onClick={openCreate}>
+          登记证照
+        </Button>
+      }
+    >
       <Card>
         {licenses.isError ? (
           <ErrorState description="证照数据加载失败" onRetry={() => void licenses.refetch()} />
@@ -199,6 +204,6 @@ export function LicensePage(): React.JSX.Element {
           </Space>
         </Form>
       </Modal>
-    </div>
+    </PageContainer>
   );
 }

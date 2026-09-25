@@ -12,6 +12,7 @@ import { getRisks } from '@/api/endpoints/risks';
 import { BusinessEvent } from '@/models/contract';
 import { EChart } from '@/components/EChart';
 import { ErrorState } from '@/components/ErrorState';
+import { PageContainer } from '@/components/PageContainer';
 
 export function SensingPage(): React.JSX.Element {
   const posture = useQuery({ queryKey: ['posture'], queryFn: getPosture });
@@ -66,9 +67,8 @@ export function SensingPage(): React.JSX.Element {
   ];
 
   return (
-    <div>
-      <Typography.Title level={4}>全域感知</Typography.Title>
-      <Row gutter={16} style={{ marginBottom: 16 }}>
+    <PageContainer title="全域感知" description="组织运行态势、风险与数据质量总览">
+      <Row gutter={16}>
         <Col span={4}>
           <Card>
             {posture.isError ? (
@@ -166,6 +166,6 @@ export function SensingPage(): React.JSX.Element {
           />
         )}
       </Card>
-    </div>
+    </PageContainer>
   );
 }
