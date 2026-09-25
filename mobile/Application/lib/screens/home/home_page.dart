@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../config/finance_config.dart';
 import '../../config/org_config_provider.dart';
+import '../../config/theme_config.dart';
 import '../../models/business_event.dart';
 import '../../models/data_quality.dart';
 import '../../models/governance.dart';
@@ -144,7 +145,10 @@ class _HomePageState extends State<HomePage> {
         children: [
           Text(
             '${_greeting()}，${org?.name ?? ''}',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              fontSize: DesignTokens.fontSizeXl,
+              fontWeight: DesignTokens.weightBold,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -216,25 +220,25 @@ class _HomePageState extends State<HomePage> {
                     _QuickAction(
                       label: labels.tabMembers,
                       icon: Icons.people_outline,
-                      color: const Color(0xFF3370FF),
+                      color: DesignTokens.primary,
                       onTap: () => context.push('/members/list'),
                     ),
                     _QuickAction(
                       label: labels.tabProjects,
                       icon: Icons.task_alt_outlined,
-                      color: const Color(0xFF00B96B),
+                      color: DesignTokens.success,
                       onTap: () => context.push('/projects/list'),
                     ),
                     _QuickAction(
                       label: labels.tabNotices,
                       icon: Icons.campaign_outlined,
-                      color: const Color(0xFFFF8800),
+                      color: DesignTokens.warning,
                       onTap: () => context.push('/notices/list'),
                     ),
                     _QuickAction(
                       label: labels.tabFinance,
                       icon: Icons.account_balance_wallet_outlined,
-                      color: const Color(0xFF7B61FF),
+                      color: DesignTokens.accentPurple,
                       onTap: () => context.push('/finance/list'),
                     ),
                   ],
@@ -245,25 +249,25 @@ class _HomePageState extends State<HomePage> {
                     _QuickAction(
                       label: '审批待办',
                       icon: Icons.fact_check_outlined,
-                      color: const Color(0xFFF54A45),
+                      color: DesignTokens.error,
                       onTap: () => context.push('/finance/tasks'),
                     ),
                     _QuickAction(
                       label: '设置',
                       icon: Icons.settings_outlined,
-                      color: const Color(0xFF8A9099),
+                      color: DesignTokens.textTertiary,
                       onTap: () => context.push('/settings'),
                     ),
                     _QuickAction(
                       label: '事件流',
                       icon: Icons.timeline_outlined,
-                      color: const Color(0xFF13C2C2),
+                      color: DesignTokens.accentCyan,
                       onTap: () => context.push('/events'),
                     ),
                     _QuickAction(
                       label: '自动任务',
                       icon: Icons.auto_awesome_outlined,
-                      color: const Color(0xFF7B61FF),
+                      color: DesignTokens.accentPurple,
                       onTap: () => context.push('/governance/tasks'),
                     ),
                   ],
@@ -435,7 +439,7 @@ class _HomePageState extends State<HomePage> {
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFF54A45),
+                          color: DesignTokens.error,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -506,22 +510,22 @@ class _OrgPostureCard extends StatelessWidget {
     final appTheme = context.appTheme;
     final pendingCount = approvalTaskCount + autoTaskCount;
     final (String statusLabel, Color statusColor) = riskCount > 0
-        ? ('需介入', const Color(0xFFF54A45))
+        ? ('需介入', DesignTokens.error)
         : (pendingCount > 0 || warningCount > 0 || dqOpenCount > 0)
-            ? ('关注', const Color(0xFFFF8800))
-            : ('正常', const Color(0xFF00B96B));
+            ? ('关注', DesignTokens.warning)
+            : ('正常', DesignTokens.success);
     final concerns = <Widget>[
       for (final risk in topRisks)
         _ConcernRow(
           color: risk.isRisk
-              ? const Color(0xFFF54A45)
-              : const Color(0xFFFF8800),
+              ? DesignTokens.error
+              : DesignTokens.warning,
           text: '${risk.isRisk ? '风险' : '预警'} · ${risk.title}',
           onTap: onOpenRisks,
         ),
       for (final issue in topDqIssues)
         _ConcernRow(
-          color: const Color(0xFFF54A45),
+          color: DesignTokens.error,
           text: '数据 · ${issue.ruleName}：${issue.entityName}',
           onTap: onOpenQuality,
         ),
@@ -571,19 +575,19 @@ class _OrgPostureCard extends StatelessWidget {
                 _PostureCount(
                   label: '风险',
                   value: '$riskCount',
-                  color: const Color(0xFFF54A45),
+                  color: DesignTokens.error,
                   onTap: riskCount > 0 ? onOpenRisks : null,
                 ),
                 _PostureCount(
                   label: '预警',
                   value: '$warningCount',
-                  color: const Color(0xFFFF8800),
+                  color: DesignTokens.warning,
                   onTap: warningCount > 0 ? onOpenRisks : null,
                 ),
                 _PostureCount(
                   label: '数据问题',
                   value: '$dqOpenCount',
-                  color: const Color(0xFF7B61FF),
+                  color: DesignTokens.accentPurple,
                   onTap: dqOpenCount > 0 ? onOpenQuality : null,
                 ),
               ],
@@ -756,7 +760,7 @@ class _MustHandleCard extends StatelessWidget {
             ),
             _HandleRow(
               icon: Icons.fact_check_outlined,
-              color: const Color(0xFF3370FF),
+              color: DesignTokens.primary,
               label: '审批待办',
               value: '$approvalCount 项',
               onTap: onOpenApprovals,
@@ -764,7 +768,7 @@ class _MustHandleCard extends StatelessWidget {
             const Divider(height: 1, indent: 54),
             _HandleRow(
               icon: Icons.auto_awesome_outlined,
-              color: const Color(0xFF7B61FF),
+              color: DesignTokens.accentPurple,
               label: '自动任务',
               value: '$autoTaskCount 项',
               onTap: onOpenAutoTasks,
@@ -773,8 +777,8 @@ class _MustHandleCard extends StatelessWidget {
             _HandleRow(
               icon: Icons.task_alt_outlined,
               color: overdue > 0
-                  ? const Color(0xFFF54A45)
-                  : const Color(0xFF00B96B),
+                  ? DesignTokens.error
+                  : DesignTokens.success,
               label: '我的任务${binding != null ? '（${binding!.memberName}）' : ''}',
               value: myTaskSummary,
               onTap: onOpenProjects,
@@ -873,7 +877,7 @@ class _FlowBlockCard extends StatelessWidget {
           if (escalatedCount > 0)
             _HandleRow(
               icon: Icons.rocket_launch_outlined,
-              color: const Color(0xFFF54A45),
+              color: DesignTokens.error,
               label: '流程阻塞（已升级自动任务）',
               value: '$escalatedCount 项',
               onTap: onOpenAutoTasks,
@@ -883,7 +887,7 @@ class _FlowBlockCard extends StatelessWidget {
           if (highDqCount > 0)
             _HandleRow(
               icon: Icons.report_gmailerrorred_outlined,
-              color: const Color(0xFFFF8800),
+              color: DesignTokens.warning,
               label: '严重数据问题',
               value: '$highDqCount 项',
               onTap: onOpenQuality,
@@ -917,12 +921,12 @@ class _FinanceOverviewCard extends StatelessWidget {
               _FinanceStat(
                 label: '收入',
                 value: formatAmount(stats.income),
-                color: const Color(0xFF00B96B),
+                color: DesignTokens.success,
               ),
               _FinanceStat(
                 label: '支出',
                 value: formatAmount(stats.expense),
-                color: const Color(0xFFF54A45),
+                color: DesignTokens.error,
               ),
               _FinanceStat(
                 label: '结余',
@@ -997,7 +1001,7 @@ class _BudgetWarningsCard extends StatelessWidget {
           Row(
             children: [
               Icon(Icons.warning_amber_rounded,
-                  size: 18, color: const Color(0xFFFF8800)),
+                  size: 18, color: DesignTokens.warning),
               const SizedBox(width: 6),
               const Text(
                 '预算预警',
@@ -1111,20 +1115,20 @@ IconData _eventIcon(String entityType) {
 Color _eventColor(String entityType) {
   switch (entityType) {
     case 'member':
-      return const Color(0xFF3370FF);
+      return DesignTokens.primary;
     case 'project':
-      return const Color(0xFF00B96B);
+      return DesignTokens.success;
     case 'task':
-      return const Color(0xFF13C2C2);
+      return DesignTokens.accentCyan;
     case 'notice':
-      return const Color(0xFFFF8800);
+      return DesignTokens.warning;
     case 'finance':
-      return const Color(0xFF7B61FF);
+      return DesignTokens.accentPurple;
     case 'approval':
-      return const Color(0xFFF54A45);
+      return DesignTokens.error;
     case 'organization':
-      return const Color(0xFF1F5FBF);
+      return DesignTokens.accentDeepBlue;
     default:
-      return const Color(0xFF8A9099);
+      return DesignTokens.textTertiary;
   }
 }

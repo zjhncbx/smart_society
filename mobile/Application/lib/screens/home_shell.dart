@@ -3,10 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../config/org_config_provider.dart';
+import '../config/theme_config.dart';
 import '../providers/finance_provider.dart';
 import '../providers/notice_provider.dart';
 import '../providers/organization_provider.dart';
 import '../router.dart';
+import '../widgets/app_theme.dart';
 import '../widgets/member_avatar.dart';
 
 class HomeShell extends StatelessWidget {
@@ -43,12 +45,20 @@ class HomeShell extends StatelessWidget {
         ],
       ),
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
-        surfaceTintColor: Colors.transparent,
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) =>
-            navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
-        destinations: [
+      bottomNavigationBar: Container(
+        // 底栏顶部 hairline 分隔线（对标飞书）
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: context.appTheme.dividerColor),
+          ),
+        ),
+        child: NavigationBar(
+          surfaceTintColor: Colors.transparent,
+          height: DesignTokens.bottomNavHeight,
+          selectedIndex: navigationShell.currentIndex,
+          onDestinationSelected: (index) =>
+              navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
+          destinations: [
           NavigationDestination(
             icon: const Icon(Icons.home_outlined),
             selectedIcon: const Icon(Icons.home),
@@ -74,7 +84,8 @@ class HomeShell extends StatelessWidget {
             selectedIcon: _FinanceTabIcon(selected: true),
             label: labels.tabFinance,
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

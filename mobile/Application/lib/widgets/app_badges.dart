@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../config/theme_config.dart';
+
 enum BadgeVariant { info, success, warning, error, neutral }
 
-const Color kBadgeInfo = Color(0xFF3370FF);
-const Color kBadgeSuccess = Color(0xFF00B96B);
-const Color kBadgeWarning = Color(0xFFFF8800);
-const Color kBadgeError = Color(0xFFF54A45);
-const Color kBadgeNeutral = Color(0xFF8A9099);
+// 语义色与 Web 端 tokens.ts 同源（DesignTokens 为唯一基准）
+const Color kBadgeInfo = DesignTokens.primary;
+const Color kBadgeSuccess = DesignTokens.success;
+const Color kBadgeWarning = DesignTokens.warning;
+const Color kBadgeError = DesignTokens.error;
+const Color kBadgeNeutral = DesignTokens.textTertiary;
 
 class StatusBadge extends StatelessWidget {
   final String label;
@@ -34,11 +37,15 @@ class StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(DesignTokens.radiusPill),
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color),
+        style: TextStyle(
+          fontSize: DesignTokens.fontSizeSm,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
       ),
     );
   }

@@ -1,5 +1,63 @@
 import 'package:flutter/material.dart';
 
+import '../config/theme_config.dart';
+import 'app_theme.dart';
+
+/// 统一页面头部骨架：大标题 + 可选副标题 + 可选右侧动作。
+/// 二级页面统一使用此组件，保证页头与间距节奏一致（对标钉钉/飞书详情页）。
+class PageHeader extends StatelessWidget {
+  const PageHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.action,
+    this.padding = const EdgeInsets.fromLTRB(16, 12, 16, 4),
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? action;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Padding(
+      padding: padding,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontSize: DesignTokens.fontSizeLg,
+                    fontWeight: DesignTokens.weightSemibold,
+                    color: cs.onSurface,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: context.appTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          ?action,
+        ],
+      ),
+    );
+  }
+}
+
 /// 空态视图
 class EmptyView extends StatelessWidget {
   const EmptyView({
@@ -37,7 +95,8 @@ class EmptyView extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             message,
-            style: theme.textTheme.bodyMedium?.copyWith(color: cs.outline),
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: context.appTheme.textSecondary),
           ),
           if (action != null) ...[
             const SizedBox(height: 16),

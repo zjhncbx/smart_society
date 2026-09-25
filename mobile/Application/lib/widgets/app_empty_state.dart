@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_theme.dart';
+
 class AppEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -51,7 +53,7 @@ class AppEmptyState extends StatelessWidget {
               Text(
                 subtitle!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: cs.outline,
+                      color: context.appTheme.textSecondary,
                     ),
                 textAlign: TextAlign.center,
               ),

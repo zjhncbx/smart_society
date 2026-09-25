@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// 设计令牌：钉钉/飞书风格（浅灰画布、白色卡片、极浅边框、语义化功能色）
+import '../config/theme_config.dart';
+
+/// 设计令牌：钉钉/飞书风格（浅灰画布、白色卡片、极浅边框、语义化功能色）。
+/// 色彩/圆角/阴影基准统一取自 DesignTokens（与 Web 端 tokens.ts 同源）。
 class AppTheme extends ThemeExtension<AppTheme> {
   final double cardRadius;
   final double controlRadius;
@@ -11,23 +14,27 @@ class AppTheme extends ThemeExtension<AppTheme> {
   final Color dividerColor;
   final Color textSecondary;
   final Color brandColor;
+  final List<BoxShadow> cardShadow;
+  final List<BoxShadow> floatingShadow;
   final List<List<Color>> avatarGradients;
 
   const AppTheme({
-    this.cardRadius = 16,
-    this.controlRadius = 12,
+    this.cardRadius = DesignTokens.radiusLarge,
+    this.controlRadius = DesignTokens.radiusCard,
     this.badgeRadius = 20,
-    this.scaffoldBackground = const Color(0xFFF5F6F7),
-    this.cardColor = Colors.white,
-    this.cardBorderColor = const Color(0xFFECECEF),
-    this.dividerColor = const Color(0xFFF0F0F3),
-    this.textSecondary = const Color(0xFF8A9099),
-    this.brandColor = const Color(0xFF3370FF),
+    this.scaffoldBackground = DesignTokens.scaffoldLight,
+    this.cardColor = DesignTokens.cardLight,
+    this.cardBorderColor = DesignTokens.borderLight,
+    this.dividerColor = DesignTokens.dividerLight,
+    this.textSecondary = DesignTokens.textSecondary,
+    this.brandColor = DesignTokens.primary,
+    this.cardShadow = const [DesignTokens.shadowCard],
+    this.floatingShadow = const [DesignTokens.shadowFloating],
     this.avatarGradients = _defaultGradients,
   });
 
   static const List<List<Color>> _defaultGradients = [
-    [Color(0xFF5B8DEF), Color(0xFF3370FF)],
+    [Color(0xFF4096FF), Color(0xFF1677FF)],
     [Color(0xFF7C6FE0), Color(0xFF5B4FCE)],
     [Color(0xFF4FB3A6), Color(0xFF2E8B7E)],
     [Color(0xFFE8A33D), Color(0xFFD47E16)],
@@ -41,11 +48,13 @@ class AppTheme extends ThemeExtension<AppTheme> {
     final dark = cs.brightness == Brightness.dark;
     return AppTheme(
       // 深色模式为黑色画布 + 深灰卡片（钉钉/飞书深色风格）
-      scaffoldBackground: dark ? Colors.black : const Color(0xFFF5F6F7),
-      cardColor: dark ? const Color(0xFF1C1C1E) : Colors.white,
-      cardBorderColor: dark ? const Color(0xFF2C2C2E) : const Color(0xFFECECEF),
-      dividerColor: dark ? const Color(0xFF26262A) : const Color(0xFFF0F0F3),
-      textSecondary: dark ? const Color(0xFF9A9AA0) : const Color(0xFF8A9099),
+      scaffoldBackground:
+          dark ? DesignTokens.scaffoldDark : DesignTokens.scaffoldLight,
+      cardColor: dark ? DesignTokens.cardDark : DesignTokens.cardLight,
+      cardBorderColor:
+          dark ? DesignTokens.borderDark : DesignTokens.borderLight,
+      dividerColor: dark ? const Color(0xFF26262A) : DesignTokens.dividerLight,
+      textSecondary: dark ? const Color(0xFF9A9AA0) : DesignTokens.textSecondary,
       brandColor: cs.primary,
     );
   }
@@ -61,6 +70,8 @@ class AppTheme extends ThemeExtension<AppTheme> {
     Color? dividerColor,
     Color? textSecondary,
     Color? brandColor,
+    List<BoxShadow>? cardShadow,
+    List<BoxShadow>? floatingShadow,
     List<List<Color>>? avatarGradients,
   }) =>
       AppTheme(
@@ -73,6 +84,8 @@ class AppTheme extends ThemeExtension<AppTheme> {
         dividerColor: dividerColor ?? this.dividerColor,
         textSecondary: textSecondary ?? this.textSecondary,
         brandColor: brandColor ?? this.brandColor,
+        cardShadow: cardShadow ?? this.cardShadow,
+        floatingShadow: floatingShadow ?? this.floatingShadow,
         avatarGradients: avatarGradients ?? this.avatarGradients,
       );
 
