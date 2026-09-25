@@ -105,7 +105,7 @@ function SuspensePage({ children }: { children: ReactNode }): ReactNode {
 }
 
 /** 404 兜底页：未知路由统一反馈并提供返回工作台入口 */
-function NotFoundPage(): React.JSX.Element {
+export function NotFoundPage(): React.JSX.Element {
   const navigate = useNavigate();
   return (
     <Result
@@ -113,7 +113,8 @@ function NotFoundPage(): React.JSX.Element {
       title="404"
       subTitle="页面不存在或已被移除"
       extra={
-        <Button type="primary" onClick={() => navigate('/')}>
+        // replace 导航：不把 404 条目残留在历史栈，避免工作台后退再回 404
+        <Button type="primary" onClick={() => navigate('/', { replace: true })}>
           返回工作台
         </Button>
       }
