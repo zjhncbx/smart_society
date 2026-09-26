@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="104" height="20" role="img" aria-label="license: GPL-3.0">
+  <title>license: GPL-3.0</title>
+  <g shape-rendering="crispEdges">
+    <rect width="52" height="20" fill="#555"/>
+    <rect x="52" width="52" height="20" fill="#007EC6"/>
+  </g>
+  <g fill="#fff" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="10" text-anchor="middle">
+    <text x="26" y="14">license</text>
+    <text x="78" y="14">GPL-3.0</text>
+  </g>
+</svg>

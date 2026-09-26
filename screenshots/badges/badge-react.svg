@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="62" height="20" role="img" aria-label="react: 19">
+  <title>react: 19</title>
+  <g shape-rendering="crispEdges">
+    <rect width="40" height="20" fill="#555"/>
+    <rect x="40" width="22" height="20" fill="#61DAFB"/>
+  </g>
+  <g font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="10" text-anchor="middle">
+    <text x="20" y="14" fill="#fff">react</text>
+    <text x="51" y="14" fill="#1F2329">19</text>
+  </g>
+</svg>

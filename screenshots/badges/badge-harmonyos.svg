@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="112" height="20" role="img" aria-label="harmonyos: NEXT">
+  <title>harmonyos: NEXT</title>
+  <g shape-rendering="crispEdges">
+    <rect width="68" height="20" fill="#555"/>
+    <rect x="68" width="44" height="20" fill="#1F2329"/>
+  </g>
+  <g fill="#fff" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="10" text-anchor="middle">
+    <text x="34" y="14">harmonyos</text>
+    <text x="90" y="14">NEXT</text>
+  </g>
+</svg>

@@ -219,6 +219,8 @@ Access Token → Auth Context → userId → Organization → Role/Permission/Da
 
 SmartSociety Web 不是传统 CRUD 后台，应采用 **“工作台 + 治理中心 + 全域感知”**。
 
+> **实现现状（W0~W4 已落地）**：一级导航已按此架构实现并扩展（含治理对象、审计与事件、文件中心、通知公告），见 `src/layouts/AppLayout.tsx` 的 `navItems`；全局视觉对标钉钉/飞书，设计令牌唯一基准为 `src/theme/tokens.ts`（主色 `#1677FF` 系），统一页面骨架 `src/components/PageContainer.tsx`，截图见仓库根 `screenshots/web/`。
+
 建议一级导航：
 
 ```text

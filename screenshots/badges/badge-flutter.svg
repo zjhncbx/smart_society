@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="88" height="20" role="img" aria-label="flutter: 3.41">
+  <title>flutter: 3.41</title>
+  <g shape-rendering="crispEdges">
+    <rect width="52" height="20" fill="#555"/>
+    <rect x="52" width="36" height="20" fill="#02569B"/>
+  </g>
+  <g fill="#fff" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="10" text-anchor="middle">
+    <text x="26" y="14">flutter</text>
+    <text x="70" y="14">3.41</text>
+  </g>
+</svg>

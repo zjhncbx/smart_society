@@ -4,88 +4,102 @@
   <img src="mobile/Application/AppScope/resources/base/media/app_icon.png" width="96" height="96" alt="社易管 Logo" />
 </p>
 
-基于 **Flutter + HarmonyOS 混合开发** 的多组织社团管理平台，支持华为账号登录、多组织管理、自动双向同步、组织层级与数据共享。
+<p align="center">
+  <img src="screenshots/badges/badge-license.svg" alt="license: GPL-3.0" />
+  &nbsp;
+  <img src="screenshots/badges/badge-harmonyos.svg" alt="harmonyos: NEXT" />
+  &nbsp;
+  <img src="screenshots/badges/badge-flutter.svg" alt="flutter: 3.41" />
+  &nbsp;
+  <img src="screenshots/badges/badge-react.svg" alt="react: 19" />
+  &nbsp;
+  <img src="screenshots/badges/badge-antd.svg" alt="antd: v5" />
+</p>
+
+**SmartSociety** (社易管) is a multi-organization management platform for campus clubs, volunteer teams, and social organizations. It ships a **Flutter-based HarmonyOS NEXT mobile app** backed by **Huawei AGC Serverless** (cloud functions + cloud database), along with a **React 19 + Ant Design 5 web console** sharing the same business APIs.
+
+Core capabilities include Huawei account sign-in with unified cross-platform identity, multi-organization management with RBAC, offline-first bidirectional sync, non-profit accounting with approval workflows, and an automated governance engine covering business events, data quality, risk alerts, audit logs, and a unified work-item center. The UI follows the DingTalk/Feishu design language with a shared design-token system across web and mobile.
+
+---
+
+## 中文简介
+
+社易管是面向**学校社团、志愿服务队、社会团体**的多组织管理平台，一个华为账号可同时加入并管理多个组织。
+
+- **移动管理端**（HarmonyOS NEXT）：面向社长/队长/会长等管理人员的全量管理能力——组织态势驾驶舱、成员/项目/公告/财务、全域检索、统一待办、风险钻取、组织数字画像、同步中心。
+- **Web 管理端**：React 19 + Ant Design 5 管理控制台，与移动端共用同一套云函数业务 API（统一 `{ ret }` 契约、幂等键、correlationId 全链贯通）。
+- **华为账号认证**：华为 Account Kit 一键登录 + 手机号/邮箱密码注册登录（scrypt 加盐哈希），端云全链身份透传与跨端统一内部 userId。
+- **自动双向同步**：本地优先、离线操作入队、联网自动推送与拉取合并；设置数据（角色名/主题/昵称）云端存储。
+- **自动化治理**：规则引擎 GR-01~12 自动生成任务与风险预警、数据质量规则与健康度评分、审计日志与事件关联链。
 
 - 应用显示名：社易管（英文 SmartSociety），包名 `com.hnmrxz.smart_society`
-- 文档版本：V3.2.1
-- 适用平台：Windows / macOS（开发），HarmonyOS NEXT（真机）
-- 真机验证：华为 Mate 70 Pro+（HarmonyOS NEXT）
+- 文档版本：V3.2.1 · 适用平台：Windows / macOS（开发）、HarmonyOS NEXT（真机，已在华为 Mate 70 Pro+ 验证）
 
-## 产品定位
+## 目录
 
-- **多组织 SaaS 平台**：支持学校社团、志愿服务队、社会团体三类组织独立注册与管理，同一华为账号可加入多个组织。
-- **移动管理端**：面向社长/队长/会长等管理人员，提供成员、项目、公告的全量管理能力。
-- **华为账号认证**：集成华为 Account Kit，用户使用华为账号一键登录，端云全链路身份透传；同时支持手机号/邮箱密码注册登录（scrypt 加盐哈希存储，注销账号联动删除）
-- **自动双向同步**：离线操作入队，联网后自动推送；云端数据变更可拉取合并，无需手动触发。
-- **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储，换设备或重新登录自动恢复；角色名按组织独立存储，钉钉凭证仅组织管理员可见。
+- [功能亮点](#功能亮点)
+- [截图预览](#截图预览)
+- [技术栈](#技术栈)
+- [仓库结构](#仓库结构)
+- [快速开始](#快速开始)
+- [鸿蒙云开发（AGC）配置](#鸿蒙云开发agc配置)
+- [云函数总览](#云函数总览)
+- [混合通信](#混合通信)
+- [同步机制](#同步机制)
+- [数据隔离模型](#数据隔离模型)
+- [里程碑](#里程碑)
+- [常见问题](#常见问题)
+- [关键资源](#关键资源)
+- [许可证](#许可证)
 
-## 技术栈
+## 功能亮点
 
-| 层 | 技术 |
-|----|------|
-| UI / 业务 | Flutter（Dart 3.11），Flutter-OH 3.41.10 |
-| 原生壳 | HarmonyOS（ArkTS，API 26） |
-| 账号认证 | 华为 Account Kit（HuaweiIDProvider + AuthenticationController） |
-| 状态管理 | Provider 6 |
-| 路由 | go_router 14（StatefulShellRoute 四 Tab + 认证守卫） |
-| 本地缓存 | Hive（settings / auth / organizations / syncQueue / members / projects / notices） |
-| 网络请求 | Dio |
-| 云开发 | 华为 AGC Serverless（云函数 + 云数据库） |
-| 混合通信 | MethodChannel（存储路径 / 云函数 / 认证桥接） |
-| UI 组件 | 自研 AppCard / StatusBadge / AppEmptyState / AppTheme |
+> 完整的功能审视与优化路线见 [`docs/产品审视与优化路线.md`](docs/产品审视与优化路线.md)；云数据契约见 [`docs/云数据契约.md`](docs/云数据契约.md)，业务 API 契约见 [`docs/业务API契约.md`](docs/业务API契约.md)。
 
-## 功能清单
-
-### 已实现（V3.2）
-
-- **华为账号认证**：一键登录/退出，用户身份端云透传（`cloudCommon.init(authProvider)`）
-- **多组织管理**：创建组织（学校社团/志愿服务队→自动生成 ID，社会团体→统一社会信用代码）、切换组织、加入已有组织
-- **组织类型**：学校社团、志愿服务队、社会团体，引导页首次选择后自动创建首个组织
-- **主题**：校园风（蓝）、青年风（紫）、公益红（红，合并原志愿/政务）；主题色按组织保存（管理员设置，成员共用），黑色深色模式为个人偏好（云端同步，仅影响本人设备）
-- **角色体系**：分级角色 + 人数上限约束，名称可在设置中自定义，按组织独立存储并云端同步（`OrgSettings.roleLabels`）
-  - 学校社团：社长(1)、部长(不限)
-  - 志愿服务队：队长(1)、部长(不限)
-  - 社会团体：会长(1)、副会长(不限)、秘书长(1)、理事(不限)、监事长(1)、监事(不限)
-- **成员管理**：列表（搜索/角色筛选）、详情、新增/编辑、删除，按 orgId 隔离
-- **项目管理**：项目/任务/里程碑三级管理、状态流转（筹备中→进行中→已暂停→已完成）、进度自动计算、任务指派负责人，按 orgId 隔离
-- **通知公告**：发布、重要标记、已读状态，按 orgId 隔离
-- **管理仪表盘**：成员总数 / 进行中项目 / 未读通知 / 同步状态统计
-- **自动双向同步**：离线操作本地持久化 + 云端队列推送，30s 周期自动同步，失败操作保留在队列中等待重试；启动与切换组织时自动拉取云端数据落库
-- **组织层级**：父-子组织和合作伙伴关系，支持成员/项目/公告选择性共享
-- **多语言文案体系**：全部 UI 文案经 `OrgLabels` 按组织类型分发
-- **钉钉通讯录单向同步**：按组织配置钉钉 Client ID/Secret，同步前可选择要同步的钉钉组织（部门，支持取消勾选下级部门以排除）；入会时间取钉钉入职日期（hired_date）；会员编号按（入会时间, 姓名）排序从 1 开始递增（部分部门同步时保留原编号）；全量同步会删除钉钉中已不存在的同步成员并清理账号绑定；拉取失败自动重试、仍失败即中止（不静默丢人）；一人多部门全部保存（`departments`），`department` 为主部门，可手动指定主部门并保留；支持变更成员角色（重新同步时保留人工调整值），同步默认分配普通成员（社员/队员/会员）
-- **财务管理**：社会团体按《民间非营利组织会计制度》提供会计科目、记账凭证（借贷分录、平衡校验）、期初余额（支持从上期期末结转）、科目余额表、总账/明细账、资产负债表、业务活动表（限定/非限定）、现金流量表与期末结账（自动生成结转凭证）；学校社团/志愿组织提供简化版收支登记；财务单据可关联项目（项目预算/支出联动），并接入自定义审批流程（审批/办理/抄送三类节点），抄送与完成结果自动生成通知公告
-- **事件中心（WF-01）**：统一业务事件模型（创建/提交/审批/驳回/通过/变更/完成/删除/状态变化等），成员/项目/任务/通知/财务单据/审批流程/结账等业务动作在云函数层自动落事件；端侧提供组织事件流页（按业务对象/级别筛选、分页、事件详情与元数据），首页集成“组织动态”入口
-- **数据治理中心（DQ-02）**：确定性数据质量规则（必填缺失/无效联系方式/重复成员/日期逻辑/负责人不存在/已结束项目未完成任务/任务逾期/财务缺少关联/预算超支/组织资料缺失），自动生成并复用/关闭问题；健康度评分（按维度）+ 问题清单闭环（解决/忽略/重开，处理结果自动进入事件流），首页集成“数据治理健康度”卡片
-- **自动任务与风险预警（WF-03/04、SA-02/03、SEC-01）**：轻量规则引擎（GR-01~08：任务逾期自动升级、项目进度偏差/延期、审批SLA超时、数据质量自动任务、预算超支、关键治理职位空缺、审批驳回异常、项目长期未更新），自动生成并升级自动任务与风险/预警（区分风险与预警，去重、自动关闭已恢复项）；自动任务中心（可解释来源规则/SLA/升级路径，完成/取消/重开闭环）+ 风险预警中心（确认监控/标记解决）+ 自动化运行审计日志（每次运行的任务/风险变更与耗时）；首页集成“风险预警”概览卡与自动任务入口
-- **工作台看板与 UI 设计语言**：工作台首页集成全览看板（成员/进行中项目/未读通知/待办统计、我的任务逾期与到期提醒、财务收支概览、预算预警、快捷入口、最近动态）；项目详情支持任务看板（待办/进行中/已完成三列、状态流转）；底部导航 5 栏（首页/成员/项目/通知/财务）；全局主题对标钉钉/飞书（浅灰画布、白卡细边框、语义化功能色、统一圆角与字阶、渐变头像、浮动圆角提示）。完整审视与优化路线见 `docs/产品审视与优化路线.md`
-- **组织态势总览（APP-01/SA-01）**：工作台顶部升级为“组织态势 → 必须处理 → 流程阻塞 → 财务概览 → 快捷入口 → 组织动态”，态势卡给出组织运行状态（正常/关注/需介入）、待处理/风险/预警/数据问题计数与“当前最值得关注”结论清单，所有指标可点击钻取到对应中心
-- **移动端体验（APP-02/03/04、同步中心）**：顶部新增全域检索入口（跨成员/项目/任务/公告/自动任务/风险/事件统一搜索并钻取）；待办中心统一聚合审批待办、自动任务与我的项目任务；风险详情页支持“风险→原因→关联对象→责任人→处理动作”完整钻取；同步中心展示数据状态、最近同步、待同步队列与同步原则，支持手动立即同步
-- **组织数字画像（P1）**：管理健康度（数据质量/流程效率/风险状态/财务健康/项目执行加权评分）+ 组织规模、会员结构、项目执行、财务与流程、风险与数据维度钻取，每一分可追溯到真实业务模块；入口位于“我的”
-- **云端权限安全加固（Web 前置）**：upsert/delete（成员/项目/公告）、get-all-data、组织层级/关系、钉钉凭证接口统一增加云端成员校验，组织关系与钉钉凭证进一步要求管理员；同步队列与拉取自动注入 userId，杜绝按 id/orgId 越权读写
-- **审计日志（Web 前置）**：新增 AuditLog 对象（action/对象/操作人/改前改后/变更原因/关联ID），record/get-audit-log 云函数；成员/项目/公告增删改、财务提交/审批/驳回/结账/反结账等 10 个关键业务函数自动落审计，支持按对象/动作/操作人筛选分页
-- **事件关联链路（Web 前置）**：correlationId 全链贯通——业务动作（财务提交/审批/结账/反结账、自动任务、风险处置、数据治理、工作项处理）生成关联键并写入 BusinessEvent 与 AuditLog；规则引擎生成的自动任务/风险、工作项物化视图携带同一关联键；事件详情页可查看关联ID；云数据契约冻结于 `docs/云数据契约.md`
-- **跨端统一身份（Web 前置）**：按身份规范新增 ExternalIdentity 对象与 ensure-user-identity 云函数（provider+providerSubject → 稳定内部 userId，幂等）；密码账号 AppUser.id 即内部 userId，华为账号 OpenID 不再直接充当业务主键
-- **统一业务 API 与服务端幂等（Web 前置）**：业务动作命名规范（submit/approve/reject/done/close/unclose/resolve/ack/reopen）与幂等契约冻结于 `docs/业务API契约.md`；财务提交/审批/结账/反结账、自动任务、风险处置、数据问题闭环共 7 个关键动作接入 IdempotencyRecord（同键重试返回首次结果，24h 有效），客户端自动生成幂等键
-- **统一工作项 WorkItem（P0-A）**：审批/自动任务/项目任务/风险整改/数据治理统一抽象为 WorkItem（对象含类型/来源/负责人/优先级/SLA/升级/完成条件）；refresh-work-items 从来源业务物化视图并自动关闭已消失项，get-work-items 统一查询，act-work-item 统一处理（自动任务/风险/数据治理同步来源，审批/项目任务跳转来源系统）；移动端新增统一工作项页，Web 直接消费同一接口
-- **跨端统一身份客户端落地（P0-B）**：华为登录后自动调用 ensure-user-identity 换取内部 userId，客户端全部业务调用改为使用内部 userId（原 19 处 openId 用法已替换，openId 仅保留为外部身份映射）；新增 Person 对象（personId+userId 主档），AppUser 增加 personId 字段，形成 ExternalIdentity → userId → Person 链路
-- **RBAC 第一版（P0-C）**：新增 Role（内置角色矩阵+自定义权限 JSON）/ Permission（权限目录）/ DataScope（数据范围）对象；UserOrganization 增强为组织成员关系（roleId/dataScope/status）；get-my-permissions 云端计算角色/权限/数据范围（回退兼容旧 admin/member），get-roles/save-role/save-data-scope 供管理员配置；客户端权限框架已接入（我的页管理操作按权限码门禁）
-- **决议执行中心（GOV-02）**：新增 Resolution 对象（统一字段+标题/内容/状态/责任人/期限/会议关联/关联ID）；save-resolution / get-resolutions / act-resolution 云函数（幂等、事件、审计）；规则引擎新增 GR-09 决议逾期未执行（自动生成预警与推进任务）；统一工作项物化纳入“决议执行”类型
-- **治理对象生命周期（GOV-01/CMP-01）**：新增 License 证照 / ComplianceItem 合规事项 / Term 任期 三个对象及 save/get/act 云函数（幂等键+事件+审计）；规则引擎新增 GR-10 证照到期（180/90/30 天分级）、GR-11 任期届满（180/90/30 天换届提醒）、GR-12 合规事项逾期；统一工作项物化纳入证照/合规/任期类型
-- **变化感知与业务血缘（P1）**：get-trend-stats 提供近 7 天事件/风险/自动化/审批时长趋势与环比异常判断；get-entity-relations 以项目为根聚合决议（Resolution.projectId）/负责人/财务/审批/风险/自动任务血缘图；Web 报表页新增趋势图、项目页新增关系图（ECharts graph）
-- **核心表统一字段迁移**：Member / Project / Notice 三张核心主数据表补齐统一字段（code/status/createdAt/createdBy/updatedBy/version/sourceType/sourceId），云函数模型与 Flutter 模型同步，upsert 时自动生成编码与版本号
-- **Flutter DTO 统一字段对齐**：FinanceRecord / ApprovalInstance / ApprovalFlow / AutoTask / RiskAlert / DataQualityIssue / DataQualitySnapshot 等移动端模型补齐统一字段（code/status/createdBy/updatedBy/version/sourceType/sourceId），与云数据契约一致
-- **Web 管理端（W0~W4）**：React19+TS strict+Vite7+AntD5+TanStack Query+Zustand 单页应用，统一 API Client（{ ret } 契约、idempotencyKey/correlationId、Zod 校验）；已实现核心工作台（WorkItem/组织态势/全域检索/风险/数据质量/自动化/审计事件链）、组织业务（组织治理/成员档案/项目/审批决议/财务）、高级治理（规则管理/报表 ECharts/CSV 导出/全域感知）、设置中心（组织设置/角色 RBAC 配置/数据范围/用户偏好）、治理对象（证照/合规事项/任期）、财务高级（期初余额/总账明细账/期末结账与反结账/会计报表）、公告管理与**真实认证链**（账号密码登录 login-user → 组织列表 get-my-orgs → 组织切换 → 权限 get-my-permissions）与统一错误处理（ErrorState/请求级错误映射/Mock 错误注入）；开发态 Mock 可完整跑通（68 项冒烟断言），接 AGC 网关后替换（详见 `web/README.md` 与 `docs/AGC部署联调.md`）
-- **治理规则启停配置（云端）**：`OrgSettings.ruleConfig` 存储组织级禁用规则集合（`{"disabled":["GR-xx"]}`）；`get-rule-config` 返回 GR-01~12 规则定义与启停状态，`set-rule-enabled`（仅管理员、强制幂等键、审计+事件+correlationId 贯通）维护启停；`run-governance-rules` 运行时跳过被禁用规则并在结果 `skippedRules` 与日志中记录；Web 规则管理页与移动端引擎共用同一配置
-- **全域检索与治理报表（云端）**：`search-all` 跨工作项/风险/自动任务/事件/成员/项目/公告七类对象统一关键词检索（每类上限 20 条、空关键词防全表扫描）；`get-automation-logs` 自动化运行日志分页；`get-report-stats` 聚合收支月度趋势/风险分布/数据质量维度/项目状态与汇总指标
-- **移动端缺陷清零**：widget 冒烟测试重写（5 Tab 骨架 + MultiProvider/GoRouter 真实初始化，Hive 等真实 IO 包 `tester.runAsync`）、models/providers/页面层空 catch 全量治理（日志+用户提示，控制流不变）、main 全局错误兜底（FlutterError.onError + PlatformDispatcher.onError）、路由 `:id` 参数缺失重定向首页、`/settings/roles` 独立可达、移除未使用依赖；`flutter analyze` 0 error/0 warning，`flutter test` 通过
-- **成员数据管理**：支持 CSV 导出与粘贴导入（钉钉托管组织仅可导出）；财务支持反结账（撤销结转凭证，恢复年度录入）
-- **设置数据上云**：角色自定义名 / 钉钉配置 / 主题 / 昵称全部云端存储（`OrgSettings` / `UserSettings` 表），换设备或重新登录自动恢复；钉钉凭证仅组织管理员可见，普通成员只读同步状态；离线保存设置提示失败，读取用本地缓存兜底
+- **组织与身份**：三类组织（学校社团/志愿服务队/社会团体）独立注册与管理；华为账号一键登录 + 账密注册；跨端统一身份（ExternalIdentity → userId → Person）；RBAC 角色权限（内置矩阵 + 自定义权限 + 数据范围）；组织层级与父子/伙伴关系共享。
+- **业务管理**：成员档案（搜索/角色筛选/CSV 导出与粘贴导入）、项目-任务-里程碑三级管理与状态流转、公告（重要标记/已读）、文件中心（上传/下载/软删）、钉钉通讯录单向同步（部门选择/主部门保留/角色保留/失败重试）。
+- **财务管理**：社会团体按《民间非营利组织会计制度》提供会计科目、借贷分录凭证、期初余额（上期结转）、科目余额表、总账/明细账、资产负债表、业务活动表、现金流量表与期末结账/反结账；学校社团/志愿组织提供简化版收支登记；自定义审批流（审批/办理/抄送三类节点，抄送与完成自动生成公告）；单据关联项目预算联动。
+- **治理与自动化**：统一业务事件中心（云函数层自动落事件）、数据质量规则（GR 系列之外另有 8 类确定性规则）与健康度评分、规则引擎 GR-01~12（任务逾期升级/进度偏差/审批 SLA/预算超支/职位空缺/证照到期/任期届满/合规逾期等，支持组织级启停）、自动任务与风险预警闭环、决议/证照/合规事项/任期治理对象、审计日志（改前改后 + correlationId 关联链）、组织数字画像（管理健康度加权评分与多维钻取）。
+- **统一工作项 WorkItem**：审批/自动任务/项目任务/风险整改/数据治理统一抽象，物化视图 + 统一查询与处理，移动端与 Web 消费同一接口。
+- **移动端体验**：组织态势总览（运行状态/待处理/风险/数据问题与"最值得关注"结论）、全域检索、统一待办中心、风险完整钻取、同步中心；全局 UI 对标钉钉/飞书（浅灰画布、白卡细边框、语义功能色、统一圆角字阶、渐变头像、底部 5 Tab + 再按一次退出防抖）。
+- **Web 管理端**：核心工作台（工作项/态势/检索/风险/数据质量/自动化/审计）、组织业务（组织/成员/项目/审批决议/财务）、高级治理（规则管理/报表 ECharts/CSV 导出/全域感知）、设置中心（组织设置/角色/数据范围/偏好）、财务高级（期初/总账/结账/报表）、公告管理；开发态 Mock 全链路可跑（68 项冒烟断言），见 [`web/README.md`](web/README.md)。
+- **同步与安全**：本地优先 + 30s 周期自动双向同步（失败指数退避重试）；云端权限加固（upsert/delete/get-all-data 统一成员校验，同步自动注入 userId）；关键动作服务端幂等（IdempotencyRecord，24h 有效）。
 
 ### 规划中
 
 - 钉钉群消息、审批流（接口已预留）
 - 华为推送 Kit（公告推送）、扫码签到（PlatformView）
+
+## 截图预览
+
+Web 管理端（mock 模式，设计令牌对标钉钉/飞书）：
+
+| 登录页 | 工作台 |
+|--------|--------|
+| ![登录页](screenshots/web/login.png) | ![工作台](screenshots/web/workbench.png) |
+
+| 财务管理 | 风险与预警 | 自动化治理 |
+|----------|------------|------------|
+| ![财务管理](screenshots/web/finance.png) | ![风险与预警](screenshots/web/risk.png) | ![自动化治理](screenshots/web/automation.png) |
+
+> 移动端截图见 [`screenshots/mobile/`](screenshots/mobile/)（占位，随版本补充）。截图由 `web/scripts/capture-screens.ts` 在 mock dev server 自动采集。
+
+## 技术栈
+
+| 层 | 技术 |
+|----|------|
+| 移动 UI / 业务 | Flutter（Dart 3.11），Flutter-OH 3.41.10 |
+| 原生壳 | HarmonyOS（ArkTS，API 26） |
+| Web 管理端 | React 19 + TypeScript strict + Vite 7 + Ant Design 5 + TanStack Query + Zustand |
+| 账号认证 | 华为 Account Kit（HuaweiIDProvider + AuthenticationController） |
+| 状态管理 | Provider 6（移动端） |
+| 路由 | go_router 14（StatefulShellRoute 五 Tab + 认证守卫）；React Router 7（Web） |
+| 本地缓存 | Hive（settings / auth / organizations / syncQueue / members / projects / notices） |
+| 网络请求 | Dio（移动端）；统一 API Client（Web，{ ret } 契约 + Zod 校验） |
+| 云开发 | 华为 AGC Serverless（云函数 + 云数据库） |
+| 混合通信 | MethodChannel（存储路径 / 云函数 / 认证桥接） |
+| 设计系统 | 双端同源 DesignTokens（Web `web/src/theme/tokens.ts` ↔ 移动 `theme_config.dart`），统一 AppCard / StatusBadge / PageContainer |
+| 测试 | Vitest + RTL（Web 单元/组件）、Playwright（Web E2E）、flutter_test（移动冒烟） |
 
 ## 仓库结构
 
@@ -93,70 +107,77 @@
 
 ```
 smart_society/                     # 仓库根目录
-├── .gitignore
 ├── README.md                      # 总说明（本文件）
+├── CONTRIBUTING.md                # 参与贡献指南
+├── SUPPORTED.md                   # 支持环境矩阵
+├── screenshots/                   # 截图与徽章资源
+│   ├── badges/                    # 仓库内静态徽章 SVG
+│   └── web/                       # Web 端代表页截图
 ├── docs/                          # 文档
-│   └── 产品审视与优化路线.md       # 功能审视与优化路线
+│   ├── AGC部署联调.md              # 云函数部署与联调（部署细节单一信息源）
+│   ├── 产品审视与优化路线.md        # 功能审视与优化路线
+│   ├── 云数据契约.md / 业务API契约.md
+│   └── ...
 ├── mobile/                        # 手机端 · 端云一体化工程（DevEco Studio 打开此目录）
-│   ├── .gitignore
 │   ├── Application/               # 端侧工程（Flutter + HarmonyOS 原生壳）
 │   │   ├── lib/                   # Flutter 业务代码
 │   │   │   ├── main.dart / app.dart   # 入口，MultiProvider 初始化链路
-│   │   │   ├── router.dart            # go_router 配置（含认证守卫 + 组织路由）
-│   │   │   ├── config/                # 组织类型、主题、OrgLabels / FinanceLabels
-│   │   │   ├── models/                # Member / Project / Notice / AuthUser / 财务与审批
-│   │   │   ├── providers/             # Settings / Auth / Organization / Sync / Finance
-│   │   │   ├── screens/               # auth / org / member / project / notice / finance / home / profile / settings
-│   │   │   ├── services/              # auth / cloud_function / storage / api_client / dingtalk
-│   │   │   ├── widgets/               # AppCard / StatusBadge / AppEmptyState / AppTheme
-│   │   │   └── utils/
-│   │   ├── entry/                  # 鸿蒙 entry 模块
-│   │   │   └── src/main/ets/
-│   │   │       ├── entryability/EntryAbility.ets   # 云开发初始化 + 3 个 MethodChannel
-│   │   │       └── resources/rawfile/agconnect-services.json
-│   │   ├── AppScope/
-│   │   ├── build-profile.json5
-│   │   ├── ohos/                   # → mobile/Application/ 自身（NTFS Junction）
+│   │   │   ├── router.dart            # go_router 配置（认证守卫 + Tab 返回拦截）
+│   │   │   ├── config/                # 组织类型、主题 DesignTokens、OrgLabels
+│   │   │   ├── models/ / providers/ / screens/ / services/ / widgets/ / utils/
+│   │   ├── entry/                # 鸿蒙 entry 模块（EntryAbility.ets 云开发初始化 + 3 个 MethodChannel）
 │   │   └── pubspec.yaml
 │   └── CloudProgram/               # 云侧工程
-│       ├── cloud-config.json
 │       ├── clouddb/
-│       │   ├── db-config.json
-│       │   ├── objecttype/         # 32 个对象类型定义（Member/Project/Notice/Org/Finance/BusinessEvent/质量/自动化/审计/身份/幂等/工作项/权限/决议/治理对象/文件等）
+│       │   ├── objecttype/         # 32 个对象类型定义
 │       │   └── dataentry/          # 种子数据
-│       └── cloudfunctions/         # 80 个云函数（含注册登录、财务、审批、结账、事件中心、数据治理、自动化治理、审计、身份、权限、决议、治理对象、文件中心、趋势/血缘、全域检索、规则配置/报表等；common/ 为共享模型模块）
-└── web/                            # 网页端（W0~W3 已实现，见 web/README.md）
-    ├── src/                        # React + TS strict + AntD5 + 统一 API Client
+│       └── cloudfunctions/         # 80 个云函数（common/ 为共享模型模块）
+└── web/                            # Web 管理端（见 web/README.md）
+    ├── src/                        # React 19 + TS strict + AntD5 + 统一 API Client
     ├── mock/                       # 开发态 Mock API（{ ret } 契约）
     ├── scripts/                    # dev-smoke（Mock 冒烟断言）
     └── tests/                      # Vitest + RTL + Playwright
 ```
 
-> **注意**：`mobile/Application/ohos/` 是 NTFS Junction（目录联结），指向 `mobile/Application/` 自身，供 Flutter 工具链（`flutter build/run`）与 `flutter-hvigor-plugin` 解析 `ohos/local.properties`。**DevEco Studio 请打开 `mobile/` 目录**（工程根仅含 `Application/` 与 `CloudProgram/` 两个目录，不含其他文件）；仓库根目录按模块拆分，不直接作为 DevEco 工程根。
-
-## 环境要求
-
-| 工具 | 版本 | 备注 |
-|------|------|------|
-| Flutter-OH | **3.41.10-ohos-1.0.0** | 鸿蒙定制版 |
-| Dart SDK | ^3.11.5 | 随 Flutter-OH |
-| DevEco Studio | 6.1+ | 安装时勾选 HarmonyOS SDK |
-| JDK | 17 | 构建必需 |
-| Node.js | 18+ | hvigor/ohpm 依赖 |
-
-环境变量：`DEVECO_SDK_HOME`、`HOS_SDK_HOME`、`PUB_HOSTED_URL=https://pub.flutter-io.cn`、`FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn`。
+> **注意**：`mobile/Application/ohos/` 是 NTFS Junction（目录联结），指向 `mobile/Application/` 自身，供 Flutter 工具链与 `flutter-hvigor-plugin` 解析 `ohos/local.properties`。**DevEco Studio 请打开 `mobile/` 目录**（工程根仅含 `Application/` 与 `CloudProgram/` 两个目录）。
 
 ## 快速开始
 
+### 环境要求
+
+| 工具 | 版本 | 备注 |
+|------|------|------|
+| Flutter-OH | **3.41.10-ohos-1.0.1** | 鸿蒙定制版 |
+| Dart SDK | ^3.11.5 | 随 Flutter-OH |
+| DevEco Studio | 6.1+ | 安装时勾选 HarmonyOS SDK |
+| JDK | 17 | 构建必需 |
+| Node.js | 18+ | hvigor/ohpm 依赖；Web 端建议 20+（pnpm） |
+
+环境变量：`DEVECO_SDK_HOME`、`HOS_SDK_HOME`、`PUB_HOSTED_URL=https://pub.flutter-io.cn`、`FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn`。详细支持环境矩阵见 [`SUPPORTED.md`](SUPPORTED.md)。
+
+### 移动端
+
 ```bash
 cd mobile/Application
-flutter doctor -v
 flutter pub get
-flutter analyze
+flutter analyze   # 门禁：0 issue
+flutter test      # 门禁：全过
 flutter run --debug -d <deviceId>
 ```
 
-首次启动流程：华为账号登录 → 引导页选择组织类型与主题 → 自动创建首个组织 → 进入主界面。
+首次启动流程：华为账号登录（或账密注册）→ 引导页选择组织类型与主题 → 自动创建首个组织 → 进入主界面。
+
+### Web 管理端
+
+```bash
+cd web
+pnpm install
+pnpm typecheck && pnpm lint && pnpm test && pnpm build   # 四门禁
+pnpm smoke                                               # Mock 冒烟（68 项断言）
+pnpm dev                                                 # 默认 mock 模式，浏览器打开 http://localhost:5173
+```
+
+Mock 模式无需任何云端配置即可完整体验；对接真实 AGC 网关见 [`docs/AGC部署联调.md`](docs/AGC部署联调.md)「四、Web 接入真实网关」。
 
 ## 鸿蒙云开发（AGC）配置
 
@@ -178,197 +199,67 @@ flutter run --debug -d <deviceId>
 
 ### 3. 云数据库
 
-32 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`：
+32 个对象类型定义位于 `CloudProgram/clouddb/objecttype/`（对象清单与统一字段契约见 [`docs/云数据契约.md`](docs/云数据契约.md)）：
 
 | 对象类型 | 主键 | 说明 |
 |----------|------|------|
-| Member | id | 成员（+orgId 隔离） |
-| Project | id | 项目（+orgId 隔离，tasks/milestones 内嵌为 JSON 字符串） |
-| Notice | id | 公告（+orgId 隔离） |
-| Organization | orgId | 组织信息 |
-| OrganizationRelationship | relId | 组织间关系 |
-| UserOrganization | id | 用户-组织关联 |
-| OrgSettings | orgId | 组织级设置（roleLabels 为 JSON 字符串、ruleConfig 规则启停配置、钉钉凭证与同步记录） |
-| UserSettings | userId | 用户级设置（主题序号、昵称） |
-| AppUser | id | 账号（手机号/邮箱密码登录，scrypt 加盐哈希） |
-| Document | id | 云存储文件元数据（domain/refType/size/status，软删） |
-| FinanceRecord | id | 财务单据（收支单/记账凭证，含借贷分录、审批状态） |
-| ApprovalFlow | id | 审批流程定义（节点含审批/办理/抄送） |
-| ApprovalInstance | id | 审批实例（当前节点、处理记录，抄送/完成生成通知） |
-| FinanceOpeningBalance | id | 会计科目期初余额（按年度） |
-| BusinessEvent | id | 统一业务事件（orgId 隔离，含事件类型/对象/操作人/级别/元数据） |
-| DataQualityIssue | id | 数据质量问题（规则/实体/严重度/状态/检查次数） |
-| DataQualitySnapshot | id | 数据治理健康度快照（总分/维度分/计数） |
-| AutoTask | id | 自动任务（来源规则/SLA/升级路径/状态） |
-| RiskAlert | id | 风险与预警（kind 区分风险/预警，责任人/期限/状态） |
-| AutomationRunLog | id | 自动化运行审计日志（动作/耗时/结果） |
-| AuditLog | id | 审计日志（改前改后/操作人/变更原因/关联ID） |
-| ExternalIdentity | identityId | 外部身份映射（provider+providerSubject → 内部 userId） |
-| IdempotencyRecord | id=幂等键 | 业务动作幂等记录（action/entity/result/有效期） |
-| WorkItem | id | 统一工作项（类型/来源/负责人/SLA/完成条件） |
-| Person | personId | 自然人主档（userId 关联，基础身份） |
-| Role | id | 组织角色（内置矩阵+自定义权限 JSON/数据范围） |
-| Permission | id | 权限目录（code/name/category） |
-| DataScope | id | 数据范围（角色级/用户级覆盖） |
-| Resolution | id | 决议（统一字段+状态/责任人/期限/会议关联/关联ID） |
-| License | id | 证照（编号/发证机关/有效期/状态） |
-| ComplianceItem | id | 合规事项（类型/截止/状态/责任人） |
-| Term | id | 任期（治理机构/起止/届次状态） |
+| Member / Project / Notice | id | 业务主数据（+orgId 隔离，tasks/milestones 内嵌 JSON） |
+| Organization / OrganizationRelationship / UserOrganization | orgId / relId / id | 组织、组织间关系、用户-组织关联 |
+| OrgSettings / UserSettings | orgId / userId | 组织级设置（roleLabels、ruleConfig、钉钉凭证）/ 用户级设置 |
+| AppUser / ExternalIdentity / Person | id / identityId / personId | 账号、外部身份映射、自然人主档 |
+| FinanceRecord / ApprovalFlow / ApprovalInstance / FinanceOpeningBalance | id | 财务单据、审批流、审批实例、期初余额 |
+| BusinessEvent / DataQualityIssue / DataQualitySnapshot | id | 业务事件、数据质量问题、健康度快照 |
+| AutoTask / RiskAlert / AutomationRunLog / AuditLog | id | 自动任务、风险预警、自动化运行日志、审计日志 |
+| IdempotencyRecord / WorkItem | id | 幂等记录、统一工作项 |
+| Role / Permission / DataScope | id | RBAC 角色、权限目录、数据范围 |
+| Resolution / License / ComplianceItem / Term | id | 决议、证照、合规事项、任期 |
+| Document | id | 云存储文件元数据（软删） |
 
 权限配置：World/Authenticated 仅可读，Creator/Administrator 可读写删。端侧不直连云数据库，由云函数服务端 SDK 访问；`OrgSettings` 中的钉钉凭证由 `get-org-settings` 按角色裁剪，普通成员不可见。
 
-### 4. 云函数
+### 4. 云函数部署
 
-80 个云函数，HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`。部署步骤与验收清单见 `docs/AGC部署联调.md`。
+80 个云函数（HTTP 触发器、POST、认证类型 `apigw-client`，统一返回 `{ ret: { code, message, data } }`）的功能分类见下方[云函数总览](#云函数总览)。**部署步骤、对象类型同步与联调验收清单的单一信息源为 [`docs/AGC部署联调.md`](docs/AGC部署联调.md)**（含 DevEco Studio 图形界面部署、AGC 控制台在线编辑器两种方式与 CLI 不可用结论）。
 
-**数据 CRUD（7 个，按 orgId 隔离）**：
+## 云函数总览
 
-| 函数 | 说明 |
-|------|------|
-| `get-all-data` | 全量拉取 Member / Project / Notice（按 orgId 过滤） |
-| `upsert-member` / `delete-member` | 成员 upsert / 删除 |
-| `upsert-project` / `delete-project` | 项目 upsert（含 tasks/milestones）/ 删除 |
-| `upsert-notice` / `delete-notice` | 公告 upsert / 删除 |
+> 本节为云函数**功能分类的唯一全量清单**；部署与联调细节见 [`docs/AGC部署联调.md`](docs/AGC部署联调.md)。
 
-**事件中心（2 个）**：
+**数据 CRUD（7 个，按 orgId 隔离）**：`get-all-data`（全量拉取 Member/Project/Notice）、`upsert/delete-member`、`upsert/delete-project`（含 tasks/milestones）、`upsert/delete-notice`
 
-| 函数 | 说明 |
-|------|------|
-| `record-business-event` | 记录一条业务事件（校验组织成员身份） |
-| `get-business-events` | 组织事件流查询（按对象/事件类型/级别筛选、倒序分页） |
+**事件中心（2 个）**：`record-business-event`（校验组织成员身份）、`get-business-events`（按对象/类型/级别筛选、倒序分页）
 
-**数据治理（3 个）**：
+**数据治理（3 个）**：`run-data-quality`（生成/复用/自动关闭问题 + 健康度快照）、`get-data-quality`、`resolve-data-quality-issue`（解决/忽略/重开，结果入事件流）
 
-| 函数 | 说明 |
-|------|------|
-| `run-data-quality` | 运行数据质量规则，生成/复用/自动关闭问题，计算健康度快照 |
-| `get-data-quality` | 健康度快照 + 问题清单（按分类/状态筛选、分页） |
-| `resolve-data-quality-issue` | 数据问题闭环（解决/忽略/重开），处理结果写入事件流 |
+**自动化治理（4 个）**：`run-governance-rules`（GR-01~12 批量运行，读取 `OrgSettings.ruleConfig` 跳过禁用规则）、`get-governance-center`（任务/风险/运行记录汇总）、`act-auto-task`、`act-risk-alert`
 
-**自动化治理（4 个）**：
+**组织管理（7 个）**：`create-org`（名称唯一性与信用代码校验）、`get-my-orgs`、`join-org`、`set-org-relationship`、`get-org-hierarchy`、`set-org-admin`、`delete-org`（级联删除）
 
-| 函数 | 说明 |
-|------|------|
-| `run-governance-rules` | 规则引擎批量运行（逾期升级/进度偏差/审批SLA/数据质量任务/预算超支），读取 `OrgSettings.ruleConfig` 跳过被禁用规则，生成任务与风险并写审计日志 |
-| `get-governance-center` | 自动任务 + 风险/预警 + 自动化运行记录汇总 |
-| `act-auto-task` | 自动任务处理（完成/取消/重开），结果写入事件流 |
-| `act-risk-alert` | 风险/预警处理（标记解决/确认监控/重开），结果写入事件流 |
+**用户与绑定（2 个）**：`bind-member`（按手机号绑定会员）、`delete-user`（注销账号，级联删除）
 
-**组织管理（7 个）**：
+**钉钉同步（2 个）**：`dingtalk-sync-contacts`（凭证入参，`d+userid` 幂等批量 upsert）、`dingtalk-list-departments`（部门树）
 
-| 函数 | 说明 |
-|------|------|
-| `create-org` | 创建组织（校验名称唯一性、信用代码格式），自动添加创建者为管理员 |
-| `get-my-orgs` | 获取当前用户所属所有组织及角色 |
-| `join-org` | 加入已有组织 |
-| `set-org-relationship` | 设置父-子或伙伴关系及数据共享策略 |
-| `get-org-hierarchy` | 获取组织层级树 |
-| `set-org-admin` | 变更组织管理员 |
-| `delete-org` | 注销组织，级联删除该组织全部数据与设置 |
+**财务与审批（7 个）**：`submit-finance-record`（提交并自动发起审批）、`act-finance-node`（通过/驳回/办理，完成时通知）、`get-finance-records`、`get-finance-stats`、`get-approval-tasks`、`save-approval-flow` / `get-approval-flows`
 
-**用户与绑定（2 个）**：
+**财务结账与报表（6 个）**：`save/get-opening-balances`（期初录入与上期结转）、`get-accounting-reports`（余额表/资产负债表/业务活动表/现金流量表）、`get-ledger`（总账/明细账）、`close-period`（结转凭证生成）、`unclose-period`（反结账）
 
-| 函数 | 说明 |
-|------|------|
-| `bind-member` | 按手机号绑定会员 |
-| `delete-user` | 注销账号，级联删除所属组织（唯一账号时）与用户设置 |
+**设置（4 个）**：`get/save-org-settings`（钉钉凭证仅 admin 可见）、`get/save-user-settings`
 
-**钉钉同步（1 个）**：
+**身份与认证（3 个）**：`register-user` / `login-user`（scrypt 加盐哈希）、`ensure-user-identity`（外部身份 → 内部 userId，幂等）
 
-| 函数 | 说明 |
-|------|------|
-| `dingtalk-sync-contacts` | 钉钉通讯录单向同步（凭证入参，`d+userid` 幂等批量 upsert） |
-| `dingtalk-list-departments` | 获取钉钉组织架构（部门树），同步前选择要同步的组织 |
+**权限 RBAC（4 个）**：`get-my-permissions`（云端计算角色/权限/数据范围，回退兼容旧 admin/member）、`get-roles`、`save-role`、`save-data-scope`
 
-**财务与审批（7 个）**：
-| 函数 | 说明 |
-|------|------|
-| `submit-finance-record` | 提交财务单据（收支/记账凭证），自动发起审批流程并生成抄送通知 |
-| `act-finance-node` | 审批通过/驳回、办理完成；推进流程节点，完成时更新单据状态并通知 |
-| `get-finance-records` | 财务单据列表/详情（含我可操作标记） |
-| `get-finance-stats` | 收入/费用/结余汇总、按科目与按项目统计（收入费用表） |
-| `get-approval-tasks` | 我的待办（当前节点处理人） |
-| `save-approval-flow` / `get-approval-flows` | 审批流程定义保存（仅管理员）与列表 |
+**统一工作项（3 个）**：`refresh-work-items`（物化 + 自动关闭消失项）、`get-work-items`、`act-work-item`（完成/取消/重开，同步来源系统）
 
-**财务结账与报表（6 个）**：
-| 函数 | 说明 |
-|------|------|
-| `save-opening-balances` / `get-opening-balances` | 期初余额录入（仅管理员），支持从上期期末一键结转 |
-| `get-accounting-reports` | 科目余额表、资产负债表、业务活动表（限定/非限定）、现金流量表 |
-| `get-ledger` | 总账/明细账（按科目，含期初与逐笔余额） |
-| `close-period` | 期末结账：收入/费用结转至净资产，生成结转凭证并通知（仅管理员） |
-| `unclose-period` | 反结账：撤销结转凭证，恢复年度录入（仅管理员，强制幂等键） |
+**审计（2 个）**：`record-audit-log`、`get-audit-logs`（按对象/动作/操作人筛选分页）
 
-**设置（4 个，新增）**：
+**决议与治理对象（12 个）**：`save/get/act-resolution`、`save/get/act-license`、`save/get/act-compliance-item`、`save/get/act-term`
 
-| 函数 | 说明 |
-|------|------|
-| `get-org-settings` | 读取组织设置；校验成员身份，钉钉凭证仅 admin 可见，member 仅返回配置状态与同步记录 |
-| `save-org-settings` | 保存组织设置（仅管理员）；roleLabels 以 JSON 字符串存储 |
-| `get-user-settings` | 读取用户设置（主题/昵称） |
-| `save-user-settings` | 保存用户设置 |
+**感知与血缘（2 个）**：`get-trend-stats`（近 7 天趋势与环比异常）、`get-entity-relations`（项目根血缘图）
 
-**身份与认证（3 个）**：
+**文件中心（5 个）**：`init/commit-file-upload`（SDK 直传或代理写入 ≤5MB）、`list-documents`、`get-document-file`（代理下载 ≤10MB）、`delete-document`（软删）
 
-| 函数 | 说明 |
-|------|------|
-| `register-user` / `login-user` | 手机号/邮箱密码注册 / 登录（scrypt 加盐哈希校验，返回内部 userId） |
-| `ensure-user-identity` | 外部身份映射（provider+providerSubject → 稳定内部 userId，幂等） |
-
-**权限 RBAC（4 个）**：
-
-| 函数 | 说明 |
-|------|------|
-| `get-my-permissions` | 云端计算当前用户角色/权限/数据范围（回退兼容旧 admin/member） |
-| `get-roles` / `save-role` / `save-data-scope` | 角色列表（内置+自定义）/ 角色保存 / 数据范围配置（仅管理员） |
-
-**统一工作项（3 个）**：
-
-| 函数 | 说明 |
-|------|------|
-| `refresh-work-items` | 从审批/自动任务/项目任务/风险/数据治理物化工作项，自动关闭已消失项 |
-| `get-work-items` / `act-work-item` | 统一工作项查询 / 处理（完成/取消/重开，同步来源系统） |
-
-**审计（2 个）**：
-
-| 函数 | 说明 |
-|------|------|
-| `record-audit-log` / `get-audit-logs` | 审计写入 / 按对象/动作/操作人筛选分页查询 |
-
-**决议与治理对象（12 个）**：
-
-| 函数 | 说明 |
-|------|------|
-| `save-resolution` / `get-resolutions` / `act-resolution` | 决议保存（强制幂等键）/ 查询 / 状态迁移（开始执行/完成/重开） |
-| `save-license` / `get-licenses` / `act-license` | 证照保存 / 查询 / 动作（续期/过期/重开） |
-| `save-compliance-item` / `get-compliance-items` / `act-compliance-item` | 合规事项保存 / 查询 / 动作（开始/完成/重开） |
-| `save-term` / `get-terms` / `act-term` | 任期保存 / 查询 / 动作（换届准备/生效/归档） |
-
-**感知与血缘（2 个）**：
-
-| 函数 | 说明 |
-|------|------|
-| `get-trend-stats` | 近 7 天事件/风险/自动化/审批时长趋势与环比异常判断 |
-| `get-entity-relations` | 业务血缘：项目根节点聚合决议/负责人/财务/审批/风险/任务 |
-
-**文件中心（5 个）**：
-
-| 函数 | 说明 |
-|------|------|
-| `init-file-upload` / `commit-file-upload` | 上传初始化（强制幂等键）/ 提交（SDK 直传 move 或代理写入 ≤5MB） |
-| `list-documents` | 按 DataScope 分页查询文件（分类/状态/关键词/只看我的） |
-| `get-document-file` | 服务端代理下载（base64，≤10MB） |
-| `delete-document` | 软删 + 存储删除（强制幂等键） |
-
-**检索、规则配置与报表（5 个，新增）**：
-
-| 函数 | 说明 |
-|------|------|
-| `search-all` | 全域检索：工作项/风险/自动任务/事件/成员/项目/公告七类关键词统一搜索（每类≤20 条，空关键词防全表扫描） |
-| `get-rule-config` | 治理规则 GR-01~12 定义（WHEN/IF/THEN）与启停状态查询 |
-| `set-rule-enabled` | 治理规则启停（仅管理员，强制幂等键，审计+事件+correlationId 贯通） |
-| `get-automation-logs` | 自动化运行日志分页查询（runAt 倒序，pageSize≤100） |
-| `get-report-stats` | 治理报表聚合：收支月度趋势/风险分布/数据质量维度/项目状态/汇总指标 |
+**检索、规则配置与报表（5 个）**：`search-all`（七类对象统一检索，每类≤20 条）、`get-rule-config`（GR-01~12 定义与启停）、`set-rule-enabled`（仅管理员，强制幂等）、`get-automation-logs`、`get-report-stats`（收支趋势/风险分布/质量维度/项目状态聚合）
 
 ## 混合通信
 
@@ -382,10 +273,8 @@ flutter run --debug -d <deviceId>
 
 - **本地优先**：所有写入操作先持久化到 Hive，界面即时响应。
 - **操作入队**：每个 save/delete 操作自动入队到 SyncProvider 的持久化队列。
-- **周期推送**：30s 定时器自动处理队列，网络不可用时操作保留在队列中等待。
-- **云端拉取**：`flush()` 在推送完成后自动拉取云端最新数据合并到本地；启动与切换组织时同样自动拉取。
-- **重试策略**：单次云函数调用失败时自动重试 3 次（指数退避 500ms / 1000ms / 2000ms）。
-- **全自动同步**：所有增删改操作自动入队推送，无手动同步入口。
+- **周期推送**：30s 定时器自动处理队列，网络不可用时操作保留等待重试（单次失败指数退避 500ms / 1s / 2s，共 3 次）。
+- **云端拉取**：推送完成后、启动时与切换组织时自动拉取云端最新数据合并到本地。
 
 ## 数据隔离模型
 
@@ -398,53 +287,43 @@ flutter run --debug -d <deviceId>
 ```
 
 - 所有数据表通过 `orgId` 字段隔离，云函数强制校验用户是否属于该组织。
-- 组织关系（`OrganizationRelationship`）控制跨组织数据共享：`shareMembers`、`shareActivities`、`shareNotices` 分别控制成员/活动/公告的可见性。
+- 组织关系（`OrganizationRelationship`）控制跨组织共享：`shareMembers`、`shareActivities`、`shareNotices`。
 
 ## 里程碑
 
 | 阶段 | 状态 | 交付物 |
 |------|------|--------|
-| 环境搭建 / 项目初始化 | ✅ | Flutter-OH + DevEco 工程，真机运行 |
-| 核心 UI（三模块 + 仪表盘） | ✅ | 成员/项目/公告/设置页 |
-| 角色体系与文案重构 | ✅ | 分级角色、自定义角色名、OrgLabels |
-| 本地持久化 | ✅ | Hive 多盒存储 |
-| 端云一体化工程结构 | ✅ | mobile/Application/ + mobile/CloudProgram/ |
-| 云函数 + 云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
+| 环境搭建 / 核心 UI / 角色体系 / 本地持久化 | ✅ | Flutter-OH 工程、三模块 + 仪表盘、分级角色、Hive 多盒 |
+| 端云一体化 + 云函数云数据库（V2） | ✅ | 7 个云函数 + 3 张表 |
 | **多组织架构（V3）** | ✅ | 华为账号认证、多组织管理、自动同步、组织层级 |
 | 云函数部署 + 真机联调 | ✅ | 80 个云函数 + 32 张表部署至 AGC |
-| 钉钉集成 | ✅ | 通讯录单向同步（按组织配置凭证、成员只读）；群消息/审批流待后续 |
-| **设置数据上云（V3.2）** | ✅ | 角色名/钉钉配置/主题/昵称云端存储，按组织隔离，凭证仅管理员可见 |
-| **事件中心（V4.1）** | ✅ | 统一业务事件模型 + 云函数自动落事件 + 组织事件流页 |
-| **数据治理中心（V4.1）** | ✅ | 质量规则 + 健康度评分 + 问题闭环 + 首页健康度卡 |
-| **自动化治理（V4.1）** | ✅ | 规则引擎 + 自动任务 + 风险/预警中心 + 运行审计 |
-| **组织态势总览（V4.1）** | ✅ | 工作台从“统计卡片”升级为“从数据到结论”的管理驾驶舱 |
-| **移动端体验（V4.1）** | ✅ | 全域检索 + 统一待办 + 风险钻取 + 同步中心 |
-| **组织数字画像（V4.1）** | ✅ | 管理健康度评分 + 规模/会员/项目/财务/流程/风险/数据钻取 |
-| **Web 管理端（W0~W4）** | ✅ | React19 管理台：认证链/组织切换/核心工作台/组织业务/高级治理/设置中心/治理对象/财务高级/公告；Mock 68 项冒烟断言全绿 |
-| **治理规则启停与收尾（V4.2）** | ✅ | OrgSettings.ruleConfig 规则启停、全域检索/自动化日志/报表聚合等 5 个新云函数（共 80 个）、AGC 部署联调文档、移动端缺陷清零（analyze 0 error / test 通过） |
+| 钉钉集成 + 设置数据上云（V3.2） | ✅ | 通讯录单向同步；角色名/钉钉配置/主题/昵称云端存储 |
+| **事件中心 / 数据治理 / 自动化治理（V4.1）** | ✅ | 统一事件模型、质量规则与健康度、规则引擎 + 任务/风险中心 + 运行审计 |
+| **组织态势 / 移动端体验 / 组织数字画像（V4.1）** | ✅ | 管理驾驶舱、全域检索、统一待办、风险钻取、同步中心、画像钻取 |
+| **Web 管理端（W0~W4）** | ✅ | React19 管理台全功能 + 真实认证链；Mock 68 项冒烟断言全绿 |
+| **治理规则启停与收尾（V4.2）** | ✅ | ruleConfig 启停、5 个新云函数（共 80 个）、AGC 部署联调文档、移动端缺陷清零 |
+| **UI 现代化（V4.3）** | ✅ | 双端设计令牌同源（#1677FF 系）、Web 布局对标钉钉/飞书、移动端卡片流强化、返回键行为审计 |
 | 测试优化 | ⏳ | 功能回归、性能、兼容性 |
 | 打包上架 | ⏳ | 签名证书、隐私政策、上架审核 |
 
 ## 常见问题
+
+> 云函数部署、AGC 联调、Web 对接真实网关类问题的**单一信息源**为 [`docs/AGC部署联调.md`](docs/AGC部署联调.md)（含 CLI 不可用结论、手动部署两种方式与验收清单）。
 
 | 问题 | 解决方案 |
 |------|----------|
 | `flutter doctor` 报 OpenHarmony toolchain 缺失 | 检查 `DEVECO_SDK_HOME` / `HOS_SDK_HOME` |
 | 真机签名失效 | DevEco → Project Structure → Signing Configs 重新生成 |
 | DevEco 不显示 CloudProgram | 用 DevEco 打开 `mobile/` 目录，确保其下仅有 `Application/` + `CloudProgram/` |
-| 云函数调用报 `160404: Trigger not exist` | 函数未部署，在 DevEco 中重新部署 |
-| 云函数报 `2047: the input class is invalid` | 模型类未实现 CloudDB SDK 要求的 5 个方法 |
-| 云函数报权限错误 | 确认认证类型为 `apigw-client`、证书指纹已登记 |
+| 云函数调用报 `160404` / `2047` / 权限错误 | 见 [`docs/AGC部署联调.md`](docs/AGC部署联调.md) 部署与验收章节 |
+| 想用命令行部署云函数 | 当前工具链不可行，需 DevEco Studio Deploy 或 AGC 在线编辑器，见 [`docs/AGC部署联调.md`](docs/AGC部署联调.md)「三、CLI 部署不可用说明」 |
+| Web 如何对接真实 AGC 网关 | `VITE_API_MODE=agc` + `VITE_API_BASE_URL`，见 [`docs/AGC部署联调.md`](docs/AGC部署联调.md)「四、Web 接入真实网关」 |
 | 华为账号登录失败 | 确认 AGC 已开通 Account Kit、OAuth 回调已配置 |
 | 同步队列堆积 | 检查网络连接，恢复后 30s 周期内自动推送 |
-| MethodChannel 通信失败 | 核对 Dart 与 ArkTS 两端 Channel 名称、参数 key 完全一致 |
-| 云数据库部署报 `Failed to decode response body. createDataBaseResource` | 多为云数据库服务未开通/登录态失效/网络代理拦截；先在 AGC 控制台确认云数据库已开通、DevEco 重新登录，再重试部署 |
-| 设置保存报"保存失败" | 设置保存必须先云端成功后本地生效，检查网络与云函数是否已部署（get/save-org-settings、get/save-user-settings） |
-| 设置页点击"保存"无反应 / 设置数据不上云 | 事件回调中误用 `context.labels`（内部为 `context.watch`，只能在 build 方法中调用）会在调试模式抛错且被吞掉；事件回调应使用 `context.labelsRead`（`read` 版本）。已修复设置页与成员/项目/公告表单页 |
-| 登录后保存设置报"缺少 orgId/userId 参数" | Provider 的 userId 原仅在启动时初始化，冷启动未登录、之后再登录时仍为空；已增加登录态监听，登录后自动同步 userId 并重新拉取云端用户/组织设置 |
-| 想用命令行部署云函数 | 当前工具链不可行：`devecocli` 无云函数部署通道、`hvigor` 构建仅覆盖 Application 模块；需用 DevEco Studio 右键 Deploy 或 AGC 控制台在线编辑器，步骤见 `docs/AGC部署联调.md` |
-| Web 如何对接真实 AGC 网关 | `VITE_API_MODE=agc` + `VITE_API_BASE_URL=云函数 HTTP 触发器域名`；认证链 `login-user → get-my-orgs → get-my-permissions`；联调步骤与验收清单见 `docs/AGC部署联调.md` |
-| `flutter test` 挂起无输出 | 测试内真实 IO（如 `Hive.openBox`）必须包在 `tester.runAsync()` 中执行：FakeAsync 区域不派发真实事件循环完成事件，裸 `await` 会永久挂起（连 `--timeout` 都不触发） |
+| 设置保存报"保存失败" / 报缺参 | 设置保存必须先云端成功后本地生效；检查网络与 get/save-org-settings、get/save-user-settings 是否已部署 |
+| 设置页点击"保存"无反应 | 事件回调中应使用 `context.labelsRead`（`read` 版本），不能在事件回调中 `context.watch` |
+| `flutter test` 挂起无输出 | 测试内真实 IO（如 `Hive.openBox`）必须包在 `tester.runAsync()` 中执行 |
+| Web 开发态接口如何 Mock | 默认 `VITE_API_MODE=mock`，`pnpm smoke` 校验 68 项断言；契约见 `web/src/mock/` |
 
 ## 关键资源
 
@@ -456,3 +335,7 @@ flutter run --debug -d <deviceId>
 | AppGallery Connect | https://developer.huawei.com/consumer/cn/service/josp/agc/index.html |
 | 云开发（Serverless）文档 | https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/agc-harmonyos-clouddev-createproject |
 | 华为 Account Kit | https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/account-kit-overview |
+
+## 许可证
+
+本项目基于 **GPL-3.0** 许可证发布，全文见 [`LICENSE`](LICENSE)。贡献内容将遵循同一许可证授权（详见 [`CONTRIBUTING.md`](CONTRIBUTING.md)）。
