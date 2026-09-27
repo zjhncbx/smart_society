@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -7,21 +8,59 @@ import '../config/theme_config.dart';
 import '../providers/finance_provider.dart';
 import '../providers/notice_provider.dart';
 import '../providers/organization_provider.dart';
-import '../router.dart';
 import '../widgets/app_theme.dart';
+import '../widgets/common.dart';
 import '../widgets/member_avatar.dart';
 
-class HomeShell extends StatelessWidget {
+class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   @override
+  State<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends State<HomeShell> {
+  /// “再按一次退出”防抖时间戳（仅首页 Tab 生效）
+  DateTime? _lastBackAt;
+
+  /// Tab 根页面返回键处理（PopScope 挂在 shell 页 ModalRoute 上）：
+  /// - 非首页 Tab：切回首页 Tab，不退出应用；
+  /// - 首页 Tab：首次返回提示“再按一次退出应用”，2 秒内再次返回才退出。
+  void _handleBack() {
+    final shell = widget.navigationShell;
+    if (shell.currentIndex != 0) {
+      shell.goBranch(0, initialLocation: false);
+      return;
+    }
+    final now = DateTime.now();
+    if (_lastBackAt == null ||
+        now.difference(_lastBackAt!) > const Duration(seconds: 2)) {
+      _lastBackAt = now;
+      showToast(context, '再按一次退出应用');
+      return;
+    }
+    // flutter-ohos 嵌入层未实际实现 SystemNavigator.pop
+    // （PlatformPlugin 委托返回 false 后仅执行 ArkUI router.back()，
+    // 单页 ArkUI 栈为 no-op），双击返回的“放行退出”在鸿蒙上暂不生效，
+    // 属嵌入层平台限制（见 back-checklist.md §1 结果记录）；
+    // 不使用 exit(0) 强杀进程——实测存在引擎死亡但宿主窗口
+    // 残留白屏的竞态（僵尸窗口），风险不可接受。
+    SystemNavigator.pop();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    registerNavigationShell(navigationShell);
     final labels = context.labels;
     final org = context.watch<OrganizationProvider>().currentOrg;
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(org?.name ?? labels.appTitle),
         actions: [
@@ -44,7 +83,7 @@ class HomeShell extends StatelessWidget {
           ),
         ],
       ),
-      body: navigationShell,
+      body: widget.navigationShell,
       bottomNavigationBar: Container(
         // 底栏顶部 hairline 分隔线（对标飞书）
         decoration: BoxDecoration(
@@ -55,9 +94,11 @@ class HomeShell extends StatelessWidget {
         child: NavigationBar(
           surfaceTintColor: Colors.transparent,
           height: DesignTokens.bottomNavHeight,
-          selectedIndex: navigationShell.currentIndex,
-          onDestinationSelected: (index) =>
-              navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex),
+          selectedIndex: widget.navigationShell.currentIndex,
+          onDestinationSelected: (index) => widget.navigationShell.goBranch(
+              index,
+              initialLocation:
+                  index == widget.navigationShell.currentIndex),
           destinations: [
           NavigationDestination(
             icon: const Icon(Icons.home_outlined),
@@ -86,6 +127,7 @@ class HomeShell extends StatelessWidget {
           ),
           ],
         ),
+      ),
       ),
     );
   }

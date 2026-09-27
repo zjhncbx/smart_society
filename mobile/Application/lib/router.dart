@@ -37,38 +37,15 @@ import 'screens/sync/sync_center_page.dart';
 import 'screens/todo/todo_center_page.dart';
 import 'screens/work_item/work_item_center_page.dart';
 import 'services/auth_gate.dart';
-import 'widgets/common.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-/// 当前 StatefulShellRoute 的导航壳引用，供 Tab 分支返回拦截（onExit）使用。
-StatefulNavigationShell? _currentNavigationShell;
-
-void registerNavigationShell(StatefulNavigationShell shell) {
-  _currentNavigationShell = shell;
-}
-
-/// Tab 分支根页面按返回键时的处理：
-/// - 非首页 Tab：先切回首页 Tab，并拦截返回事件（避免直接退出应用回到桌面）。
-/// - 首页 Tab：2 秒内首次返回拦截并提示"再按一次退出"，防误触直接回桌面；
-///   2 秒窗口内再次返回才放行，交给系统执行默认返回（退出应用）。
-DateTime? _lastBackAt;
-
-Future<bool> _handleShellExit(BuildContext context, GoRouterState state) async {
-  final shell = _currentNavigationShell;
-  if (shell != null && shell.currentIndex != 0) {
-    shell.goBranch(0, initialLocation: false);
-    return false;
-  }
-  final now = DateTime.now();
-  if (_lastBackAt == null ||
-      now.difference(_lastBackAt!) > const Duration(seconds: 2)) {
-    _lastBackAt = now;
-    showToast(context, '再按一次退出应用');
-    return false;
-  }
-  return true;
-}
+// Tab 分支根路由不再挂 onExit 做返回键拦截：
+// go_router 14.x 中 onExit 在 setNewRoutePath 的路由 diff 中也会被调用，
+// goBranch 切换 Tab 时旧分支根的 onExit 返回 false 会静默取消整个导航，
+// 导致底部 Tab 永远无法切换；而系统返回键在根导航器 bubble 路径上
+// 根本不会触发 onExit（两处路径均验证失效）。
+// 返回键拦截改由 HomeShell 内的 PopScope 承担（挂在 shell 页 ModalRoute 上）。
 
 /// 详情路由 id 参数缺失/为空时兜底重定向首页。
 /// 正常路径匹配（`:id` 存在）不会触发，属防御处理，替代裸 `!` 断言崩溃。
@@ -98,7 +75,6 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/home',
-              onExit: _handleShellExit,
               builder: (c, s) => const HomePage(),
             ),
           ],
@@ -107,7 +83,6 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/members',
-              onExit: _handleShellExit,
               builder: (c, s) => const MemberListPage(),
             ),
           ],
@@ -116,7 +91,6 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/projects',
-              onExit: _handleShellExit,
               builder: (c, s) => const ProjectListPage(),
             ),
           ],
@@ -125,7 +99,6 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/notices',
-              onExit: _handleShellExit,
               builder: (c, s) => const NoticeListPage(),
             ),
           ],
@@ -134,7 +107,6 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/finance',
-              onExit: _handleShellExit,
               builder: (c, s) => const FinanceListPage(),
             ),
           ],
