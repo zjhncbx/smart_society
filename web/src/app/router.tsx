@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Button, Result, Spin } from 'antd';
-import { lazy, ReactNode, Suspense } from 'react';
-import { Navigate, createBrowserRouter, useNavigate } from 'react-router';
+import { lazy, ReactNode, Suspense, useEffect } from 'react';
+import { Navigate, createBrowserRouter, useLocation, useNavigate } from 'react-router';
 
 import { useSession } from '@/auth/session';
 import { LoginPage } from '@/features/auth/LoginPage';
@@ -87,6 +87,15 @@ const NoticePage = lazy(() =>
 
 function RequireAuth({ children }: { children: ReactNode }): ReactNode {
   const userId = useSession((s) => s.userId);
+  const navigate = useNavigate();
+  const pathname = useLocation().pathname;
+  // effect 兜底：<Navigate> 的重定向 effect 在 React 19 transition 竞态下可能不执行
+  // （T048 实测：登出后立即浏览器后退，POP 提交后守卫 effect 丢失 → 白屏卡死）
+  useEffect(() => {
+    if (!userId && pathname !== '/login') {
+      navigate('/login', { replace: true });
+    }
+  }, [userId, pathname, navigate]);
   return userId ? children : <Navigate to="/login" replace />;
 }
 
