@@ -82,7 +82,17 @@ Web 管理端（mock 模式，设计令牌对标钉钉/飞书）：
 |----------|------------|------------|
 | ![财务管理](screenshots/web/finance.png) | ![风险与预警](screenshots/web/risk.png) | ![自动化治理](screenshots/web/automation.png) |
 
-> 移动端截图见 [`screenshots/mobile/`](screenshots/mobile/)（占位，随版本补充）。截图由 `web/scripts/capture-screens.ts` 在 mock dev server 自动采集。
+移动端（HarmonyOS 模拟器 Pura 90 实测，1320×2856，T046 UI 验证采集）：
+
+| 首页 | 成员 | 项目 |
+|------|------|------|
+| ![首页](screenshots/mobile/tab_home.png) | ![成员](screenshots/mobile/tab_members.png) | ![项目](screenshots/mobile/tab_projects.png) |
+
+| 通知 | 财务 |
+|------|------|
+| ![通知](screenshots/mobile/tab_notices.png) | ![财务](screenshots/mobile/tab_finance.png) |
+
+> 返回键防抖（首页"再按一次退出"提示）见 [back_debounce_home.png](screenshots/mobile/back_debounce_home.png)。Web 截图由 `web/scripts/capture-screens.ts` 在 mock dev server 自动采集。
 
 ## 技术栈
 
