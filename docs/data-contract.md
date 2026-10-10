@@ -1,6 +1,6 @@
 # 社易管云数据契约（V6.0 冻结稿）
 
-> 依据：docs/产品审视与优化路线.md（V6.0）§4 统一数据契约  
+> 依据：docs/roadmap.md（V6.0）§4 统一数据契约  
 > 目的：Web / Android / HarmonyOS 三端开发前冻结数据模型、统一字段、事件与审计约定。  
 > 生效：本文件与 CloudDB 对象类型目录（clouddb/objecttype/）为唯一数据契约来源；新增/修改对象必须先更新本文件再部署。
 
@@ -42,7 +42,7 @@ eventType entityType entityId actorId occurredAt metadata correlationId
 
 ---
 
-# 二、对象类型总览（31 张已建表）
+# 二、对象类型总览（32 张已建表）
 
 ## 2.1 组织与身份
 
@@ -52,6 +52,7 @@ eventType entityType entityId actorId occurredAt metadata correlationId
 | OrganizationRelationship | 组织关系（父子/伙伴 + 数据共享策略） | ✅ 契约完整（主键映射 relId） |
 | UserOrganization | 用户-组织成员关系（admin/member + roleId/dataScope） | ✅ 契约完整 |
 | AppUser | 账号 | ⚠️ 用户级对象（契约豁免） |
+| ExternalIdentity | 外部身份映射（provider + providerSubject → 内部 userId） | ✅ 契约完整（主键映射 identityId） |
 | Person | 自然人主档（personId + userId + 基础身份） | ✅ 契约完整 |
 | Role | 组织角色（内置矩阵+自定义权限 JSON/数据范围） | ✅ 契约完整 |
 | Permission | 权限目录（code/name/category） | ✅ 契约完整 |
@@ -62,7 +63,7 @@ eventType entityType entityId actorId occurredAt metadata correlationId
 > **OrgSettings.ruleConfig 字段说明**：治理规则启停配置，`String` 类型 JSON 字符串，默认 `"{}"`。
 > 格式 `{"disabled":["GR-03","GR-08"]}`——`disabled` 为禁用规则编号集合，合法值 `GR-01`~`GR-12`，未出现的规则视为启用。
 > 写入方：`set-rule-enabled`（仅组织管理员，强制幂等键，同步写 AuditLog/BusinessEvent）；读取方：`get-rule-config`（返回 12 条规则定义与 enabled 状态）、`run-governance-rules`（运行时跳过被禁用规则，并在结果 `actions.skippedRules` 与运行日志中记录）。
-> 兜底：存量行为空或 JSON 损坏时一律按全部启用处理，不阻塞规则引擎。部署同步步骤见 `docs/AGC部署联调.md` §二。
+> 兜底：存量行为空或 JSON 损坏时一律按全部启用处理，不阻塞规则引擎。部署同步步骤见 [docs/deployment.md](deployment.md) §二。
 
 ## 2.2 业务数据
 
@@ -100,7 +101,7 @@ eventType entityType entityId actorId occurredAt metadata correlationId
 |---|---|---|
 | Document | 云存储文件元数据（domain/refType/refId/size/status/storagePath/uploadPath/checksum/downloadCount，status：uploading/active/deleted/failed） | ✅ 契约完整 |
 
-> 结论：**31 张表统一字段已全部补齐**（用户级 AppUser/UserSettings 按契约豁免；Organization/OrgSettings/OrganizationRelationship/ExternalIdentity/Person 等以各自主键语义映射，其余统一字段齐全）。新增对象一律按 §一 契约自建。
+> 结论：**32 张表统一字段已全部补齐**（用户级 AppUser/UserSettings 按契约豁免；Organization/OrgSettings/OrganizationRelationship/ExternalIdentity/Person 等以各自主键语义映射，其余统一字段齐全）。新增对象一律按 §一 契约自建。
 
 > Flutter 端 DTO（Member/Project/Notice/FinanceRecord/ApprovalInstance/ApprovalFlow/AutoTask/RiskAlert/DataQualityIssue/Snapshot）已同步统一字段，移动端与云端契约一致。
 
@@ -115,7 +116,7 @@ version isDeleted occurredAt createdAt
 ```
 
 - `eventType`：created/submitted/approved/rejected/completed/updated/overdue/withdrawn/archived/deleted/status_changed/notified/resolved
-- `correlationId`：一次业务动作（如一次提交）产生的一串事件的公共关联键，用于追踪“事件→规则→动作→新事件”链路
+- `correlationId`：一次业务动作（如一次提交）产生的一串事件的公共关联键，用于追踪"事件→规则→动作→新事件"链路
 - ✅ 已贯通：业务动作生成关联键写入 BusinessEvent / AuditLog；AutoTask / RiskAlert / WorkItem 携带同一关联键；规则引擎与工作项物化按关联键可全链追踪
 
 ---
@@ -155,7 +156,7 @@ Term              # 任期（180/90/30 天感知 + 换届）
 Role / Permission # 角色与权限（Web 权限配置的数据底座）
 ```
 
-> 身份规范：docs/跨端统一用户身份与唯一标识规范.md。外部登录（华为账号等）一律通过 `ensure-user-identity` 映射到稳定内部 userId，禁止直接用 OpenID 作为业务主键。
+> 身份规范见 [docs/identity-spec.md](identity-spec.md)。外部登录（华为账号等）一律通过 `ensure-user-identity` 映射到稳定内部 userId，禁止直接用 OpenID 作为业务主键。
 
 ## 5.2 治理数据
 
@@ -195,3 +196,13 @@ ChangeLog / Notification / Rule（规则配置实体）——WorkItem、AuditLog
 - 业务变化：BusinessEvent 记录事件并带 correlationId
 - 自动化：AutomationRunLog 记录规则命中、动作与耗时；RiskAlert/AutoTask 记录来源规则
 - 全局可回答十问：谁发起、哪个组织、当前状态、谁负责、为何进入当前状态、发生了什么事件、依据什么规则、下一步、是否超时、是否闭环
+
+---
+
+# 八、交叉引用
+
+- 业务 API 动作型契约与幂等规范见 [docs/api-contract.md](api-contract.md)
+- 云存储安全策略与文件上传模型见 [docs/cloud-storage-security.md](cloud-storage-security.md)
+- 跨端统一身份规范见 [docs/identity-spec.md](identity-spec.md)
+- 云函数部署与联调见 [docs/deployment.md](deployment.md)
+- 技术架构与设计原则见 [docs/architecture.md](architecture.md)

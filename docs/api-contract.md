@@ -1,6 +1,6 @@
 # 社易管统一业务 API 契约（P0-D / P0-E）
 
-> 依据：docs/产品审视与优化路线.md（V6.0）§21 业务服务层、§23 自动化可靠性  
+> 依据：docs/roadmap.md（V6.0）§21 业务服务层、§23 自动化可靠性  
 > 目的：Web / Android / HarmonyOS 三端共用一套业务动作语义，禁止三端各自实现核心业务规则。
 
 ---
@@ -10,7 +10,7 @@
 - 传输：HTTP POST，JSON body，认证类型 `apigw-client`。
 - 返回：统一 `{ ret: { code, message, data } }`，`code=0` 成功。
 - 组织上下文：所有组织级调用必须携带 `orgId` + `userId`；云函数在服务端重新校验成员/管理员身份。
-- 业务动作：核心状态迁移通过“动作型”云函数完成（见 §二），客户端不得直接 upsert 覆盖状态字段。
+- 业务动作：核心状态迁移通过"动作型"云函数完成（见 §二），客户端不得直接 upsert 覆盖状态字段。
 
 ---
 
@@ -60,7 +60,7 @@
 
 ## 3.2 调用约定
 
-调用方为“一次业务动作”生成唯一 `idempotencyKey`，**同一动作重试时必须复用同一键**：
+调用方为"一次业务动作"生成唯一 `idempotencyKey`，**同一动作重试时必须复用同一键**：
 
 ```json
 {
@@ -76,12 +76,12 @@
 1. 校验组织成员/权限；缺少 `idempotencyKey` 直接拒绝（财务提交/审批/结账/反结账等关键动作）。
 2. **原子认领（claim）**：按 `idempotencyKey` 查 `IdempotencyRecord`：
    - `status=done` → 直接返回首次执行结果（`message: ok（幂等返回）`）。
-   - `status=processing` 且在认领窗口内（120s）→ 返回“操作正在处理中”，拒绝重复执行。
+   - `status=processing` 且在认领窗口内（120s）→ 返回"操作正在处理中"，拒绝重复执行。
    - 不存在 / 超时 / failed → 写入 `status=processing` + `claimId`，**读回确认 claimId 归属后获得执行权**。
 3. 执行成功 → 更新 `status=done` + `result`（首次返回 data，24h 有效）。
 4. 执行失败 → 更新 `status=failed`，下次重试可重新认领执行。
 
-> 说明：CloudDB 无事务性条件插入，本实现通过“认领 + claimId 归属确认 + 超时重领”将并发双执行窗口压缩到最小；若要求严格 Exactly-Once，需在 AGC 后端服务层引入分布式锁/唯一索引（Web 阶段可选增强）。
+> 说明：CloudDB 无事务性条件插入，本实现通过"认领 + claimId 归属确认 + 超时重领"将并发双执行窗口压缩到最小；若要求严格 Exactly-Once，需在 AGC 后端服务层引入分布式锁/唯一索引（Web 阶段可选增强）。
 
 ## 3.4 幂等键生成（客户端）
 
@@ -147,3 +147,55 @@
   - `projectStatus: [{ name, value }]`——项目按状态展示名计数（筹备中/进行中/已暂停/已完成）；
   - `totals: { members, projects, pendingWorkItems, dqScore, successRate }`——成员数/项目数/未关闭工作项数/数据质量总分/自动化近 20 次运行成功率（无记录按 100）。
 - **约束**：明细查询按 `orgId` 等值过滤分页拉取（单页 1000、上限 50 页），服务端聚合，禁止端侧全量拉取。
+
+---
+
+# 附录：云函数完整分类列表（80 个）
+
+> 云函数部署与联调细节见 [docs/deployment.md](deployment.md)。
+
+**数据 CRUD（7 个，按 orgId 隔离）**：`get-all-data`（全量拉取 Member/Project/Notice）、`upsert/delete-member`、`upsert/delete-project`（含 tasks/milestones）、`upsert/delete-notice`
+
+**事件中心（2 个）**：`record-business-event`（校验组织成员身份）、`get-business-events`（按对象/类型/级别筛选、倒序分页）
+
+**数据治理（3 个）**：`run-data-quality`（生成/复用/自动关闭问题 + 健康度快照）、`get-data-quality`、`resolve-data-quality-issue`（解决/忽略/重开，结果入事件流）
+
+**自动化治理（4 个）**：`run-governance-rules`（GR-01~12 批量运行，读取 `OrgSettings.ruleConfig` 跳过禁用规则）、`get-governance-center`（任务/风险/运行记录汇总）、`act-auto-task`、`act-risk-alert`
+
+**组织管理（7 个）**：`create-org`（名称唯一性与信用代码校验）、`get-my-orgs`、`join-org`、`set-org-relationship`、`get-org-hierarchy`、`set-org-admin`、`delete-org`（级联删除）
+
+**用户与绑定（2 个）**：`bind-member`（按手机号绑定会员）、`delete-user`（注销账号，级联删除）
+
+**钉钉同步（2 个）**：`dingtalk-sync-contacts`（凭证入参，`d+userid` 幂等批量 upsert）、`dingtalk-list-departments`（部门树）
+
+**财务与审批（7 个）**：`submit-finance-record`（提交并自动发起审批）、`act-finance-node`（通过/驳回/办理，完成时通知）、`get-finance-records`、`get-finance-stats`、`get-approval-tasks`、`save-approval-flow` / `get-approval-flows`
+
+**财务结账与报表（6 个）**：`save/get-opening-balances`（期初录入与上期结转）、`get-accounting-reports`（余额表/资产负债表/业务活动表/现金流量表）、`get-ledger`（总账/明细账）、`close-period`（结转凭证生成）、`unclose-period`（反结账）
+
+**设置（4 个）**：`get/save-org-settings`（钉钉凭证仅 admin 可见）、`get/save-user-settings`
+
+**身份与认证（3 个）**：`register-user` / `login-user`（scrypt 加盐哈希）、`ensure-user-identity`（外部身份 → 内部 userId，幂等）
+
+**权限 RBAC（4 个）**：`get-my-permissions`（云端计算角色/权限/数据范围，回退兼容旧 admin/member）、`get-roles`、`save-role`、`save-data-scope`
+
+**统一工作项（3 个）**：`refresh-work-items`（物化 + 自动关闭消失项）、`get-work-items`、`act-work-item`（完成/取消/重开，同步来源系统）
+
+**审计（2 个）**：`record-audit-log`、`get-audit-logs`（按对象/动作/操作人筛选分页）
+
+**决议与治理对象（12 个）**：`save/get/act-resolution`、`save/get/act-license`、`save/get/act-compliance-item`、`save/get/act-term`
+
+**感知与血缘（2 个）**：`get-trend-stats`（近 7 天趋势与环比异常）、`get-entity-relations`（项目根血缘图）
+
+**文件中心（5 个）**：`init/commit-file-upload`（SDK 直传或代理写入 ≤5MB）、`list-documents`、`get-document-file`（代理下载 ≤10MB）、`delete-document`（软删）
+
+**检索、规则配置与报表（5 个）**：`search-all`（七类对象统一检索，每类≤20 条）、`get-rule-config`（GR-01~12 定义与启停）、`set-rule-enabled`（仅管理员，强制幂等）、`get-automation-logs`、`get-report-stats`（收支趋势/风险分布/质量维度/项目状态聚合）
+
+---
+
+# 七、交叉引用
+
+- 数据模型与统一字段契约见 [docs/data-contract.md](data-contract.md)
+- 云存储安全策略与文件上传模型见 [docs/cloud-storage-security.md](cloud-storage-security.md)
+- 跨端统一身份规范见 [docs/identity-spec.md](identity-spec.md)
+- 云函数部署与联调见 [docs/deployment.md](deployment.md)
+- 技术架构与设计原则见 [docs/architecture.md](architecture.md)

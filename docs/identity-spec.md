@@ -1,6 +1,8 @@
 # 跨端统一用户身份与唯一标识规范
 
-> SmartSociety Web / Android / HarmonyOS 三端统一身份规范，属于 `产品审视与优化路线.md` 的 P0 架构要求。
+> SmartSociety Web / Android / HarmonyOS 三端统一身份规范，属于架构级 P0 要求。
+
+---
 
 ## 1. 核心原则
 
@@ -15,6 +17,8 @@ userId
 ```
 
 作为 SmartSociety 全平台唯一、稳定、不可变的用户身份主键。
+
+---
 
 ## 2. 四层身份模型
 
@@ -56,7 +60,7 @@ Person
 
 ### OrganizationMembership
 
-代表“某用户/人员属于某社会团体”的关系：
+代表"某用户/人员属于某社会团体"的关系：
 
 ```text
 OrganizationMembership
@@ -95,6 +99,8 @@ ExternalIdentity
 
 例如未来可以同时支持不同登录方式，而不改变业务数据中的 `userId`。
 
+---
+
 ## 3. 三端统一关系
 
 ```text
@@ -113,6 +119,8 @@ ExternalIdentity
 ```
 
 Web、Android、HarmonyOS 无论使用什么 SDK、登录界面或本地存储方案，最终都必须映射到同一个 `userId`。
+
+---
 
 ## 4. 业务数据统一引用
 
@@ -141,6 +149,8 @@ Approval
 
 需要自然人主档案时再关联 `personId`，需要组织成员关系时关联 `membershipId`。
 
+---
+
 ## 5. 严禁作为业务主键的字段
 
 以下字段不得作为 SmartSociety 的内部用户唯一主键：
@@ -156,6 +166,8 @@ Approval
 
 原因：这些字段可能发生变化、可能一人多端、可能一人多身份，也可能随着身份提供商变化而失效。
 
+---
+
 ## 6. userId 设计要求
 
 `userId` 必须：
@@ -170,6 +182,8 @@ Approval
 - 可以安全作为跨端业务关联字段
 
 推荐使用随机生成的 UUID/ULID/同等级别的不可预测标识，不采用自增 ID 作为公开业务身份。
+
+---
 
 ## 7. 组织上下文不能混入 userId
 
@@ -191,6 +205,8 @@ organizationId
 
 这样才能支持多组织、组织切换、跨组织权限和组织成员生命周期管理。
 
+---
+
 ## 8. 权限模型
 
 统一采用：
@@ -210,6 +226,8 @@ OperationPolicy
 ```
 
 客户端可以根据权限隐藏 UI，但真正的权限校验必须在 API Gateway / Cloud Functions / 后端服务执行。
+
+---
 
 ## 9. 高风险身份操作
 
@@ -237,6 +255,8 @@ sourceDevice
 correlationId
 ```
 
+---
+
 ## 10. 三端验收标准
 
 同一个人在 Web 登录、Android 登录、HarmonyOS 登录后：
@@ -260,3 +280,13 @@ HarmonyOS.userId
 - 权限计算结果一致
 
 这项规范属于 **P0，必须在三端正式开发前冻结**。
+
+---
+
+## 11. 交叉引用
+
+- 数据模型与 ExternalIdentity 字段定义见 [docs/data-contract.md](data-contract.md)
+- 业务 API 契约（ensure-user-identity 等）见 [docs/api-contract.md](api-contract.md)
+- 云存储安全策略见 [docs/cloud-storage-security.md](cloud-storage-security.md)
+- 云函数部署与联调见 [docs/deployment.md](deployment.md)
+- 技术架构与设计原则见 [docs/architecture.md](architecture.md)

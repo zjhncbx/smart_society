@@ -1,6 +1,6 @@
-# 社易管 云存储安全策略（V1.0）
+# 社易管云存储安全策略（V1.0）
 
-> 依据：docs/产品审视与优化路线.md（V6.0）、docs/云数据契约.md、docs/业务API契约.md
+> 依据：docs/roadmap.md（V6.0）、docs/data-contract.md、docs/api-contract.md
 > 目的：冻结 AGC Cloud Storage 的桶安全规则、目录布局与服务端校验职责，杜绝"客户端直写任意路径"和"成员可读全组织文件"两类越权。
 > 生效：本文为云存储安全规则唯一权威来源；修改规则必须先更新本文再部署。
 
@@ -151,3 +151,13 @@ agc.cloud.storage[
 - **客户端直传限本人暂存区**：组织共享区文件只有云函数能读写，客户端拿到的永远是"云函数签发的数据"而非桶路径，避免路径泄露。
 - **删除为软删**：Document.status=deleted 后保留元数据供审计，存储文件由云函数删除；如需彻底清除元数据需另立治理任务。
 - **桶级 CORS**：Web 代理模式不涉及桶级 CORS；若未来启用客户端直传 Web 上传，需在桶 CORS 配置中放行 `VITE_API_BASE_URL` 来源。
+
+---
+
+# 八、交叉引用
+
+- 数据模型与统一字段契约见 [docs/data-contract.md](data-contract.md)
+- 业务 API 契约与幂等规范见 [docs/api-contract.md](api-contract.md)
+- 跨端统一身份规范见 [docs/identity-spec.md](identity-spec.md)
+- 云函数部署与联调见 [docs/deployment.md](deployment.md)
+- 技术架构与设计原则见 [docs/architecture.md](architecture.md)

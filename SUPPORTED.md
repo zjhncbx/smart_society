@@ -29,7 +29,7 @@
 | 华为 AGC Serverless | 云函数（HTTP 触发器、`apigw-client`）+ 云数据库（32 对象类型）+ 云存储 |
 | 华为 Account Kit | 华为账号一键登录（OAuth 回调需在 AGC 配置） |
 
-部署与联调步骤见 [`docs/AGC部署联调.md`](docs/AGC部署联调.md)。
+部署与联调步骤见 [`docs/deployment.md`](docs/deployment.md)。
 
 ## 门禁基线
 
